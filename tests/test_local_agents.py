@@ -48,6 +48,9 @@ with tempfile.TemporaryDirectory() as tmp:
         assert request('/api/local/chat',{'model':'test-coder:3b','message':'Hello there'})[0]==401
         status,data=request('/api/auth/signup',{'email':'agent-test@blorp.local','name':'Test Agent','password':'MyStrongPassw0rd!'})
         assert status==201
+        # Owner bootstrap is local-only; owner can test the agent runtime without a paid subscription.
+        boot=subprocess.run([sys.executable,str(root/'manage_owner.py'),'agent-test@blorp.local'],env=env,capture_output=True,text=True,timeout=6)
+        assert boot.returncode==0,boot.stderr
         status,chat=request('/api/local/chat',{'model':'test-coder:3b','message':'Hello there'})
         assert status==200 and chat['reply']=='Hello from the local model.' and chat['source']=='local-ollama'
         status,run=request('/api/local/agents/build',{'model':'test-coder:3b','brief':'Build a beautiful coffee shop website'})

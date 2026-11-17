@@ -74,7 +74,7 @@
  el('localClear').addEventListener('click',()=>{history=[];el('localChatThread').replaceChildren();const intro=document.createElement('div');intro.className='local-welcome';intro.textContent='Fresh local conversation. What would you like to ask?';el('localChatThread').append(intro)});
  el('localRefresh').addEventListener('click',reload);
  const previewOnly=window.location.protocol==='file:';
- const nav=el('localAiNav');nav.addEventListener('click',()=>{changeView('localai');el('crumb').textContent='Local AI Lab';if(!previewOnly)reload()});
+ const nav=el('localAiNav');nav.addEventListener('click',()=>{if(window.blorpAuthorizeView&&!window.blorpAuthorizeView('localai'))return;changeView('localai');el('crumb').textContent='Local AI Lab';if(!previewOnly)reload()});
  if(previewOnly){el('localModel').replaceChildren(new Option('Start Blorp server to use Ollama',''));showStatus('UI-only preview. To connect real local AI, extract the project ZIP, start Python with START_BLORP_WINDOWS.bat and open the localhost URL shown.','problem');el('localRun').disabled=true;}
  else{reload()}
  if(window.location.hash==='#localai'){nav.click()}

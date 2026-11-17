@@ -15,8 +15,16 @@ jobs:
         with:
           python-version: '3.12'
       - name: Syntax check
-        run: python -m compileall -q server.py local_runtime.py build_frontend.py patch_frontend.py
+        run: python -m compileall -q server.py local_runtime.py build_frontend.py patch_frontend.py manage_owner.py
       - name: Local account and API tests
         run: python tests/test_api.py
       - name: Mock Ollama agent tests
         run: python tests/test_local_agents.py
+      - name: Membership, owner and payment API tests
+        run: python tests/test_memberships.py
+      - name: Frontend JavaScript syntax
+        run: |
+          node --check public/assets/base.js
+          node --check public/assets/v5.js
+          node --check public/assets/v51.js
+          node --check public/assets/v52.js

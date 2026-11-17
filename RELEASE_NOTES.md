@@ -1,3 +1,12 @@
+# V5.2 — Owner-approved memberships and Google account integration
+
+- Build Fast locked for Free and expired members (UI + server-side build API checks).
+- Owner-only membership management, pending payment requests, audit trail, and 30/365-day expiration logic.
+- Google Identity Services signup/signin and explicit password-account linking, when OAuth client ID and optional verification dependencies are configured.
+- Manual payment requests and optional external HTTPS checkout link; **no direct card charging or automatic transaction verification**.
+- Original V5.1 Multi Task, Workflows, Local AI Lab, and add-ons preserved.
+- Python 3.10+ localhost development app, **not production ready**.
+
 # Blorp V5.1 — Local AI Agents (Phase 2 MVP)
 
 **Delivered:** local Ollama integration, a real chat request path, a sequential three-role static website generator, account-scoped generated ZIP downloads, and matching Local AI Lab screens. No real model weight files are bundled or downloaded.

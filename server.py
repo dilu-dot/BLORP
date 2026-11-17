@@ -21,6 +21,7 @@ import sys
 import threading
 import time
 import uuid
+from urllib.parse import urlparse
 
 import local_runtime
 
@@ -34,6 +35,10 @@ COOKIE = 'blorp_session'
 SESSION_AGE = 7 * 24 * 3600
 MAX_JSON = 16 * 1024
 FREE_CREDITS = 4_000_000
+PLAN_PRICES = {('builder', 'monthly'): 2000, ('builder', 'annual'): 21600,
+               ('studio', 'monthly'): 5000, ('studio', 'annual'): 54000}
+GOOGLE_CLIENT_ID = os.environ.get('BLORP_GOOGLE_CLIENT_ID', '').strip()
+PAYMENT_INSTRUCTIONS = os.environ.get('BLORP_PAYMENT_INSTRUCTIONS', '').strip()[:700]
 ITERATIONS = 310_000
 _attempts: dict[str, list[float]] = {}
 _attempt_lock = threading.Lock()
@@ -64,21 +69,87 @@ def init_db():
            id TEXT NOT NULL, user_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
            title TEXT NOT NULL, payload TEXT NOT NULL, updated_at INTEGER NOT NULL,
            PRIMARY KEY(id,user_id));
+        CREATE TABLE IF NOT EXISTS payment_requests (
+           id TEXT PRIMARY KEY,
+           user_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+           plan TEXT NOT NULL CHECK(plan IN ('builder','studio')),
+           interval TEXT NOT NULL CHECK(interval IN ('monthly','annual')),
+           amount_cents INTEGER NOT NULL,
+           currency TEXT NOT NULL DEFAULT 'USD',
+           method TEXT NOT NULL CHECK(method IN ('manual','hosted_link')),
+           status TEXT NOT NULL DEFAULT 'pending' CHECK(status IN ('pending','approved','rejected')),
+           reference TEXT NOT NULL DEFAULT '',
+           owner_note TEXT NOT NULL DEFAULT '',
+           reviewed_by TEXT,
+           created_at INTEGER NOT NULL,
+           reviewed_at INTEGER);
+        CREATE TABLE IF NOT EXISTS membership_audit (
+           id TEXT PRIMARY KEY, actor_id TEXT NOT NULL, user_id TEXT NOT NULL,
+           old_plan TEXT NOT NULL, new_plan TEXT NOT NULL, expires_at INTEGER,
+           reason TEXT NOT NULL, created_at INTEGER NOT NULL);
         CREATE TABLE IF NOT EXISTS local_artifacts (
            id TEXT PRIMARY KEY, user_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
            model TEXT NOT NULL, created_at INTEGER NOT NULL);
         ''')
+        columns={r['name'] for r in conn.execute('PRAGMA table_info(users)')}
+        for col,definition in {
+            'role': "TEXT NOT NULL DEFAULT 'member'",
+            'plan_expires_at': 'INTEGER',
+            'google_sub': 'TEXT',
+        }.items():
+            if col not in columns:
+                conn.execute(f'ALTER TABLE users ADD COLUMN {col} {definition}')
+        conn.execute('CREATE UNIQUE INDEX IF NOT EXISTS users_google_sub_unique ON users(google_sub) WHERE google_sub IS NOT NULL')
 
 
 def hash_password(password, salt):
     return hashlib.pbkdf2_hmac('sha256', password.encode('utf-8'), bytes.fromhex(salt), ITERATIONS).hex()
 
 
+def effective_plan(row):
+    if not row:
+        return 'free'
+    expires=row['plan_expires_at']
+    return row['plan'] if row['plan'] != 'free' and expires and expires > int(time.time()) else 'free'
+
+
+def has_build_access(row):
+    return bool(row and (row['role']=='owner' or effective_plan(row) in ('builder','studio')))
+
+
+def safe_checkout_url(plan, interval):
+    url=os.environ.get(f'BLORP_CHECKOUT_URL_{plan.upper()}_{interval.upper()}','').strip()
+    parsed=urlparse(url)
+    return url if parsed.scheme=='https' and parsed.netloc and not parsed.username and not parsed.password else None
+
+
+def verify_google_credential(credential):
+    if not GOOGLE_CLIENT_ID:
+        raise RuntimeError('Google login is not configured')
+    if not isinstance(credential,str) or len(credential)>8000:
+        raise ValueError('Invalid Google credential')
+    try:
+        from google.oauth2 import id_token
+        from google.auth.transport import requests
+    except ImportError as exc:
+        raise RuntimeError('Install optional Google dependencies: pip install -r requirements-google.txt') from exc
+    claims=id_token.verify_oauth2_token(credential,requests.Request(),GOOGLE_CLIENT_ID)
+    if claims.get('iss') not in ('accounts.google.com','https://accounts.google.com'):
+        raise ValueError('Invalid Google issuer')
+    if not claims.get('sub') or claims.get('email_verified') is not True:
+        raise ValueError('Verified Google email required')
+    email=str(claims.get('email','')).lower().strip()
+    if not re.fullmatch(r'[^\s@]+@[^\s@]+\.[^\s@]+',email):
+        raise ValueError('Invalid Google email')
+    return {'sub':str(claims['sub']),'email':email,'name':str(claims.get('name') or email.split('@')[0])[:55]}
+
+
 def safe_user(row):
     if row is None:
         return None
     return {'id': row['id'], 'name': row['name'], 'email': row['email'],
-            'plan': row['plan'], 'credits_remaining': row['credits_remaining']}
+            'plan': effective_plan(row), 'role': row['role'], 'plan_expires_at': row['plan_expires_at'],
+            'build_fast_unlocked': has_build_access(row), 'credits_remaining': row['credits_remaining']}
 
 
 def allow_attempt(key):
@@ -94,7 +165,7 @@ def allow_attempt(key):
 
 
 class Handler(BaseHTTPRequestHandler):
-    server_version = 'BlorpLocal/0.5'
+    server_version = 'BlorpLocal/0.5.2'
 
     def log_message(self, fmt, *args):
         # Avoid printing credentials, cookies or JSON payloads.
@@ -167,7 +238,32 @@ class Handler(BaseHTTPRequestHandler):
     def do_GET(self):
         path = urlsplit(self.path).path
         if path == '/api/health':
-            return self.response(200, {'ok': True, 'version': 'v5.1-local-agents', 'ai_connected': False, 'local_ollama_supported': True, 'billing_connected': False})
+            return self.response(200, {'ok': True, 'version': 'v5.2-member-access', 'local_ollama_supported': True, 'billing_connected': False,
+                                       'manual_requests': True, 'google_configured': bool(GOOGLE_CLIENT_ID)})
+        if path == '/api/auth/config':
+            return self.response(200, {'google_client_id': GOOGLE_CLIENT_ID})
+        if path == '/api/billing/plans':
+            prices=[{'plan':p,'interval':i,'currency':'USD','amount_cents':c,'checkout_url':safe_checkout_url(p,i)}
+                    for (p,i),c in PLAN_PRICES.items()]
+            return self.response(200, {'plans':prices,'payment_instructions':PAYMENT_INSTRUCTIONS,
+                                       'manual_approval':True,'automatic_billing':False})
+        if path == '/api/billing/requests':
+            user=self.find_user()
+            if not user:return self.response(401,{'error':'Sign in required'})
+            with database() as conn:
+                records=conn.execute('SELECT id,plan,interval,amount_cents,currency,method,status,reference,created_at,reviewed_at FROM payment_requests WHERE user_id=? ORDER BY created_at DESC LIMIT 30',(user['id'],)).fetchall()
+            return self.response(200,{'requests':[dict(r) for r in records]})
+        if path == '/api/owner/overview':
+            user=self.find_user()
+            if not user:return self.response(401,{'error':'Sign in required'})
+            if user['role']!='owner':return self.response(403,{'error':'Owner access only'})
+            with database() as conn:
+                members=conn.execute('SELECT id,email,name,plan,plan_expires_at,credits_remaining,role,created_at FROM users ORDER BY created_at DESC LIMIT 250').fetchall()
+                pending=conn.execute('''SELECT p.id,p.plan,p.interval,p.amount_cents,p.currency,p.method,p.status,p.reference,p.owner_note,p.created_at,p.reviewed_at,u.email,u.name
+                    FROM payment_requests p JOIN users u ON u.id=p.user_id ORDER BY p.created_at DESC LIMIT 250''').fetchall()
+                audits=conn.execute('SELECT * FROM membership_audit ORDER BY created_at DESC LIMIT 40').fetchall()
+            members=[dict(r) | {'effective_plan':effective_plan(r)} for r in members]
+            return self.response(200,{'members':members,'payments':[dict(r) for r in pending],'audit':[dict(r) for r in audits]})
         if path == '/api/local/models':
             try:
                 return self.response(200, {'models':local_runtime.models(),'provider':'Ollama (this computer)','connected':True})
@@ -250,9 +346,44 @@ class Handler(BaseHTTPRequestHandler):
                 return self.response(401, {'error': 'Invalid credentials'})
             with database() as conn:
                 user = conn.execute('SELECT * FROM users WHERE email=?',(email,)).fetchone()
-            if not user or not hmac.compare_digest(hash_password(password,user['salt']),user['password_hash']):
+            if not user or not user['password_hash'] or not hmac.compare_digest(hash_password(password,user['salt']),user['password_hash']):
                 return self.response(401, {'error': 'Invalid credentials'})
             return self.response(200, {'user': safe_user(user)}, self.create_session(user))
+        if path in ('/api/auth/google','/api/auth/google/link'):
+            try:
+                identity=verify_google_credential(data.get('credential'))
+            except (ValueError, RuntimeError) as exc:
+                return self.response(503 if isinstance(exc,RuntimeError) else 401,{'error':str(exc)})
+            except Exception:
+                return self.response(401,{'error':'Google sign-in could not be verified'})
+            if path.endswith('/link'):
+                user=self.find_user()
+                if not user:return self.response(401,{'error':'Sign in with your password before linking Google'})
+                if user['email']!=identity['email']:
+                    return self.response(409,{'error':'Google email does not match your account'})
+                if user['google_sub'] and user['google_sub']!=identity['sub']:
+                    return self.response(409,{'error':'A different Google account is already linked'})
+                try:
+                    with database() as conn:
+                        conn.execute('UPDATE users SET google_sub=? WHERE id=?',(identity['sub'],user['id']))
+                        user=conn.execute('SELECT * FROM users WHERE id=?',(user['id'],)).fetchone()
+                except sqlite3.IntegrityError:
+                    return self.response(409,{'error':'Google identity already linked to another account'})
+                return self.response(200,{'user':safe_user(user),'linked':True})
+            with database() as conn:
+                user=conn.execute('SELECT * FROM users WHERE google_sub=?',(identity['sub'],)).fetchone()
+                if not user:
+                    existing=conn.execute('SELECT id FROM users WHERE email=?',(identity['email'],)).fetchone()
+                    if existing:
+                        return self.response(409,{'error':'An account already uses this email. Sign in with your password, then link Google from the account settings.'})
+                    uid=str(uuid.uuid4())
+                    try:
+                        conn.execute('''INSERT INTO users(id,email,name,salt,password_hash,credits_remaining,plan,created_at,google_sub)
+                            VALUES (?,?,?,?,?,?,?,?,?)''',(uid,identity['email'],identity['name'],'','',FREE_CREDITS,'free',int(time.time()),identity['sub']))
+                    except sqlite3.IntegrityError:
+                        return self.response(409,{'error':'Account already exists'})
+                    user=conn.execute('SELECT * FROM users WHERE id=?',(uid,)).fetchone()
+            return self.response(200,{'user':safe_user(user)},self.create_session(user))
         if path == '/api/auth/signout':
             raw = self.headers.get('Cookie','')
             try:
@@ -264,6 +395,65 @@ class Handler(BaseHTTPRequestHandler):
                 with database() as conn:
                     conn.execute('DELETE FROM sessions WHERE token_hash=?',(hashlib.sha256(token.encode()).hexdigest(),))
             return self.response(200, {'ok':True}, f'{COOKIE}=; HttpOnly; SameSite=Strict; Path=/; Max-Age=0')
+        if path == '/api/billing/request':
+            user=self.find_user()
+            if not user:return self.response(401,{'error':'Sign in required'})
+            plan=data.get('plan'); interval=data.get('interval'); method=data.get('method','manual')
+            if (plan,interval) not in PLAN_PRICES or method not in ('manual','hosted_link'):
+                return self.response(422,{'error':'Invalid plan, billing period or payment method'})
+            if method=='hosted_link' and not safe_checkout_url(plan,interval):
+                return self.response(503,{'error':'Hosted checkout is not configured yet'})
+            now=int(time.time())
+            with database() as conn:
+                count=conn.execute("SELECT COUNT(*) FROM payment_requests WHERE user_id=? AND status='pending'",(user['id'],)).fetchone()[0]
+                if count>=3:return self.response(429,{'error':'Up to three pending payment requests are allowed'})
+                req_id=uuid.uuid4().hex
+                conn.execute('''INSERT INTO payment_requests(id,user_id,plan,interval,amount_cents,currency,method,status,created_at)
+                    VALUES (?,?,?,?,?,?,?,?,?)''',(req_id,user['id'],plan,interval,PLAN_PRICES[(plan,interval)],'USD',method,'pending',now))
+            return self.response(201,{'request_id':req_id,'status':'pending','amount_cents':PLAN_PRICES[(plan,interval)],'currency':'USD',
+                                      'checkout_url':safe_checkout_url(plan,interval) if method=='hosted_link' else None,
+                                      'payment_instructions':PAYMENT_INSTRUCTIONS if method=='manual' else '',
+                                      'message':'No membership has been activated. Owner must verify payment separately.'})
+        if path in ('/api/owner/payments/decision','/api/owner/memberships/set'):
+            owner=self.find_user()
+            if not owner:return self.response(401,{'error':'Sign in required'})
+            if owner['role']!='owner':return self.response(403,{'error':'Owner access only'})
+            now=int(time.time())
+            if path.endswith('/decision'):
+                req_id=data.get('request_id'); decision=data.get('decision'); note=str(data.get('note','')).strip()[:240]
+                if not isinstance(req_id,str) or not re.fullmatch(r'[a-f0-9]{32}',req_id) or decision not in ('approve','reject'):
+                    return self.response(422,{'error':'Invalid payment request or decision'})
+                if decision=='approve' and data.get('verified_payment') is not True:
+                    return self.response(422,{'error':'Confirm payment independently before activation'})
+                with database() as conn:
+                    conn.execute('BEGIN IMMEDIATE')
+                    request=conn.execute('SELECT * FROM payment_requests WHERE id=?',(req_id,)).fetchone()
+                    if not request:return self.response(404,{'error':'Payment request not found'})
+                    if request['status']!='pending':return self.response(409,{'error':'Request already reviewed'})
+                    user=conn.execute('SELECT * FROM users WHERE id=?',(request['user_id'],)).fetchone()
+                    if decision=='approve':
+                        old=effective_plan(user)
+                        base=max(now,user['plan_expires_at'] or now) if old==request['plan'] else now
+                        expires=base+(365 if request['interval']=='annual' else 30)*86400
+                        conn.execute('UPDATE users SET plan=?,plan_expires_at=? WHERE id=?',(request['plan'],expires,user['id']))
+                        conn.execute('INSERT INTO membership_audit VALUES(?,?,?,?,?,?,?,?)',
+                                     (uuid.uuid4().hex,owner['id'],user['id'],old,request['plan'],expires,'Verified manual payment '+req_id,now))
+                    conn.execute('''UPDATE payment_requests SET status=?,owner_note=?,reviewed_by=?,reviewed_at=? WHERE id=?''',
+                                 ('approved' if decision=='approve' else 'rejected',note,owner['id'],now,req_id))
+                return self.response(200,{'ok':True,'status':'approved' if decision=='approve' else 'rejected'})
+            member_id=data.get('user_id'); plan=data.get('plan'); days=data.get('days'); reason=str(data.get('reason','')).strip()
+            if not isinstance(member_id,str) or plan not in ('free','builder','studio') or type(days) is not int or not 1<=days<=365 or not 5<=len(reason)<=240:
+                return self.response(422,{'error':'Choose a member, plan, valid duration and a reason (5–240 chars)'})
+            expires=None if plan=='free' else now+days*86400
+            with database() as conn:
+                conn.execute('BEGIN IMMEDIATE')
+                member=conn.execute('SELECT * FROM users WHERE id=?',(member_id,)).fetchone()
+                if not member:return self.response(404,{'error':'Member not found'})
+                old=effective_plan(member)
+                conn.execute('UPDATE users SET plan=?,plan_expires_at=? WHERE id=?',(plan,expires,member_id))
+                conn.execute('INSERT INTO membership_audit VALUES(?,?,?,?,?,?,?,?)',
+                             (uuid.uuid4().hex,owner['id'],member_id,old,plan,expires,reason,now))
+            return self.response(200,{'ok':True,'plan':plan,'plan_expires_at':expires})
         if path == '/api/projects':
             user = self.find_user()
             if not user:
@@ -286,6 +476,8 @@ class Handler(BaseHTTPRequestHandler):
             user=self.find_user()
             if not user:
                 return self.response(401, {'error':'Sign in with your local Blorp account first'})
+            if path.endswith('/build') and not has_build_access(user):
+                return self.response(402, {'error':'Build Fast requires an active Builder or Studio membership'})
             model=data.get('model')
             if not isinstance(model,str) or len(model)>110 or not re.fullmatch(r'[a-zA-Z0-9_.:/-]+',model):
                 return self.response(422, {'error':'Choose a valid installed Ollama model'})
@@ -331,8 +523,11 @@ class Handler(BaseHTTPRequestHandler):
             finally:
                 _model_lock.release()
         if path == '/api/agents/run':
-            if not self.find_user():
+            user=self.find_user()
+            if not user:
                 return self.response(401, {'error': 'Sign in required'})
+            if not has_build_access(user):
+                return self.response(402, {'error': 'Build Fast requires an active Builder or Studio membership'})
             # Intentionally fail closed for ALL tiers until isolated runtime and billing exist.
             return self.response(503, {'error': 'Agent execution is not deployed. This server never runs submitted code.'})
         if path.startswith('/api/billing/'):

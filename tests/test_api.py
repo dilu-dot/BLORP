@@ -36,8 +36,9 @@ with tempfile.TemporaryDirectory() as temp:
         status,body=api('/api/auth/signup',{'email':f'v5-{uuid.uuid4().hex}@example.com','name':'Blorp Test','password':'TestPassw0rd!234'})
         print('signup',status,body['user']['credits_remaining']);assert status==201 and body['user']['credits_remaining']==4_000_000 and body['user']['plan']=='free'
         status,body=api('/api/auth/me');assert status==200 and body['user']['name']=='Blorp Test'
-        status,body=api('/api/agents/run',{});assert status==503 and 'not deployed' in body['error']
+        status,body=api('/api/agents/run',{});assert status==402 and 'membership' in body['error']
         status,body=api('/api/billing/checkout',{});assert status==503
+        status,body=api('/api/local/agents/build',{'model':'unknown','brief':'Build a website'});assert status==402
         status,body=api('/api/projects',{'title':'My first site','payload':{'stack':'React'}});assert status==200;pid=body['id']
         status,body=api('/api/projects');assert status==200 and body['projects'][0]['id']==pid
         status,body=api('/api/auth/signout',{});assert status==200

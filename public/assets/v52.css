@@ -1,0 +1,29 @@
+/* V5.2: warm teal/orange membership and owner controls; inherit Midnight Glass typography */
+.nav button[hidden],.tab[hidden],[hidden]{display:none!important}
+.v52-locked-nav{opacity:.54!important;position:relative}
+.v52-locked-nav::after{content:'🔒';font-size:11px;margin-left:auto;opacity:.76}
+.local-ai-nav.v52-locked-nav{opacity:.55}
+.v52-pay-card{max-width:760px;background:linear-gradient(145deg,rgba(19,70,72,.74),rgba(35,22,18,.84))!important;border-color:rgba(197,109,50,.32)!important}
+.v52-inline-form{margin-top:21px;display:flex;gap:10px;align-items:end;flex-wrap:wrap}
+.v52-inline-form label{width:100%;font-size:12px;color:#c7d7d3}
+.v52-inline-form select{flex:1;min-width:220px}
+.v52-status{font-size:12px;color:#ecc7a6;line-height:1.6;margin:14px 0 0}
+.v52-list{display:grid;gap:10px}
+.v52-record{display:flex;align-items:center;gap:14px;justify-content:space-between;border:1px solid rgba(116,164,166,.2);background:rgba(9,26,28,.34);border-radius:13px;padding:14px 16px}
+.v52-record-info{min-width:0;overflow-wrap:anywhere}
+.v52-record-info strong{display:block;font-size:13px;color:#f2f1ed}
+.v52-record-info small{display:block;font-size:11px;color:#adc3c2;margin-top:6px;line-height:1.55}
+.v52-record-actions{display:flex;flex-wrap:wrap;gap:7px;flex-shrink:0}
+.v52-record-actions .btn{padding:9px 11px;font-size:11px}
+.v52-owner-summary{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px}
+.v52-owner-stat{display:flex;flex-direction:column;gap:15px;padding:18px}
+.v52-owner-stat small{font-size:11px;color:#b0d2ce}
+.v52-owner-stat strong{font-size:31px;color:#f0cfaa}
+.v52-grant-form{display:grid;grid-template-columns:140px minmax(0,1fr);gap:12px;align-items:end;margin-top:20px}
+.v52-grant-form label{font-size:11px;color:#bac9c6;align-self:end}
+.v52-grant-form .btn{grid-column:1/-1}
+.v52-google-area{display:flex;flex-direction:column;align-items:center;gap:12px;margin:17px 0 10px;padding:15px 8px;border:1px solid rgba(142,178,171,.16);border-radius:14px;background:rgba(14,52,54,.13)}
+.v52-google-area .form-hint{text-align:center;line-height:1.5;margin:0}
+.v52-link-google-btn{margin-bottom:12px;width:100%}
+.v52-google-link-slot{margin:8px 0 18px}
+@media(max-width:760px){.v52-owner-summary{grid-template-columns:1fr}.v52-record{flex-direction:column;align-items:stretch}.v52-record-actions .btn{flex:1}.v52-grant-form{grid-template-columns:1fr}.v52-inline-form{flex-direction:column;align-items:stretch}.v52-inline-form select{min-width:0}}

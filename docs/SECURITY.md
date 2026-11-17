@@ -1,4 +1,4 @@
-# Blorp V5.1 — Local Model Security Notes
+# Blorp V5.2 — Local Model Security Notes
 
 - Blorp's Python server binds to `127.0.0.1` only, not the public internet. Do not modify it to bind `0.0.0.0` or deploy it publicly without a complete security redesign.
 - Ollama is contacted over loopback (`127.0.0.1`, default port 11434) by the Python server, not directly by the browser. Model calls do not require paid API keys. `:cloud` model names are excluded from the UI model list; the user must still verify their Ollama installation and model source.
@@ -9,6 +9,9 @@
 - The three “agents” are three prompts to the same installed model, run in sequence. They are not an isolated multi-tenant agent cloud or autonomous tool-use system.
 - The server enforces a serialized inference lock, model-name allowlist, prompt/body limits, attempt limits and account-scoped artifact IDs. Local generated ZIPs are stored under `data/artifacts/`, and download requires authentication.
 - Never enter real API secrets into plugin/MCP drafts, project demos or prompts. Plugin cards and skills are UI-only preferences, not connected external integrations. Existing browser-local draft state is not scoped to signed-in user accounts.
-- The `4,000,000` credits are a demo account field, not chargeable money, real billing entitlement or model usage ledger. `/api/agents/run` remains blocked with HTTP 503; checkout/billing requests remain disabled.
+- The `4,000,000` credits are a demo account field, not chargeable money, real billing entitlement or model usage ledger. `/api/agents/run` remains blocked with HTTP 503; membership requests and owner-approved access are available locally, but no automatic payment processing is connected.
 - Security controls required before any real service launch include comprehensive CSRF/CSP policy, OAuth, credential vault, account-scoped project data, immutable audit trail, rigorous sandbox and resource limits, payment webhooks, abuse controls, secure model provider routing, backups, dependency audits and penetration testing.
 - Windows Defender does not need to be disabled, bypassed or excluded. The project runs as normal Python localhost code; future signed distribution is a separate goal.
+
+- V5.2: Never use `plan` from the browser as an entitlement. The server reads a database role + expiry; owners can only be bootstrapped offline with `manage_owner.py`. Owner actions require authenticated owner role and are logged in `membership_audit`. Google identity tokens require validated Google signature and audience; users cannot auto-merge password accounts based on email.
+- V5.2: Manual payment status is **not a verified transaction**. Owners must independently verify payment; hosted checkout links have no automatic webhook integration. Do not publicly host this local server.

@@ -1,8 +1,21 @@
-# BLORP V5.1 — Local AI Agents (Windows-friendly prototype)
+# BLORP V5.2 — Google Sign-in & Owner Membership (local prototype)
 
 This is the next iteration of the Blorp project. It builds on **the existing V5 foundation and original V4.1 frontend**, preserving Multi Task, Build Playground, Workflows, AI Playground, Model Explorer, Projects, account dashboard, membership UI and Add-ons. It adds **Local AI Lab**, a real integration with an Ollama model running on the *same computer*.
 
 > **Scope:** Local learning/development software. Not a production website-building SaaS, not a trained Blorp V1–V5 model, not a Hermes/Codex replacement, and not a public deployment.
+
+
+## New in V5.2 — Accounts and paid-access foundation
+
+- Google sign-in / sign-up integration using **Google Identity Services** (only enabled after owner configures a Google OAuth web client ID and installs optional dependencies).
+- **Build Fast** UI lock plus **server-side denial** of agent build/run endpoints for Free accounts. The owner role may access local build tests.
+- Private **Manage → Owner Console**, protected by a server-side role check. Owner can approve/reject membership requests, set/revoke plans, and inspect access audit entries.
+- **Payment requests**, not automatic card collection: manual transfer or optional provider-hosted HTTPS checkout link. Owner must independently verify payment before activating a membership. Monthly access lasts 30 days; annual 365 days.
+- Existing `data/` stays local; migrations preserve earlier accounts and projects. Starter credits remain unmetered demo credits. **Do not host this development server publicly.**
+
+**Owner setup:** Sign up normally, stop the local server, run `py -3 manage_owner.py your-email@example.com`, restart and sign in. Full setup, payment limitations, and Google instructions: [docs/AUTH_BILLING.md](docs/AUTH_BILLING.md).
+
+> This is **not** a production checkout. You cannot charge customers or authenticate with Google until you configure actual merchant links and Google credentials. The requested subscriptions can be activated manually by an authorized owner after verifying payment externally. Full hosted agent execution remains unimplemented.
 
 ## Quick start (Windows)
 
@@ -26,7 +39,7 @@ This is the next iteration of the Blorp project. It builds on **the existing V5 
 
 5. Open the `http://127.0.0.1:...` address printed by the server in Edge or Chrome. (Default port is 8765, but it may choose another free port.)
 6. Create a **local Blorp account** with Sign up. This is a localhost-only account; use a **unique test password**.
-7. In the left sidebar, choose **Build Fast → Local AI Lab**, click **Detect Ollama**, select the installed model and try **Local Chat**.
+7. For Free users, Build Fast is now **locked**. To test local agent generation, configure your owner account as described above or grant Builder/Studio through the Owner Console. In the left sidebar, choose **Build Fast → Local AI Lab**, click **Detect Ollama**, select the installed model and try **Local Chat**.
 8. Switch to **Build Website**, enter a website brief, and click **Run three agents**. When it finishes, select **Download generated website ZIP** to inspect the output files.
 
 Ollama is a separate program that runs on your own PC; Blorp does not install it, download models automatically, or connect to a remote LLM provider. The local server calls Ollama at `127.0.0.1:11434` (configurable using `BLORP_OLLAMA_PORT`). On Windows, Ollama usually runs as a background app.
@@ -74,9 +87,12 @@ tests/                       Automated API, agent and browser tests
 
 ## Testing
 
+`build_frontend.py` and `patch_frontend.py` are legacy V5.1 regeneration scripts; do not run them to regenerate V5.2 until they are updated to preserve the new UI.
+
 ```powershell
 py -3 tests\test_api.py
 py -3 tests\test_local_agents.py
+py -3 tests\test_memberships.py
 ```
 
 The local-agent test **mocks Ollama**; it verifies Blorp's request/response flow, authentication, agent sequencing, ZIP download and rejection of unsafe file paths without contacting real models. The optional UI test uses Playwright and Chromium; Playwright is not required to run Blorp.
@@ -85,7 +101,7 @@ The local-agent test **mocks Ollama**; it verifies Blorp's request/response flow
 
 1. **Local inference is not cloud-grade:** Quality and speed depend on your installed model, hardware and prompt.
 2. **Not trained proprietary models:** Blorp V1–V5 remain planned routing profiles. V5.1 uses a named open-weight Ollama model, with its own license.
-3. **Not a secure shared service:** Only use on your own computer. No public hosting, billing, OAuth, external add-on access or managed worker sandbox exists yet.
+3. **Not a secure shared service:** Only use on your own computer. No public hosting, automatically verified billing, publicly deployed OAuth flow, external add-on access or managed worker sandbox exists yet.
 4. **Static website only:** Generated ZIPs are restricted to `index.html`, `styles.css`, `script.js`, optionally `README.md`. This deliberately excludes full-stack code, package installation and execution.
 5. **Credits don't bill:** Your 4 million starter credits remain a demo allocation; local inference does not deduct credits.
 6. **Existing browser drafts:** Earlier V4.1 draft persistence may remain in browser local storage and is not isolated between local accounts in the same browser. Use only test content.
