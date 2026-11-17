@@ -40,6 +40,7 @@ FREE_CREDITS = 4_000_000
 PLAN_PRICES = {('builder', 'monthly'): 2000, ('builder', 'annual'): 21600,
                ('studio', 'monthly'): 5000, ('studio', 'annual'): 54000}
 GOOGLE_CLIENT_ID = os.environ.get('BLORP_GOOGLE_CLIENT_ID', '').strip()
+GOOGLE_DESKTOP_CLIENT_ID = os.environ.get('BLORP_GOOGLE_DESKTOP_CLIENT_ID', '').strip()
 PAYMENT_INSTRUCTIONS = os.environ.get('BLORP_PAYMENT_INSTRUCTIONS', '').strip()[:700]
 MAX_QR_BYTES = 350_000
 ITERATIONS = 310_000
@@ -170,7 +171,7 @@ def safe_checkout_url(plan, interval):
 
 
 def verify_google_credential(credential):
-    if not GOOGLE_CLIENT_ID:
+    if not (GOOGLE_CLIENT_ID or GOOGLE_DESKTOP_CLIENT_ID):
         raise RuntimeError('Google login is not configured')
     if not isinstance(credential,str) or len(credential)>8000:
         raise ValueError('Invalid Google credential')
@@ -179,7 +180,19 @@ def verify_google_credential(credential):
         from google.auth.transport import requests
     except ImportError as exc:
         raise RuntimeError('Install optional Google dependencies: pip install -r requirements-google.txt') from exc
-    claims=id_token.verify_oauth2_token(credential,requests.Request(),GOOGLE_CLIENT_ID)
+    # Explicitly allow only our configured Web or Desktop Google OAuth clients.
+    # Never accept an unverified audience from the JWT itself.
+    claims=None
+    for client_id in (GOOGLE_CLIENT_ID,GOOGLE_DESKTOP_CLIENT_ID):
+        if not client_id:
+            continue
+        try:
+            claims=id_token.verify_oauth2_token(credential,requests.Request(),client_id)
+            break
+        except ValueError:
+            continue
+    if claims is None:
+        raise ValueError('Invalid Google credential or OAuth client audience')
     if claims.get('iss') not in ('accounts.google.com','https://accounts.google.com'):
         raise ValueError('Invalid Google issuer')
     if not claims.get('sub') or claims.get('email_verified') is not True:
@@ -286,9 +299,9 @@ class Handler(BaseHTTPRequestHandler):
         path = urlsplit(self.path).path
         if path == '/api/health':
             return self.response(200, {'ok': True, 'version': 'v5.3-owner-payments', 'local_ollama_supported': True, 'billing_connected': False,
-                                       'manual_requests': True, 'google_configured': bool(GOOGLE_CLIENT_ID)})
+                                       'manual_requests': True, 'google_configured': bool(GOOGLE_CLIENT_ID or GOOGLE_DESKTOP_CLIENT_ID)})
         if path == '/api/auth/config':
-            return self.response(200, {'google_client_id': GOOGLE_CLIENT_ID})
+            return self.response(200, {'google_client_id': GOOGLE_CLIENT_ID, 'google_desktop_client_id': GOOGLE_DESKTOP_CLIENT_ID})
         if path == '/api/billing/qr':
             user=self.find_user()
             if not user:return self.response(401,{'error':'Sign in to see payment QR'})

@@ -1,7 +1,7 @@
 {
   "name": "blorp-ai-customer-desktop",
   "private": true,
-  "version": "0.5.3",
+  "version": "0.5.4",
   "description": "Blorp AI Windows desktop client - local demo until backend is hosted",
   "main": "desktop/main.js",
   "scripts": {
@@ -21,6 +21,8 @@
     },
     "files": [
       "desktop/main.js",
+      "desktop/google-oauth.js",
+      "desktop/preload.js",
       "desktop/owner-exclusion.txt",
       "public/**/*",
       "package.json"

@@ -13,7 +13,7 @@ permissions:
 jobs:
   publish:
     name: Publish customer preview to GitHub Releases
-    if: ${{ github.event.workflow_run.conclusion == 'success' && github.event.workflow_run.head_branch == 'main' }}
+    if: ${{ github.event.workflow_run.conclusion == 'success' && github.event.workflow_run.head_branch == 'main' && github.event.workflow_run.head_repository.full_name == github.repository }}
     runs-on: ubuntu-latest
     steps:
       - name: Download verified Windows executable artifact
@@ -31,10 +31,10 @@ jobs:
           REPOSITORY: ${{ github.repository }}
           SOURCE_SHA: ${{ github.event.workflow_run.head_sha }}
         run: |
-          TAG="desktop-v0.5.3-preview"
+          TAG="desktop-v0.5.4-google-preview"
           EXE="$(find ./download -type f -name '*.exe' -print -quit)"
           if gh release view "$TAG" --repo "$REPOSITORY" >/dev/null 2>&1; then
             gh release upload "$TAG" "$EXE" --repo "$REPOSITORY" --clobber
           else
-            gh release create "$TAG" "$EXE" --repo "$REPOSITORY" --target "$SOURCE_SHA" --title "Blorp AI for Windows — Preview" --prerelease --notes "This is a downloadable Windows desktop UI preview, not a production AI service. Without a compatible running backend it opens the Blorp demo; sign-in, payments, cloud sync, AI responses and builds do not work offline. Do not expose the local development backend to the internet. The private Blorp Owner app is NOT included."
+            gh release create "$TAG" "$EXE" --repo "$REPOSITORY" --target "$SOURCE_SHA" --title "Blorp AI for Windows — Google desktop sign-in preview" --prerelease --notes "This is a Windows desktop preview with system-browser Google OAuth PKCE support, requiring a configured backend and Google Desktop OAuth client. It is not a production AI service. Without a compatible running backend it opens the Blorp demo; sign-in, payments, cloud sync, AI responses and builds do not work offline. Do not expose the local development backend to the internet. The private Blorp Owner app is NOT included."
           fi

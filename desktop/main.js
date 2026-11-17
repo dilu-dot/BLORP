@@ -5,7 +5,8 @@
  * Actual sign-in, payments, and AI building require a backend.
  * The private Blorp Owner desktop app is NOT included.
  */
-const {app, BrowserWindow, protocol, net, session, shell} = require("electron");
+const {app, BrowserWindow, protocol, net, session, shell, ipcMain} = require("electron");
+const {authorizeWithGoogle,isGoogleDesktopId} = require("./google-oauth");
 const {pathToFileURL} = require("node:url");
 const path = require("node:path");
 
@@ -99,12 +100,33 @@ app.whenReady().then(async () => {
     console.warn("Blorp server configuration invalid:", error.message);
   }
 
-  const window = new BrowserWindow({
+  let oauthInProgress = false;
+  let window;
+  ipcMain.handle("blorp:google:authorize", async event => {
+    if (!window || event.sender !== window.webContents ||
+        !allowedPage(window.webContents.getURL(), backend))
+      throw Error("Untrusted Google sign-in request.");
+    if (!backend) throw Error("A running Blorp backend is needed for Google sign-in.");
+    if (oauthInProgress) throw Error("A Google sign-in is already open.");
+    oauthInProgress = true;
+    try {
+      const response = await fetch(backend + "/api/auth/config", {cache:"no-store"});
+      if (!response.ok) throw Error("Blorp authentication backend is unavailable.");
+      const config = await response.json();
+      const clientId = config.google_desktop_client_id;
+      if (!isGoogleDesktopId(clientId))
+        throw Error("Configure BLORP_GOOGLE_DESKTOP_CLIENT_ID in your backend first.");
+      const result = await authorizeWithGoogle({clientId, openExternal: url => shell.openExternal(url)});
+      return result.credential;
+    } finally {oauthInProgress = false;}
+  });
+  window = new BrowserWindow({
     title: "Blorp AI",
     width: 1440, height: 900, minWidth: 850, minHeight: 620,
     autoHideMenuBar: true, backgroundColor: "#081a1a",
     webPreferences: {
       partition: "persist:blorp-customer",
+      preload: path.join(__dirname, "preload.js"),
       sandbox: true, contextIsolation: true,
       nodeIntegration: false, webSecurity: true
     }

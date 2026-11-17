@@ -64,7 +64,50 @@
    }catch(err){say(err.message)}
    finally{linking=false;}
  }
- async function initGoogle(){if(sitePreview){$('googleAuthHint').textContent='Google sign-in requires the running Blorp server and your OAuth client configuration.';return;}
+ async function initGoogle(){
+  if(window.blorpDesktopGoogle){
+     const hint=$('googleAuthHint');
+     const button=node('button','btn v52-google-desktop','Continue with Google');
+     button.type='button';
+     button.style.cssText='display:inline-flex;align-items:center;justify-content:center;padding:11px 20px;border:1px solid #8d9d97;border-radius:24px;min-width:260px;font-weight:600;cursor:pointer;';
+     $('googleLoginSlot').replaceChildren(button);
+     let configured=false;
+     try {
+       const cfg=await api('/api/auth/config');
+       configured=Boolean(cfg.google_desktop_client_id);
+     }catch(err){hint.textContent='The Blorp backend is offline. Google signup will work after connecting the backend.';}
+     if(!configured){
+       button.disabled=true;
+       if(!hint.textContent.includes('offline'))
+         hint.textContent='Google desktop sign-in is not configured yet. Add a Google Desktop OAuth client ID to the backend.';
+       return;
+     }
+     googleReady=true;
+     refreshGates();
+     hint.textContent='Secure Google login opens in your default browser, then returns here.';
+     async function launchGoogle(){
+       if(button.disabled)return;
+       button.disabled=true;
+       hint.textContent='Complete Google sign-in in your default browser.';
+       try {
+         const credential=await window.blorpDesktopGoogle.begin();
+         await googleCallback({credential});
+         hint.textContent='Google sign-in completed.';
+       }catch(err){
+         hint.textContent=err.message||'Google sign-in failed.';
+         say(hint.textContent);
+         linking=false;
+       }finally{button.disabled=false;}
+     }
+     button.addEventListener('click',launchGoogle);
+     $('linkGoogleBtn').addEventListener('click',()=>{
+       if(!account)return;
+       linking=true;
+       launchGoogle();
+     });
+     return;
+   }
+   if(sitePreview){$('googleAuthHint').textContent='Google sign-in requires the running Blorp server and your OAuth client configuration.';return;}
    const cfg=await api('/api/auth/config');if(!cfg.google_client_id){$('googleAuthHint').textContent='Google login is ready to configure. Add BLORP_GOOGLE_CLIENT_ID to the server environment.';return;}
    const script=document.createElement('script');script.src='https://accounts.google.com/gsi/client';script.async=true;script.defer=true;
    script.onload=()=>{
