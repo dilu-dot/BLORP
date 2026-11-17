@@ -1,0 +1,35 @@
+{
+  "name": "blorp-ai-customer-desktop",
+  "private": true,
+  "version": "0.5.3",
+  "description": "Blorp AI Windows desktop client - local demo until backend is hosted",
+  "main": "desktop/main.js",
+  "scripts": {
+    "desktop:start": "electron .",
+    "desktop:check": "node --check desktop/main.js && node desktop/check.js",
+    "desktop:build": "electron-builder --win portable --publish never"
+  },
+  "devDependencies": {
+    "electron": "^37.0.0",
+    "electron-builder": "^26.0.0"
+  },
+  "build": {
+    "appId": "ai.blorp.customer",
+    "productName": "Blorp AI",
+    "directories": {
+      "output": "dist"
+    },
+    "files": [
+      "desktop/main.js",
+      "desktop/owner-exclusion.txt",
+      "public/**/*",
+      "package.json"
+    ],
+    "win": {
+      "target": [
+        "portable"
+      ],
+      "icon": "desktop/blorp.ico"
+    }
+  }
+}\n
