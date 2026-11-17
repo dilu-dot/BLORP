@@ -54,6 +54,13 @@ The current Windows `.exe` releases still use the localhost V5.3/V5.4 backend an
 5. As Owner, deliberately supply a wrong UTR/amount: approval rejected; supply correct values **after independently verifying a real transfer**: one approval. Repeating it fails and expiry increases only once.
 6. Review security advisors and confirm no missing RLS/table grants. Run tests after modifying the schema.
 
-## Current connector blocker (November 17, 2026)
+## Deployed environment (November 17, 2026)
 
-The connected Supabase integration currently lists only an unrelated project named `teddy-private`, even though the owner reports creating `BLORP`. No SQL or Edge Function has been deployed. To deploy, refresh/reconnect Supabase access in ChatGPT (Settings → Plugins) and share the **BLORP Project Ref** from Supabase Project Settings → General or its dashboard URL. Never deploy this schema into `teddy-private`.
+- Supabase project ref: `piwcwmspjhtalryzpkez` (Singapore, `ap-southeast-1`).
+- API project URL: `https://piwcwmspjhtalryzpkez.supabase.co`.
+- JWT-protected membership Edge Function: `https://piwcwmspjhtalryzpkez.supabase.co/functions/v1/blorp-membership`; status `ACTIVE`.
+- PostgreSQL migration `blorp_v55_membership_foundation` applied successfully; six `blorp_*` tables have RLS enabled.
+- Initial setup: four price slots have NULL amounts; UPI ID and QR are blank. No cloud Owner account is granted yet. The local Owner login is NOT automatically a Supabase Auth account.
+- Management API and SQL permissions confirmed. An actual authenticated runtime/client request could not yet be tested from this session, and the Windows customer/Owner apps still use legacy localhost sessions.
+- Two INFO security-advisor notices for Owner-only/audit tables with RLS and no SELECT policies are intentional: clients have no SELECT privileges to those tables.
+- Never deploy this schema into `teddy-private`.
