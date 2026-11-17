@@ -1,0 +1,895 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>Blorp V5.1 — Local AI Agents</title>
+<style>
+
+:root{color-scheme:dark;--bg:#07080e;--panel:#11121b;--panel2:#141622;--line:rgba(255,255,255,.075);--text:#f3f3fa;--muted:#9699af;--purple:#9c84ff;--green:#b7f38b;--shadow:0 20px 70px rgba(0,0,0,.35)}
+*{box-sizing:border-box}html{scroll-behavior:smooth}body{margin:0;background:var(--bg);color:var(--text);font-family:'Segoe UI Variable Text','Segoe UI',system-ui,sans-serif;min-height:100vh}button,input,textarea{font:inherit}button{cursor:pointer}button:focus-visible,input:focus-visible,textarea:focus-visible{outline:2px solid var(--purple);outline-offset:2px}::selection{background:rgba(156,132,255,.5)}
+.app{display:grid;grid-template-columns:252px minmax(0,1fr);min-height:100vh}.sidebar{position:sticky;top:0;height:100vh;padding:29px 17px 22px;background:#0b0c13;border-right:1px solid var(--line);display:flex;flex-direction:column}.brand{display:flex;align-items:center;gap:12px;padding:4px 11px 34px}.brand-symbol{width:39px;height:39px;display:grid;place-items:center;border-radius:14px;background:linear-gradient(135deg,#a98bff,#5844c7);box-shadow:0 0 32px rgba(136,93,255,.34);font-weight:700;font-size:25px;font-family:'Segoe UI Variable Display','Segoe UI',system-ui}.brand b{font-family:'Segoe UI Variable Display','Segoe UI',system-ui;font-size:24px;letter-spacing:-1.5px}.brand small{font-size:9px;letter-spacing:1px;color:#a5a0bf;display:block;margin-top:1px}.label{font-size:10px;font-weight:700;letter-spacing:1.7px;text-transform:uppercase;color:#676a83;padding:16px 12px 8px}.nav{display:flex;flex-direction:column;gap:4px}.nav button{background:transparent;border:1px solid transparent;text-align:left;color:#9295a9;padding:12px 13px;border-radius:11px;display:flex;align-items:center;gap:12px;font-size:13px;font-weight:600;transition:.2s}.nav button svg{width:17px;height:17px;opacity:.8}.nav button:hover{color:white;background:#151623}.nav button.active{background:linear-gradient(90deg,rgba(153,127,255,.17),rgba(153,127,255,.05));border-color:rgba(156,132,255,.17);color:#d6caff}.nav button.active svg{color:#ad96ff;opacity:1}.sb-bottom{margin-top:auto;padding:12px;border-top:1px solid rgba(190,174,255,.10)}.profile{display:flex;gap:11px;align-items:center;padding:12px 4px 2px}.avatar{height:33px;width:33px;border-radius:11px;display:grid;place-items:center;background:linear-gradient(135deg,#7e63bc,#253a51);font-weight:700}.profile strong{display:block;font-size:12px}.profile small{color:#7f829b;font-size:10px}
+.main{min-width:0;position:relative;overflow:hidden}.main:before{content:'';pointer-events:none;position:absolute;top:-230px;right:0;width:800px;height:650px;background:radial-gradient(ellipse at center,rgba(95,65,190,.13),transparent 60%)}.top{height:83px;border-bottom:1px solid var(--line);display:flex;align-items:center;justify-content:space-between;padding:0 45px;position:relative;z-index:1}.crumb{color:#81869e;font-size:12px}.crumb span{color:#dddaf0}.top-right{display:flex;align-items:center;gap:15px}.pill{border:1px solid #304335;color:#b6ee9a;background:rgba(133,231,139,.075);padding:8px 12px;border-radius:99px;font-size:11px;font-weight:700;display:inline-flex;align-items:center;gap:8px}.dot{height:6px;width:6px;background:#9de47c;border-radius:50%;box-shadow:0 0 10px #9de47c}.iconbtn{height:35px;width:35px;background:#151722;border:1px solid var(--line);border-radius:10px;color:#b4b5ca;font-size:17px}.content{max-width:1540px;margin:auto;padding:39px 45px 80px;position:relative;z-index:1}.kicker{text-transform:uppercase;letter-spacing:2.3px;color:#ac97ff;font-size:10px;font-weight:700;margin:0 0 15px}.heading{display:flex;justify-content:space-between;align-items:center;gap:20px;margin-bottom:27px;flex-wrap:wrap}h1,h2,h3,p{margin-top:0}h1{font-size:clamp(29px,3vw,42px);line-height:1.12;letter-spacing:-2px;font-family:'Segoe UI Variable Display','Segoe UI',system-ui;margin-bottom:10px}h1 em{font-style:normal;color:#b6a2ff}h2{font:600 17px 'Segoe UI Variable Display','Segoe UI',system-ui;letter-spacing:-.5px;margin:0}h3{font-size:13px}.subtitle{font-size:13px;color:var(--muted);margin:0}.heading-actions{display:flex;gap:10px}.btn{border:1px solid #38354b;background:#191b2a;color:#dedbed;padding:12px 17px;border-radius:11px;font-size:12px;font-weight:700;display:inline-flex;gap:10px;align-items:center;justify-content:center}.btn.primary{background:#a68bff;color:#110d21;border-color:#a68bff;box-shadow:0 7px 23px rgba(128,91,240,.21)}.btn:hover{filter:brightness(1.14)}.grid4{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:15px}.stat,.panel{border:1px solid var(--line);background:linear-gradient(135deg,rgba(24,25,38,.91),rgba(14,15,24,.96));border-radius:18px;box-shadow:var(--shadow)}.stat{padding:22px;min-height:156px;position:relative;overflow:hidden}.stat:after{content:'';position:absolute;right:-55px;top:-55px;width:130px;height:130px;background:radial-gradient(circle,rgba(138,105,241,.09),transparent 65%)}.stathead{display:flex;align-items:center;justify-content:space-between;color:#9294aa;font-size:11px;font-weight:600}.stathead .glyph{width:30px;height:30px;display:grid;place-items:center;border-radius:9px;background:rgba(146,127,249,.1);color:#b49efe;font-size:17px}.statnumber{font:600 32px 'Segoe UI Variable Display','Segoe UI',system-ui;letter-spacing:-1.8px;margin:19px 0 4px}.statfoot{font-size:10px;color:#9294a8}.positive{color:#a9ed89}.purple{color:#b59cfe}.lower{display:grid;grid-template-columns:minmax(0,1.64fr) minmax(285px,1fr);gap:17px;margin-top:17px}.panel{padding:23px}.panelhead{display:flex;justify-content:space-between;align-items:center;gap:12px;margin-bottom:22px}.subtle{color:#81849b;font-size:11px}.chooser{background:#1c1e2b;border:1px solid #2b2d40;padding:8px 12px;color:#bdbad0;border-radius:8px;font-size:10px}.plot{height:230px;width:100%;overflow:visible}.plot text{font-size:10px;fill:#686b85}.legend{display:flex;gap:18px;font-size:10px;color:#999cb1}.legend span{display:inline-flex;align-items:center;gap:7px}.legend i{height:6px;width:6px;border-radius:50%;display:inline-block}.prov{display:flex;align-items:center;padding:13px 0;border-bottom:1px solid var(--line);gap:10px}.prov:last-child{border-bottom:none}.prov-icon{width:34px;height:34px;display:grid;place-items:center;background:#202230;border-radius:10px;color:white;font-size:15px;font-weight:bold}.prov-main{flex:1;min-width:0}.prov-main b{display:block;font-size:12px}.prov-main small{color:#84889e;font-size:10px}.status{font-size:10px;color:#a8ed90}.status.off{color:#b09bac}.usagebar{width:100%;height:5px;background:#262737;border-radius:4px;overflow:hidden;margin-top:8px}.usagebar div{height:100%;background:linear-gradient(90deg,#8e79f4,#bca9ff);border-radius:4px}.table{width:100%;border-collapse:collapse;font-size:12px}.table th{text-align:left;color:#757993;font-size:10px;text-transform:uppercase;letter-spacing:1px;border-bottom:1px solid var(--line);padding:0 12px 16px}.table td{padding:17px 12px;border-bottom:1px solid var(--line);color:#a5a6ba}.table tr:last-child td{border:0}.table td b{color:#eeeefa}.modelicon{display:inline-grid;place-items:center;background:#242436;width:30px;height:30px;border-radius:9px;color:#bda6ff;margin-right:8px}.table-wrapper{overflow-x:auto}.under{margin-top:17px}.monospace{font-family:ui-monospace,SFMono-Regular,Consolas,monospace}.tab{display:none}.tab.active{display:block;animation:reveal .3s ease both}@keyframes reveal{from{opacity:.5;transform:translateY(9px)}to{opacity:1;transform:translateY(0)}}.select-row{display:flex;gap:12px;align-items:center;margin-bottom:20px}.search{width:100%;background:#191b28;border:1px solid #2b2e40;padding:13px 15px;border-radius:11px;color:white;min-width:0}.chatwrap{display:grid;grid-template-columns:280px minmax(0,1fr);gap:17px}.chat{display:flex;flex-direction:column;min-height:470px}.message-area{flex:1;padding:5px;display:flex;flex-direction:column;gap:18px}.bubble{max-width:85%;background:#202133;padding:14px 17px;border-radius:13px;color:#d4d3e6;font-size:13px;line-height:1.6}.bubble.user{align-self:flex-end;background:#49397b;color:#fff}.chatbox{display:flex;gap:9px;border:1px solid #38334c;background:#1a1b29;border-radius:14px;padding:9px}.chatbox textarea{min-height:51px;max-height:140px;resize:vertical;background:transparent;color:#eee;border:0;outline:none;flex:1;padding:9px;font-size:12px}.chatbox button{align-self:end}.info-row{padding:16px;border:1px solid var(--line);border-radius:12px;background:#171926;margin-bottom:10px}.info-row strong{display:block;font-size:12px;margin-bottom:6px}.info-row p{font-size:11px;color:#888ba4;line-height:1.6;margin:0}.tag{border:1px solid #474160;background:rgba(149,119,250,.09);color:#bbaaff;border-radius:7px;padding:5px 8px;font-size:10px}.toggle{width:39px;height:23px;border:none;border-radius:20px;background:#434456;padding:3px;display:inline-flex;align-items:center;transition:.2s}.toggle:before{content:'';display:block;width:17px;height:17px;border-radius:50%;background:#e3e3e9;transition:.2s}.toggle.on{background:#9a80ee}.toggle.on:before{transform:translateX(16px)}.mutedbox{margin-top:16px;padding:16px 18px;border-radius:12px;background:rgba(173,144,255,.06);border:1px solid rgba(173,144,255,.15);color:#a49ebe;font-size:12px;line-height:1.6}.toast{position:fixed;right:25px;bottom:24px;background:#28243c;border:1px solid #574b81;border-radius:11px;padding:13px 19px;box-shadow:0 10px 45px #0009;color:#f7f2ff;font-size:12px;z-index:8;opacity:0;transform:translateY(15px);pointer-events:none;transition:.2s}.toast.visible{opacity:1;transform:translateY(0)}.empty{padding:45px;text-align:center;color:#9296b0}.mobiletop{display:none}.badge-demo{margin-left:8px;color:#d3b9ff;font-size:9px;background:#312543;padding:5px 7px;border-radius:5px}
+@media(max-width:1170px){.grid4{grid-template-columns:repeat(2,1fr)}.lower{grid-template-columns:1fr}.top{padding:0 24px}.content{padding:35px 24px}}@media(max-width:760px){.app{grid-template-columns:1fr}.sidebar{position:fixed;z-index:20;width:255px;transform:translateX(-105%);transition:.25s;box-shadow:20px 0 50px #0008}.sidebar.open{transform:translateX(0)}.mobiletop{display:block}.top{height:70px;padding:0 15px}.content{padding:28px 15px 65px}.grid4{grid-template-columns:1fr 1fr;gap:10px}.stat{min-height:135px;padding:17px}.statnumber{font-size:26px}.stathead{font-size:10px}.chatwrap{grid-template-columns:1fr}.sidebar-overlay{display:none;position:fixed;inset:0;background:#0008;z-index:15}.sidebar-overlay.open{display:block}.heading-actions{width:100%}.heading-actions .btn{flex:1}.panel{padding:16px}}@media(max-width:430px){.grid4{grid-template-columns:1fr}.top-right{gap:5px}.top-right .pill{font-size:9px}.heading-actions{flex-direction:column}.panelhead{flex-wrap:wrap}}
+
+/* BLORP V2 — GPU-conscious adaptive glass surface system */
+:root {--bg:#080911;--panel:#11131f;--line:rgba(215,210,255,.115);--purple:#ad95ff;--shadow:0 16px 45px rgba(0,0,0,.23);--glass-outline:rgba(234,226,255,.15)}
+body {background:radial-gradient(ellipse 105% 65% at 77% 0%,#1c1637 0%,transparent 64%),linear-gradient(145deg,#0b0c17,#07080e 62%);}
+.app{position:relative;isolation:isolate}
+.main{background:linear-gradient(145deg,rgba(21,18,41,.22),rgba(8,10,19,0) 40%);isolation:isolate}
+.main:before{display:none}
+.ambient-scene{position:absolute;inset:0 0 auto; height:800px; overflow:hidden;z-index:0;pointer-events:none;contain:paint}
+.morph-orb{position:absolute;border-radius:42% 58% 55% 45%/56% 41% 59% 44%;opacity:.38;transform:translateZ(0);filter:blur(32px);will-change:auto}
+.morph-one{width:450px;height:380px;right:5%;top:-180px;background:radial-gradient(circle at 38% 42%,rgba(174,110,255,.58),rgba(67,50,152,.15) 68%,transparent);}
+.morph-two{width:350px;height:390px;right:28%;top:140px;background:radial-gradient(circle,rgba(64,135,180,.18),rgba(75,51,175,.12) 58%,transparent)}
+.morph-three{width:310px;height:240px;right:-130px;top:310px;background:radial-gradient(circle,rgba(202,96,200,.22),transparent 70%)}
+.sidebar{background:linear-gradient(165deg,rgba(23,21,41,.86),rgba(10,11,21,.95));border-right:1px solid rgba(208,193,255,.14);z-index:5}
+.top{background:linear-gradient(90deg,rgba(16,17,30,.76),rgba(31,23,58,.3));border-bottom:1px solid rgba(233,221,255,.1)}
+.content{z-index:1}
+.stat,.panel{background:linear-gradient(145deg,rgba(35,33,58,.68),rgba(17,18,31,.85) 62%,rgba(17,18,30,.88));border:1px solid var(--glass-outline);box-shadow:0 13px 38px rgba(0,0,0,.2),inset 0 1px rgba(255,255,255,.055);}
+.stat{transition:transform .22s ease,border-color .22s ease,box-shadow .22s ease;}
+.stat:hover{transform:translateY(-3px);border-color:rgba(181,158,255,.36);box-shadow:0 18px 48px rgba(31,23,72,.2),inset 0 1px rgba(255,255,255,.09)}
+.stat:after{width:170px;height:140px;right:-60px;top:-55px;background:radial-gradient(circle,rgba(164,125,255,.2),transparent 69%);}
+.brand-symbol{border:1px solid rgba(235,216,255,.32);box-shadow:0 8px 35px rgba(146,105,255,.25),inset 0 1px 1px rgba(255,255,255,.32);border-radius:14px}
+.nav button{transition:background-color .17s ease,color .17s ease,border-color .17s ease,transform .17s ease}
+.nav button:hover{background:rgba(167,137,255,.1);transform:translateX(2px)}
+.nav button.active{background:linear-gradient(105deg,rgba(164,134,255,.23),rgba(91,70,155,.04));border:1px solid rgba(192,166,255,.3);box-shadow:inset 0 1px rgba(255,255,255,.075)}
+.help{background:linear-gradient(140deg,rgba(112,77,189,.22),rgba(68,58,118,.04));border-color:rgba(191,161,255,.26)}
+.btn,.iconbtn,.chooser,.search,.chatbox,.info-row,.bubble,.tag{box-shadow:inset 0 1px rgba(255,255,255,.05)}
+.btn.primary{background:linear-gradient(135deg,#c2adff,#9984ff);border-color:#c5b2ff;box-shadow:0 6px 26px rgba(140,90,255,.25),inset 0 1px rgba(255,255,255,.4)}
+.kicker{color:#c1acff}
+h1{letter-spacing:-1.8px}h1 em{background:linear-gradient(95deg,#ddd1ff,#a68aff 72%,#d4b5ff);-webkit-background-clip:text;background-clip:text;color:transparent}
+.visual-chip{font-size:10px;padding:8px 12px;color:#d3c4ff;background:rgba(165,129,255,.09);border:1px solid rgba(196,170,255,.22);border-radius:99px;white-space:nowrap}
+.concept-notes{display:flex;gap:7px;flex-wrap:wrap;margin-top:19px}
+.note-pill{font-size:10px;font-weight:600;line-height:1.3;padding:7px 10px;color:#bdb5d5;border:1px solid rgba(198,174,255,.18);background:rgba(98,73,169,.1);border-radius:100px}
+.pill{background:rgba(103,214,130,.08)}
+.fx-title{display:flex;align-items:start;justify-content:space-between;gap:14px;margin-bottom:18px}
+.fx-options{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px}
+.fx-option{display:flex;flex-direction:column;justify-content:center;align-items:flex-start;gap:7px;min-height:89px;padding:15px 13px;text-align:left;background:rgba(16,17,32,.65);border:1px solid rgba(207,198,247,.1);border-radius:12px;color:#d6d2e7;transition:border-color .16s ease,background-color .16s ease,transform .16s ease}
+.fx-option span{font-size:12px;font-weight:700}.fx-option small{font-size:10px;line-height:1.4;color:#8f90a9}
+.fx-option:hover{border-color:rgba(182,150,255,.33);transform:translateY(-2px)}
+.fx-option.is-selected{border-color:rgba(191,162,255,.72);background:linear-gradient(135deg,rgba(125,94,227,.24),rgba(80,66,149,.1));box-shadow:inset 0 0 0 1px rgba(213,194,255,.08)}
+.fx-reason{color:#a39db9;font-size:11px;line-height:1.6;margin-top:16px}
+.trust-panel{display:flex;align-items:flex-start;gap:13px;margin-top:15px;border:1px solid rgba(143,214,171,.17);border-radius:15px;padding:16px;background:rgba(56,92,72,.08)}
+.trust-icon{font-size:22px}.trust-panel strong{font-size:12px}.trust-panel p{font-size:11px;color:#999fb0;line-height:1.65;margin:6px 0 0}
+.fx-cinematic .sidebar,.fx-cinematic .top,.fx-cinematic .panel,.fx-cinematic .stat,.fx-cinematic .toast{-webkit-backdrop-filter:blur(14px) saturate(1.15);backdrop-filter:blur(14px) saturate(1.15)}
+.fx-balanced .sidebar,.fx-balanced .top,.fx-balanced .toast{-webkit-backdrop-filter:blur(10px);backdrop-filter:blur(10px)}
+.fx-lite .ambient-scene{display:none}.fx-lite .sidebar{background:#10111d}.fx-lite .top{background:#111322}.fx-lite .panel,.fx-lite .stat{background:#181a29;box-shadow:none}.fx-lite .stat:hover,.fx-lite .fx-option:hover,.fx-lite .nav button:hover{transform:none}.fx-lite .btn.primary{box-shadow:none}.fx-lite .tab.active{animation:none}
+@media (prefers-reduced-motion:no-preference){.fx-cinematic .morph-one{animation:morphDrift 22s ease-in-out infinite alternate}.fx-cinematic .morph-two{animation:morphDrift2 29s ease-in-out infinite alternate}.fx-balanced .morph-one{animation:morphDrift 34s ease-in-out infinite alternate}}
+@keyframes morphDrift{0%{transform:translate3d(0,0,0) rotate(0deg)}100%{transform:translate3d(-34px,32px,0) rotate(10deg)}}
+@keyframes morphDrift2{0%{transform:translate3d(0,0,0)}100%{transform:translate3d(20px,-28px,0)}}
+@media (prefers-reduced-motion:reduce){*,*:before,*:after{animation:none!important;transition:none!important;scroll-behavior:auto!important}.morph-orb{filter:none;opacity:.14}}
+@media (max-width:1170px){.fx-options{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media (max-width:760px){.morph-orb{filter:blur(15px);opacity:.23}.morph-one{right:-170px;top:-90px}.visual-chip{display:none}.fx-options{grid-template-columns:repeat(2,minmax(0,1fr))}.fx-title{flex-wrap:wrap}.nav button:hover{transform:none}}
+@media (max-width:430px){.fx-options{gap:7px}.fx-option{padding:12px 10px;min-height:79px}.note-pill{font-size:9px}}
+
+
+/* V3: multi-agent Build Fast workspace, standalone dedicated navigation, and auth UI. */
+.sidebar{padding-top:22px;padding-bottom:12px}.brand{padding-bottom:17px}.nav{min-height:0;overflow-y:auto;scrollbar-width:thin;scrollbar-color:#39324f transparent;padding-bottom:9px}.nav .label{padding-top:15px}.buildfast-section{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-top:9px;border-top:1px solid rgba(196,172,255,.13);color:#c8afff}.newflag{font-size:8px;letter-spacing:.7px;padding:4px 6px;border:1px solid rgba(175,139,255,.35);border-radius:6px;background:rgba(157,120,255,.12)}.nav-end{margin-left:auto;font-size:11px;color:#79669b}.sb-bottom{margin-top:auto;flex-shrink:0}.account-actions{display:flex;align-items:center;gap:11px}.account-actions[hidden]{display:none}.auth-link{background:transparent;border:1px solid transparent;color:#c5bedb;font-size:11px;font-weight:700;padding:10px 8px;border-radius:8px}.auth-link:hover{background:#ffffff0c;color:white}.auth-signup{padding:10px 14px}.account-email{max-width:140px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:#bdb5d7;font-size:11px}.section-overline{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap}.preview-badge{font-size:9px;letter-spacing:1px;font-weight:700;color:#9ce6b5;background:rgba(82,145,104,.1);border:1px solid rgba(122,214,153,.2);padding:7px 11px;border-radius:99px}.fast-metrics{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px;margin-bottom:29px}.metric-mini{padding:16px 18px;min-height:98px;background:linear-gradient(125deg,rgba(42,35,67,.68),rgba(16,16,29,.87));border:1px solid rgba(215,195,255,.13);border-radius:14px;display:flex;flex-direction:column;gap:6px}.metric-mini span{font-size:9px;letter-spacing:1px;color:#9791b0}.metric-mini strong{font-size:24px;letter-spacing:-.7px}.metric-mini .green{color:#a8e99b}.metric-mini small{font-size:10px;color:#8885a5}.section-title{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;margin-bottom:15px}.section-title .subtle{margin:6px 0 0}.agent-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:15px}.agent-card{border:1px solid rgba(204,183,255,.17);background:linear-gradient(147deg,rgba(40,35,66,.74),rgba(17,18,31,.93) 75%);border-radius:17px;min-height:223px;padding:18px;display:flex;flex-direction:column;gap:15px;box-shadow:inset 0 1px #ffffff11;transition:border-color .18s,transform .18s}.agent-card:hover{border-color:rgba(191,156,255,.5);transform:translateY(-2px)}.agent-card-header{display:flex;align-items:flex-start;gap:11px;min-width:0}.agent-symbol{flex-shrink:0;display:grid;place-items:center;width:43px;height:43px;border-radius:12px;background:linear-gradient(135deg,rgba(178,146,255,.27),rgba(133,103,230,.07));border:1px solid rgba(188,158,255,.17);font-size:23px;color:#c5adff}.agent-card-header-text{flex:1;min-width:0}.agent-card h3{font-size:14px;margin:2px 0 5px;overflow-wrap:anywhere}.agent-card .role-description{font-size:11px;line-height:1.4;color:#9a96ad;max-width:100%;overflow-wrap:anywhere}.agent-state{font-size:9px;color:#b2ed9b;white-space:nowrap;background:rgba(103,210,121,.08);border:1px solid #b2ed9b24;border-radius:99px;padding:5px 7px}.agent-facts{display:flex;gap:10px;flex-wrap:wrap;font-size:10px;color:#c5bed9}.agent-facts span{min-width:0;word-break:break-word}.agent-guidance{font-size:10px;line-height:1.55;color:#a8a3be;min-height:30px}.agent-actions{display:flex;gap:8px;margin-top:auto}.agent-actions .btn{flex:1;padding:9px 8px;font-size:10px}.agent-add{min-height:223px;border:1px dashed rgba(188,159,255,.5);border-radius:17px;background:radial-gradient(circle at 50% 35%,rgba(133,94,228,.13),transparent 60%),rgba(22,20,40,.42);color:#d0c3f5;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px;text-align:center;padding:20px}.agent-add .plus-icon{width:45px;height:45px;display:grid;place-items:center;border-radius:13px;background:#8e75cc32;border:1px solid #c8aeff30;font-size:28px}.agent-add b{font-size:14px}.agent-add small{font-size:11px;color:#9992b3}.agent-add:hover{background-color:rgba(63,48,98,.4)}.flow-row{display:grid;grid-template-columns:minmax(130px,.9fr) minmax(230px,1.7fr) auto;gap:18px;align-items:center;padding:15px 0;border-top:1px solid rgba(214,204,255,.09)}.flow-row:first-child{border-top:0}.flow-info strong{font-size:12px}.flow-info small{display:block;color:#85829c;font-size:10px;margin-top:5px;line-height:1.5}.flow-chain{display:flex;gap:5px;align-items:center;flex-wrap:wrap}.flow-chip{font-size:10px;color:#cdbafc;border:1px solid rgba(189,158,255,.23);background:rgba(157,132,255,.08);padding:7px 10px;border-radius:9px}.flow-arrow{color:#80799e}.flow-actions{display:flex;align-items:center;gap:9px}.flow-status{font-size:10px;color:#8bcfaf;white-space:nowrap}.flow-actions .btn{padding:9px 11px;font-size:10px}.soft-note{margin-top:17px;color:#9894b1;font-size:11px;line-height:1.6}.builder-layout{display:grid;grid-template-columns:minmax(230px,.86fr) minmax(290px,1.15fr) minmax(275px,1.02fr);gap:15px;align-items:start}.builder-panel{min-height:385px}.builder-left,.builder-middle,.builder-right{min-width:0}.builder-panel .panelhead{align-items:flex-start}.field-label{display:block;color:#bcb7d3;font-size:11px;font-weight:700;margin:16px 0 9px}.builder-panel .search,.blorp-modal .search{font-size:12px;width:100%;background:rgba(15,16,29,.7)}select.search{appearance:auto;cursor:pointer}.builder-divider{height:1px;background:#ffffff12;margin:21px 0 18px}.agent-checklist{display:flex;flex-direction:column;gap:8px}.agent-check{display:flex;align-items:center;gap:10px;padding:10px;border-radius:10px;border:1px solid #ffffff12;background:rgba(8,10,22,.27);cursor:pointer;font-size:11px}.agent-check input{accent-color:#a38cff;width:15px;height:15px}.agent-check small{color:#89869f;margin-left:auto;font-size:9px}.fill-btn{width:100%;margin-top:16px}.large-prompt{width:100%;min-height:252px;resize:vertical;border:1px solid rgba(186,156,255,.24);border-radius:14px;background:rgba(9,10,21,.55);color:#e6e0f5;font:13px/1.7 'Segoe UI Variable Text','Segoe UI',sans-serif;padding:16px;outline:none}.large-prompt:focus{border-color:#aa8aff}.large-prompt::placeholder{color:#777189}.prompt-actions{display:flex;gap:9px;justify-content:space-between;align-items:center;margin-top:12px}.char-count,.form-hint{color:#85809c;font-size:10px;line-height:1.6}.form-hint{margin:11px 0 0}.template-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:9px}.template-card{color:#e1d9f5;border:1px solid rgba(204,187,255,.14);background:rgba(19,19,33,.7);border-radius:12px;padding:14px 11px;display:flex;flex-direction:column;align-items:flex-start;gap:8px;text-align:left;min-width:0}.template-card:hover{border-color:#a78be18c;background:#26213c}.template-card span{font-size:19px;color:#bfa7ff}.template-card strong{font-size:11px}.template-card small{font-size:9px;color:#9790aa;line-height:1.5}.output-panel{min-height:448px}.output-empty{display:flex;min-height:300px;align-items:center;justify-content:center;flex-direction:column;text-align:center;gap:10px}.output-icon{display:grid;place-items:center;width:55px;height:55px;border-radius:16px;background:rgba(159,123,255,.13);font-size:30px;color:#c6b0ff}.output-empty h3{margin:4px 0;font-size:13px}.output-empty p{color:#85829d;font-size:11px;line-height:1.7;max-width:250px}.out-item{display:flex;gap:10px;border-top:1px solid #ffffff12;padding:12px 0}.out-item:first-child{border-top:0}.out-num{width:25px;height:25px;border-radius:8px;display:grid;place-items:center;background:#a58cff1a;border:1px solid #a58cff34;color:#cbb8ff;font:700 10px monospace;flex-shrink:0}.out-item b{font-size:11px}.out-item p{margin:4px 0 0;font-size:10px;line-height:1.5;color:#9793af}.out-heading{font-size:11px;color:#c8b7fb;margin-bottom:15px;line-height:1.5;overflow-wrap:anywhere}.output-actions{display:flex;gap:7px;flex-wrap:wrap;margin-top:17px}.output-actions[hidden]{display:none}.output-actions .btn{font-size:10px;padding:9px 11px}.blorp-modal{max-width:min(96vw,475px);width:475px;border:1px solid rgba(192,171,255,.35);border-radius:19px;background:linear-gradient(145deg,#24203b,#0f1020 80%);color:#fff;box-shadow:0 35px 100px #000b;padding:0}.blorp-modal::backdrop{background:rgba(2,3,10,.8);backdrop-filter:blur(5px)}.modal-form{padding:28px}.dialog-head{display:flex;align-items:start;justify-content:space-between;gap:12px;margin-bottom:21px}.dialog-head h2{font-size:23px}.dialog-head .kicker{margin-bottom:9px}.dialog-close{background:#29263e;color:#a8a1c1;border:1px solid #ffffff1b;border-radius:9px;width:34px;height:34px}.modal-textarea{resize:vertical}.dialog-actions{display:flex;justify-content:flex-end;gap:10px;margin-top:21px}.dialog-checkboxes{max-height:200px;overflow:auto;display:flex;flex-direction:column;gap:7px}.dialog-checkboxes label{font-size:12px;display:flex;align-items:center;gap:9px;padding:9px 10px;background:#ffffff08;border-radius:9px}.dialog-checkboxes input{accent-color:#ad95ff}.auth-switch{display:grid;grid-template-columns:1fr 1fr;gap:5px;padding:4px;border:1px solid #ffffff19;background:#ffffff06;border-radius:11px}.auth-switch button{background:transparent;border:0;border-radius:8px;color:#a5a0bb;font-size:12px;padding:11px}.auth-switch button.selected{color:#1b1332;background:linear-gradient(135deg,#c7b4ff,#a188ff);font-weight:700}.warn-hint{color:#dacaa2;margin:15px 0}.auth-bottom{font-size:10px;color:#817d96;text-align:center;line-height:1.6;margin:14px 0 0}.workflow-empty{font-size:11px;color:#8c87a0;padding:28px 8px;text-align:center}.flow-delete{background:transparent;color:#9c90b1;border:1px solid #ffffff16;padding:8px 10px;border-radius:8px;font-size:10px}.flow-delete:hover{color:#ffb7c5;border-color:#b667774c}
+@media(max-width:1450px){.agent-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.builder-layout{grid-template-columns:270px minmax(0,1fr)}.builder-right{grid-column:1/-1}.output-panel{min-height:260px}.output-empty{min-height:170px}}@media(max-width:1020px){.fast-metrics{grid-template-columns:repeat(2,minmax(0,1fr))}.flow-row{grid-template-columns:1fr;gap:11px}.builder-layout{grid-template-columns:1fr 1fr}.template-grid{grid-template-columns:1fr}.builder-panel{min-height:0}}@media(max-width:760px){.account-actions{gap:5px}.auth-signup{padding:9px 10px}.top-right{gap:7px}.top{padding:0 14px}.builder-layout{grid-template-columns:1fr}.builder-right{grid-column:auto}.template-grid{grid-template-columns:repeat(3,minmax(0,1fr))}.agent-grid{grid-template-columns:1fr}.fast-metrics{grid-template-columns:repeat(2,minmax(0,1fr))}.section-title{flex-wrap:wrap}.flow-actions{flex-wrap:wrap}.sidebar{height:100dvh}}@media(max-width:440px){.top .pill{display:none}.account-email{display:none}.content{padding:27px 15px}.heading-actions{flex-wrap:wrap}.fast-metrics{gap:7px}.metric-mini{padding:13px}.template-grid{grid-template-columns:1fr}.section-overline .preview-badge{font-size:8px}.auth-signup{font-size:10px}.auth-link{font-size:10px;padding:9px 3px}}@media(max-width:760px){.sidebar{z-index:30}.sidebar-overlay{z-index:25}}@media(prefers-reduced-motion:reduce){.agent-card:hover{transform:none}}.fx-lite .agent-card{box-shadow:none;transition:none}.fx-lite .agent-card:hover{transform:none}.fx-cinematic .agent-card,.fx-cinematic .blorp-modal{-webkit-backdrop-filter:blur(10px);backdrop-filter:blur(10px)}
+
+/* Blorp V3.1: the mobile backdrop must not occupy a desktop CSS-grid cell.
+   Mobile rules below still reveal it when the drawer is explicitly opened. */
+.sidebar-overlay { display: none; }
+
+/* Blorp V4.1: preserved app/navigation, chat-first Build Fast playground and Espresso x Teal Glass theme. */
+:root { --bg:#0a0f14;--panel:#102324;--panel2:#122d2f;--line:rgba(127,179,184,.18);--text:#f5ede1;--muted:#a1b6b8;--purple:#e58b4b;--green:#9fdbc0;--shadow:0 18px 50px rgba(0,0,0,.25);--glass-outline:rgba(129,195,193,.20); }
+body { background:radial-gradient(ellipse 55% 75% at 7% 22%, rgba(198,96,31,.15),transparent 64%),radial-gradient(ellipse 75% 65% at 85% 12%,rgba(15,101,104,.24),transparent 70%),#0a0f14;color:var(--text) }
+.sidebar {background:linear-gradient(166deg,rgba(34,27,22,.96),rgba(8,21,23,.95) 62%);border-right:1px solid rgba(220,185,133,.15)}
+.brand-symbol {background:linear-gradient(135deg,#ed9858,#ab451b);border-color:#f6b17670;box-shadow:0 7px 31px #c6601f50}
+.brand-symbol span {color:#ffe1aa!important}
+.nav .label,.label{color:#aeafab}
+.buildfast-section{color:#f3b982;border-top-color:#98633f50}
+.newflag{color:#f9b776;background:#a0582526;border-color:#e3985940}
+.nav button{color:#b0b5b7}.nav button:hover{background:rgba(192,115,58,.09)}
+.nav button.active{background:linear-gradient(95deg,#ae581f8a,#bc722637);border-color:rgba(243,151,84,.39);color:#fbe9db;box-shadow:inset 0 1px #ffe6ba20}
+.nav button.active svg{color:#ffc28c}
+.sb-bottom {border-top-color:#f2bc7b2a}
+.avatar {background:linear-gradient(135deg,#ce7c3c,#11565c)}
+.top{background:linear-gradient(90deg,rgba(18,25,25,.89),rgba(7,35,38,.48));border-bottom-color:#add0cb22}
+.crumb span{color:#e9e0d2}
+.pill {border-color:#45836a66;color:#a5e3c3;background:#1e42364c}.dot{background:#a8dfa4;box-shadow:0 0 10px #a8dfa4}
+.visual-chip {background:#c6601f19;border-color:#d48a5a4a;color:#f4c099}
+.main{background:linear-gradient(145deg,rgba(16,58,58,.15),rgba(14,22,20,0) 45%)}
+.morph-one{background:radial-gradient(circle at 38% 42%,rgba(12,162,168,.55),rgba(9,83,86,.13) 65%,transparent)}
+.morph-two{background:radial-gradient(circle,rgba(218,117,50,.33),rgba(150,76,29,.1) 58%,transparent)}
+.morph-three{background:radial-gradient(circle,rgba(37,190,177,.20),transparent 70%)}
+.stat,.panel {background:linear-gradient(145deg,rgba(25,55,55,.77),rgba(17,25,27,.86) 68%,rgba(21,22,24,.94));border:1px solid rgba(135,198,191,.20)}
+.kicker{color:#eda56a}h1 em {background:linear-gradient(95deg,#e9c0a0,#e8914d 80%,#f1b17d);background-clip:text;-webkit-background-clip:text;color:transparent}
+.btn{background:rgba(22,42,43,.78);border-color:#79b4af35;color:#e8e6dc}.btn.primary{background:linear-gradient(135deg,#ec9954,#c7601f);border-color:#f6ac68;color:#19120c;box-shadow:0 7px 24px #d96e2f40,inset 0 1px #ffe1c0a5}
+.stathead .glyph,.modelicon,.agent-symbol,.output-icon{background:#bd6b3527;color:#f6ac7d}
+.search,.chatbox,.info-row,.large-prompt{background:rgba(7,20,22,.66);border-color:#7fb3b840;color:#f6f0e5}
+.tag {border-color:#cb955440;background:#bb712b1a;color:#f4bd88}
+.agent-check input,.dialog-checkboxes input{accent-color:#e88a47}
+.agent-card{background:linear-gradient(145deg,rgba(21,59,59,.82),rgba(16,23,26,.93));border-color:#92c9c633}
+.agent-card:hover{border-color:#5db4b2a0}
+.agent-add{background:rgba(22,74,74,.20);border-color:#a8cab04a;color:#f0dbc7}
+.flow-chip{color:#f2c392;border-color:#b9794d44;background:#b276401c}
+.metric-mini{background:linear-gradient(140deg,rgba(33,72,70,.58),rgba(31,26,25,.87));border-color:#79bfb830}.metric-mini .green,.flow-status{color:#9fdbc0}
+.blorp-modal{background:linear-gradient(146deg,#172e2e,#141e1e 76%);border-color:#7dbfba68}.blorp-modal::backdrop{background:rgba(2,11,12,.78);backdrop-filter:blur(5px)}.dialog-close{background:#254344;color:#cce6df}
+.auth-switch button.selected{background:linear-gradient(135deg,#f0b279,#d77939);color:#24170e}
+.chooser,.toast{background:#193334;border-color:#73b6b75a;color:#e6dccf}
+.fx-option{background:rgba(12,44,44,.55);border-color:#a6d1cf28;color:#e8e0d2}.fx-option.is-selected{background:linear-gradient(125deg,#a2582b55,#2c77714c);border-color:#efae7a75}
+.fx-lite .sidebar{background:#122321}.fx-lite .top{background:#193132}.fx-lite .panel,.fx-lite .stat{background:#193132}
+.fx-cinematic .build-composer,.fx-cinematic .build-output-drawer,.fx-cinematic .build-toolbar-btn,.fx-cinematic .build-welcome-logo{-webkit-backdrop-filter:blur(16px) saturate(1.15);backdrop-filter:blur(16px) saturate(1.15)}
+.fx-balanced .build-composer,.fx-balanced .build-output-drawer{-webkit-backdrop-filter:blur(8px);backdrop-filter:blur(8px)}
+/* Chat-first layout */
+.content:has(#builder.active){max-width:none;padding:17px 29px 12px;min-height:calc(100dvh - 83px)}
+#builder.active {display:flex;flex-direction:column;height:calc(100dvh - 111px);min-height:540px;animation:none}
+.build-header-bar{display:flex;justify-content:space-between;align-items:center;gap:18px;padding:6px 3px 16px;border-bottom:1px solid #90ccc423;flex-wrap:wrap}
+.build-header-caption{display:flex;gap:11px;align-items:center;font-size:14px}
+.build-header-caption strong{display:block;letter-spacing:-.3px}.build-header-caption small{display:block;color:#9faeb0;font-size:10px;margin-top:4px}
+.build-mark{color:#f6b073;background:#b5662c35;border:1px solid #d88a5049;border-radius:12px;padding:10px;font-size:17px}
+.build-header-controls{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.build-toolbar-btn{display:flex;align-items:center;gap:9px;justify-content:center;min-height:36px;padding:8px 12px;border-radius:10px;border:1px solid #78adad41;color:#e5e2d9;background:linear-gradient(150deg,#183637bb,#1c272aab);font-size:12px;font-weight:600;white-space:nowrap}
+.build-toolbar-btn:hover,.build-subtle-btn:hover,.build-icon-btn:hover{border-color:#e29c697d;background:#ac61262a}
+.build-toolbar-btn:focus-visible,.build-send:focus-visible{outline:2px solid #ffc58a;outline-offset:2px}
+.build-layout{display:flex;gap:16px;min-height:0;flex:1;padding-top:12px}
+.build-conversation{min-width:0;flex:1;display:flex;flex-direction:column;align-items:stretch;border-radius:18px;position:relative;overflow:hidden}
+.build-conversation::before{content:'';position:absolute;inset:0;pointer-events:none;background:radial-gradient(ellipse 54% 43% at 49% 29%,rgba(21,108,109,.16),transparent 70%);z-index:0}
+.build-conversation-scroll{min-height:0;flex:1;overflow-y:auto;display:flex;flex-direction:column;padding:20px 10px 12px;scrollbar-color:#557775 transparent;scrollbar-width:thin;position:relative;z-index:1}
+.build-welcome{width:min(760px,100%);margin:auto;align-self:center;text-align:center;padding:20px 6px 50px}
+.build-welcome[hidden]{display:none!important}
+.build-welcome-logo{display:grid;place-items:center;width:62px;height:62px;margin:0 auto 20px;font-size:36px;font-weight:800;letter-spacing:-4px;border-radius:19px;background:linear-gradient(135deg,#eaa166,#ab531f);box-shadow:0 14px 55px #c9672447,inset 0 1px #ffe9c988;color:#fff8ed}
+.build-welcome-logo span{color:#ffe4b1}
+.build-eyebrow{color:#dfa47b;text-transform:uppercase;font-size:10px;letter-spacing:2px;font-weight:700;margin:0 0 8px}
+.build-welcome h1{font-size:clamp(30px,3.6vw,49px);letter-spacing:-1.9px;margin-bottom:13px}
+.build-welcome-desc{max-width:560px;font-size:13px;line-height:1.7;color:#9bb3b5;margin:0 auto 30px}
+.build-suggest-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:11px;text-align:left}
+.build-suggest{padding:18px 17px;text-align:left;border:1px solid #7fb3b838;border-radius:14px;background:linear-gradient(139deg,#183837aa,#18272aaa);color:#e5e5d9;display:flex;flex-direction:column;gap:9px;transition:border-color .15s,transform .15s}
+.build-suggest:hover{border-color:#d99a64a0;transform:translateY(-2px)}
+.build-suggest span{font-size:21px;color:#eb9f63}.build-suggest strong{font-size:12px}.build-suggest small{font-size:11px;line-height:1.4;color:#9cb5b6}
+.build-thread{width:min(810px,100%);margin:0 auto;display:flex;flex-direction:column;gap:28px;padding:6px 4px 26px}
+.build-chat-msg{display:flex;gap:12px;align-items:flex-start;min-width:0}
+.build-chat-msg.user{justify-content:flex-end}.build-chat-msg.user .build-message-bubble{background:#274346;color:#f0eee3;border:1px solid #7aa7a74a;border-radius:17px 17px 4px 17px;max-width:min(620px,88%)}
+.build-chat-msg.assistant .build-message-bubble{background:transparent;border:0;padding:4px 0;flex:1;max-width:100%}
+.build-message-bubble{padding:15px 17px;font-size:13px;line-height:1.75;white-space:pre-wrap;overflow-wrap:anywhere}
+.build-chat-avatar{display:grid;place-items:center;flex:0 0 31px;height:31px;background:linear-gradient(135deg,#e48a4b,#a44e22);border-radius:11px;font-weight:800;color:#fff}
+.build-chat-msg.user .build-chat-avatar{order:2;background:linear-gradient(135deg,#1a7177,#37615b)}
+.build-message-bubble strong{color:#f5c59d}.build-message-bubble p{margin:7px 0}
+.build-plan-link{border:1px solid #cc96635c;border-radius:9px;background:#a65e2e2c;color:#ffc89c;padding:10px 14px;font-size:11px;font-weight:700;margin-top:12px;display:inline-flex;gap:8px;align-items:center}
+.build-composer-wrap{width:min(850px,100%);margin:0 auto;padding:0 12px 3px;position:relative;z-index:2}
+.build-composer{background:linear-gradient(125deg,rgba(28,51,50,.88),rgba(17,31,32,.91));border:1px solid rgba(136,198,193,.39);border-radius:19px;padding:14px 13px 10px;box-shadow:0 16px 60px #0005,inset 0 1px #ffffff12}
+.build-composer:focus-within{border-color:#e6a3728c;box-shadow:0 12px 55px #0006,0 0 0 1px #e49d7540}
+.build-composer textarea{width:100%;resize:none;background:transparent;color:#f6ede2;border:0;outline:0;min-height:66px;max-height:180px;padding:6px 8px;font-size:14px;line-height:1.65}
+.build-composer textarea::placeholder{color:#8ea7a9}
+.build-composer-footer{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap}
+.build-compose-left,.build-compose-right{display:flex;gap:7px;align-items:center;flex-wrap:wrap}
+.build-icon-btn,.build-subtle-btn{border:1px solid #76afae38;background:#1e3b3a65;color:#dedfd3;border-radius:10px;min-height:32px;padding:7px 10px;font-size:11px;display:inline-flex;align-items:center;gap:7px}
+.build-icon-btn{width:34px;justify-content:center;font-size:17px;padding:0}
+.build-count{color:#8eaaa8;font-size:10px;padding-right:4px}
+.build-send{border:0;border-radius:12px;width:40px;height:38px;display:grid;place-items:center;background:linear-gradient(140deg,#f4ad6b,#c6601f);color:#21130b;font-size:22px;box-shadow:0 7px 20px #c6601f46}
+.build-send:hover{filter:brightness(1.14)}
+.build-demo-note{text-align:center;color:#789393;font-size:10px;padding:11px 0 0;margin:0;line-height:1.45}
+.build-output-drawer{width:clamp(300px,29vw,410px);flex:0 0 clamp(300px,29vw,410px);display:flex;flex-direction:column;min-height:0;border-radius:17px;border:1px solid #79bec048;background:linear-gradient(155deg,rgba(15,66,66,.85),rgba(13,28,31,.91) 65%);box-shadow:0 15px 45px #0004;overflow:hidden}
+.build-output-drawer[hidden]{display:none!important}
+.build-output-header{padding:19px 19px 16px;border-bottom:1px solid #74b9b638;display:flex;justify-content:space-between;align-items:flex-start}
+.build-output-header h2{font-size:19px;margin:2px 0 6px}.build-output-header small{font-size:11px;color:#8eb9b8}
+.build-output-body{min-height:0;overflow-y:auto;flex:1;padding:18px}
+.build-output-drawer .output-empty{min-height:250px}
+.build-output-drawer .output-actions{padding:12px;border-top:1px solid #8cc6c22c;margin:0}
+.build-output-drawer .output-actions[hidden]{display:none!important}
+.build-output-drawer .output-actions .btn{padding:9px;font-size:10px;flex:1}
+.build-output-drawer .out-heading{color:#c1ddd8}.build-output-drawer .out-item{border-color:#92c6c228}.build-output-drawer .out-num{background:#c6601f27;border-color:#ecaa723f;color:#f7b57d}
+.build-dialog{max-height:min(93dvh,780px);overflow-y:auto}
+.build-dialog-desc{color:#99b6b6;font-size:11px;line-height:1.6;margin:8px 0 0}
+.build-dialog .agent-check{background:#102d2e88;border-color:#7bb2ac35}.build-dialog .field-label{color:#d5c9b9}
+.build-model-options{display:flex;flex-direction:column;gap:8px}
+.build-model-option{border:1px solid #82bcb63a;border-radius:12px;background:rgba(8,35,36,.60);color:#e9e4d9;display:flex;align-items:center;gap:14px;text-align:left;padding:13px}
+.build-model-option.active{border-color:#f0aa6eaa;background:#c2652c2c}
+.build-model-icon{width:42px;height:42px;display:grid;place-items:center;border-radius:11px;background:#cf7d3b37;color:#f9c59c;font-weight:750}
+.build-model-copy{flex:1}.build-model-copy strong{display:block;font-size:12px}.build-model-copy small{display:block;font-size:10px;color:#94aeac;margin-top:4px}
+.build-model-notice{font-size:10px;color:#94aead;line-height:1.65;margin:15px 0 0}
+.build-project-list{display:flex;flex-direction:column;gap:9px;margin-bottom:24px}
+.build-project-option{width:100%;background:#143637ae;color:#f0e5d7;border:1px solid #75b4b440;padding:12px 14px;border-radius:12px;display:flex;align-items:center;gap:12px;text-align:left}
+.build-project-option.active{border-color:#e79966a3;background:#8d5a332b}
+.build-project-option span{font-size:21px;color:#eca06a}.build-project-option strong{display:block;font-size:12px}.build-project-option small{display:block;color:#96b0b0;font-size:10px;margin-top:5px}
+.build-project-option b{margin-left:auto;color:#e7b78b}
+.build-project-entry{display:flex;gap:9px}.build-project-entry .search{flex:1}.build-project-entry .btn{white-space:nowrap}
+/* Standard pages retained as-is apart from palette. */
+@media(max-width:1160px){.build-layout{position:relative}.build-output-drawer{position:absolute;right:0;top:0;bottom:0;width:min(390px,95%);z-index:5;box-shadow:-14px 0 44px #0009;background:linear-gradient(155deg,#123c3d,#0c2528 65%)}.build-conversation{width:100%}}
+@media(max-width:900px){.build-header-bar{align-items:flex-start}.build-header-controls{width:100%}.build-toolbar-btn{font-size:11px}.content:has(#builder.active){padding:12px 16px 9px}}
+@media(max-width:760px){.content:has(#builder.active){padding:9px 12px 6px;min-height:calc(100dvh - 70px)}#builder.active{height:calc(100dvh - 90px);min-height:490px}.build-header-bar{padding-bottom:12px}.build-header-caption small{display:none}.build-header-controls{flex-wrap:nowrap;overflow-x:auto;padding-bottom:4px;scrollbar-width:none}.build-toolbar-btn{padding:8px 10px;min-height:34px}.build-header-controls .build-toolbar-btn:nth-child(3){display:none}.build-conversation-scroll{padding:12px 3px}.build-welcome{padding:30px 8px}.build-welcome-desc{font-size:12px}.build-welcome h1{font-size:35px}.build-composer-wrap{padding:0 0 3px}.build-composer textarea{min-height:74px}.build-output-drawer{width:100%;border-radius:13px}.build-suggest-grid{gap:7px}.build-suggest{padding:12px 10px}.build-suggest strong{font-size:10px}.build-suggest small{font-size:9px}.build-demo-note{font-size:9px}.build-thread{gap:20px}.build-chat-msg.user .build-message-bubble{max-width:80%}}
+@media(max-width:420px){.top .crumb{white-space:nowrap;max-width:125px;text-overflow:ellipsis;overflow:hidden}.top .account-actions{flex-shrink:0;white-space:nowrap}.top .auth-link,.top .auth-signup{white-space:nowrap;font-size:10px;padding:8px 9px}.build-header-caption{display:none}.build-header-controls{gap:5px}.build-header-controls .build-toolbar-btn{padding:8px 9px;font-size:10px}.build-toolbar-btn#projectPickerBtn{max-width:125px;overflow:hidden}.build-toolbar-btn#projectPickerBtn span:nth-child(2){overflow:hidden;text-overflow:ellipsis}.build-suggest-grid{grid-template-columns:1fr 1fr}.build-suggest:last-child{grid-column:1/-1}.build-subtle-btn{font-size:10px}.build-compose-left{gap:4px}.build-count{font-size:9px}.build-message-bubble{font-size:12px}.build-welcome h1{font-size:30px}}
+@media(prefers-reduced-motion:reduce){.build-suggest:hover{transform:none}}
+
+
+</style>
+<style>
+/* BLORP V5 FOUNDATION — additive styles; all V4.1 features remain in base.css. */
+:root{--v5-teal:#12383a;--v5-deep:#081619;--v5-warm:#c6601f;--v5-cream:#eadcc8;--v5-sea:#7fb3b8}
+body{background:radial-gradient(900px 600px at 73% 15%,rgba(32,106,108,.17),transparent 62%),radial-gradient(700px 460px at 0 88%,rgba(198,96,31,.09),transparent 70%),#070d10}
+.v5-navsymbol{width:17px;flex:none;color:currentColor;font-size:18px;text-align:center;line-height:1}
+.sidebar .brand-symbol{background:linear-gradient(135deg,#d18043,#8c4627);box-shadow:0 0 30px rgba(182,81,30,.22)}
+.nav button[data-view="account"].active,.nav button[data-view="addons"].active,.nav button[data-view="membership"].active,.nav button[data-view="projects"].active{color:#f2bb90;background:linear-gradient(110deg,rgba(203,102,41,.21),rgba(19,81,84,.19));border-color:rgba(213,137,81,.25)}
+.v5-page-heading{display:flex;justify-content:space-between;align-items:center;gap:22px;margin-bottom:26px;flex-wrap:wrap}
+.v5-page-heading h1{margin-bottom:10px}.v5-page-heading .btn{white-space:nowrap}
+.v5-metrics{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:14px;margin:16px 0}
+.v5-metric{border:1px solid rgba(117,179,177,.18);background:linear-gradient(141deg,rgba(25,69,69,.61),rgba(16,29,31,.75));border-radius:18px;min-width:0;padding:22px;box-shadow:inset 0 1px rgba(245,230,208,.045),0 10px 32px #0002}
+.v5-metric span{color:#a7bcb8;font-size:10px;font-weight:700;letter-spacing:1.25px;display:block}.v5-metric strong{color:#efe9da;font-size:clamp(20px,2.6vw,30px);letter-spacing:-.6px;display:block;margin:16px 0 6px}.v5-metric small{color:#93a6a5;font-size:10px;line-height:1.5}
+.account-hero{display:flex;justify-content:space-between;gap:16px;align-items:center;background:radial-gradient(circle at 87% 11%,rgba(200,93,40,.14),transparent 36%),linear-gradient(118deg,rgba(28,86,84,.71),rgba(22,36,39,.76))}
+.account-hello{display:flex;align-items:center;gap:18px}.account-portrait{width:64px;height:64px;border-radius:18px;flex:none;display:grid;place-items:center;font-size:27px;font-weight:800;background:linear-gradient(145deg,#e4a067,#98502d);box-shadow:0 12px 24px #0004;color:#23150e}
+.account-eyebrow{font-size:10px;letter-spacing:1.6px;color:#c9936a;font-weight:700;display:block;margin-bottom:9px}.account-hello h2{font-size:clamp(19px,2.2vw,26px);margin:0 0 7px;letter-spacing:-.5px}.account-hello p{font-size:12px;color:#a9bab7;margin:0;line-height:1.6}
+.account-plan-pill{border:1px solid rgba(223,162,108,.34);background:rgba(198,96,31,.11);color:#f4bd89;border-radius:999px;padding:9px 14px;white-space:nowrap;font-size:10px;font-weight:800;letter-spacing:.8px}
+.v5-two-col{display:grid;grid-template-columns:minmax(0,1.45fr) minmax(290px,1fr);gap:16px;margin-top:16px}.v5-profile-line{border-bottom:1px solid rgba(122,191,182,.11);display:flex;justify-content:space-between;gap:10px;margin:0;padding:15px 0;font-size:12px}.v5-profile-line span{color:#98aca9}.v5-profile-line strong{font-weight:650;overflow-wrap:anywhere;text-align:right}.v5-profile-panel>.btn{margin-top:18px}
+.v5-empty{padding:38px 14px;color:#9ab0ae;text-align:center;font-size:12px}.v5-recent{display:flex;flex-direction:column;gap:8px}.v5-recent-item{width:100%;display:flex;justify-content:space-between;gap:10px;align-items:center;text-align:left;background:rgba(10,43,44,.45);border:1px solid rgba(137,192,186,.15);border-radius:12px;padding:14px 15px;color:#f3e8d9}.v5-recent-item strong{font-size:12px;display:block}.v5-recent-item small{font-size:10px;color:#90a8a6;display:block;margin-top:6px}
+.v5-project-list{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}.v5-project-tile{border:1px solid #7fb3b82b;border-radius:14px;padding:20px;background:linear-gradient(130deg,rgba(17,70,71,.48),rgba(11,27,31,.73));min-width:0}.v5-project-tile .v5-project-art{font-size:25px;color:#df9c68;margin-bottom:17px}.v5-project-tile h3{font-size:15px;margin:0 0 8px}.v5-project-tile p{font-size:11px;color:#99b5b2;line-height:1.6;margin-bottom:17px}.v5-project-tile .btn{font-size:10px;padding:8px 11px}
+.addons-feature{background:linear-gradient(115deg,rgba(14,70,72,.8),rgba(15,32,35,.92) 67%,rgba(86,45,29,.45));min-height:170px;display:flex;justify-content:space-between;align-items:center;gap:20px;padding:27px 34px;overflow:hidden}.addons-feature h2{font-size:27px;letter-spacing:-1px;color:#fff3e7;margin-bottom:11px}.addons-feature p:not(.kicker){max-width:580px;color:#b2c9c5;font-size:12px;line-height:1.7}.addons-feature .kicker{color:#e4a77e}.addons-orb{font-size:110px;line-height:1;color:#b77a4c;opacity:.5;transform:rotate(-17deg);text-shadow:0 0 60px rgba(200,95,30,.35)}
+.addons-controls{margin:22px 0;display:flex;gap:14px;justify-content:space-between;align-items:center;flex-wrap:wrap}.addons-tabs{display:flex;gap:4px;padding:5px;border-radius:12px;background:rgba(9,40,42,.62);border:1px solid rgba(120,179,176,.17)}.addons-tabs button,.billing-switch button{border:0;border-radius:9px;background:transparent;color:#9ab1b0;font-size:12px;padding:11px 15px;font-weight:700}.addons-tabs button.selected,.billing-switch button.selected{background:linear-gradient(140deg,#24585b,#184043);color:#f4e9d9;box-shadow:inset 0 1px rgba(255,255,255,.075)}#addonSearch{width:min(100%,345px)}.addons-filter{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:16px}.addons-filter button{background:rgba(12,42,43,.58);border:1px solid rgba(126,190,188,.19);border-radius:9px;color:#a7bdb9;font-size:11px;padding:9px 12px}.addons-filter button.selected{background:rgba(204,104,42,.22);border-color:#d78a5870;color:#f6bc8e}
+.addon-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px}.addon-card{padding:21px;background:linear-gradient(148deg,rgba(20,59,61,.73),rgba(12,24,29,.92));border:1px solid rgba(125,176,175,.20);border-radius:17px;min-height:192px;display:flex;flex-direction:column;gap:11px;box-shadow:inset 0 1px rgba(255,255,255,.045)}.addon-card:hover{border-color:rgba(225,151,99,.48)}.addon-card-top{display:flex;align-items:start;gap:12px}.addon-logo{height:43px;width:43px;border-radius:12px;background:#c6601f26;display:grid;place-items:center;font-size:23px;color:#e3a274;flex:none;border:1px solid #f0b58930}.addon-name{font-size:13px;font-weight:700;color:#fff3e9;margin:3px 0 6px}.addon-category{font-size:10px;color:#9dbbb8}.addon-desc{font-size:11px;color:#afc1bd;line-height:1.65;flex:1;margin:0}.addon-card-bottom{display:flex;justify-content:space-between;gap:10px;align-items:center}.addon-status{font-size:10px;color:#91ada9}.addon-status.on{color:#e6b88e}.addon-card .btn{font-size:10px;padding:8px 11px}.addons-custom{display:flex;align-items:center;justify-content:space-between;gap:18px}.addons-custom .subtitle{max-width:580px;line-height:1.6}.v5-check-row{display:grid;grid-template-columns:1fr 1fr;gap:9px}.v5-check-row label{font-size:12px;padding:12px;border:1px solid #8abcb92b;border-radius:10px;background:#163638;color:#e2e5d9}.v5-check-row input,.v5-approve input{accent-color:#c77a47}.v5-approve{display:flex;gap:9px;align-items:center;margin-top:19px;color:#bbd0c9;font-size:11px}.v5-dialog{border-color:#c4815c55;background:linear-gradient(150deg,#173d3f,#111c21 87%)}
+.billing-toolbar{display:flex;align-items:center;justify-content:space-between;gap:18px;margin:15px 0 23px}.billing-toolbar p{font-size:11px;color:#8ea7a7;margin:0}.billing-switch{display:flex;gap:4px;padding:5px;border:1px solid rgba(124,182,179,.2);background:rgba(13,35,39,.7);border-radius:12px}.billing-switch span{color:#e6a374;font-size:10px;margin-left:7px}.pricing-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:17px}.pricing-card{padding:29px 23px;background:linear-gradient(143deg,rgba(19,61,63,.55),rgba(15,25,30,.89));border:1px solid #76afac34;border-radius:20px;display:flex;flex-direction:column;min-height:460px}.pricing-card.featured{border-color:#ce865c99;background:radial-gradient(circle at 100% 0%,#bc6a3d26,transparent 50%),linear-gradient(145deg,#174347bb,#171d20ef);box-shadow:0 18px 50px #0004}.pricing-index{font-size:10px;letter-spacing:1.7px;color:#edab7b;font-weight:800}.pricing-card h2{font-size:23px;color:#fff2e5;margin:15px 0 8px}.pricing-card>p{font-size:12px;line-height:1.5;color:#9eb3b1}.pricing-price{display:flex;align-items:baseline;gap:6px;margin:20px 0 0}.pricing-price strong{font-size:40px;color:#f5efe7;letter-spacing:-2px}.pricing-price small{color:#91aaa8}.pricing-card .billed-yearly{font-size:10px;color:#cb9b75;margin-top:5px;min-height:20px}.pricing-card ul{margin:19px 0 23px;padding:0;list-style:none;display:flex;flex-direction:column;gap:16px;flex:1}.pricing-card li{font-size:11px;line-height:1.5;color:#c3d1cd;padding-left:21px;position:relative}.pricing-card li:before{content:'✓';color:#d89c6f;position:absolute;left:0}.pricing-card .btn{width:100%}
+/* Chat-first AI Playground, same design language as Build Playground. */
+.content:has(#playground.active){max-width:none;padding:25px 40px 18px;min-height:calc(100dvh - 83px)}
+.ai-stage{min-height:calc(100dvh - 140px);max-width:1280px;margin:0 auto;display:flex;flex-direction:column}
+.ai-heading{display:flex;align-items:start;justify-content:space-between;gap:16px;margin-bottom:17px}.ai-heading h1{font-size:clamp(27px,3.4vw,36px);margin-bottom:7px}.ai-heading .kicker{margin-bottom:10px}
+.ai-switchrow{display:flex;justify-content:space-between;align-items:center;gap:10px;border-bottom:1px solid #9cc7c025;padding-bottom:12px}.ai-modes{display:flex;gap:5px}.ai-mode{background:transparent;border:1px solid transparent;border-radius:9px;color:#8fb3ae;padding:11px 15px;font-size:12px;font-weight:700}.ai-mode.on{background:#c6601f22;border-color:#cf8c5c6e;color:#f6bf94}.ai-toolbar{display:flex;gap:9px;align-items:center}.ai-model-select{background:#193b3d;color:#f0e4d6;border:1px solid #7badaa53;border-radius:10px;padding:10px 12px;font-size:11px}.ai-toolbar .btn{padding:10px 12px}
+.ai-conversation{flex:1;min-height:320px;display:flex;flex-direction:column;overflow-y:auto;padding:18px clamp(4px,4vw,55px)}.ai-trust{text-align:center;color:#759894;font-size:10px;letter-spacing:.15px}.ai-dot{display:inline-block;height:5px;width:5px;background:#91c1a7;border-radius:50%;margin-right:7px}.ai-conversation .message-area{max-width:850px;width:100%;margin:auto;padding:30px 0;gap:24px}.ai-conversation .bubble{background:transparent;max-width:78%;color:#d5e0da;font-size:13px;line-height:1.8}.ai-conversation .bubble.user{background:#274c4d;color:#f3e6da;border:1px solid #7aafae44}.ai-composer{max-width:930px;width:100%;margin:0 auto 20px}.ai-composer .chatbox{border:1px solid rgba(138,190,180,.38);background:linear-gradient(140deg,rgba(21,58,60,.9),rgba(19,38,42,.96));padding:12px;border-radius:18px;box-shadow:0 14px 36px #0004}.ai-composer .chatbox textarea{min-height:64px;font-size:13px}.ai-composer .chatbox .btn{height:40px;width:44px;border-radius:11px;font-size:20px}.ai-composefoot{display:flex;justify-content:space-between;gap:14px;margin-top:10px;color:#739a98;font-size:10px;flex-wrap:wrap}
+.sr-only{position:absolute!important;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}
+@media(max-width:1240px){.addon-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.v5-metrics{grid-template-columns:repeat(2,minmax(0,1fr))}.pricing-grid{gap:10px}.pricing-card{padding:23px 18px}}
+@media(max-width:950px){.v5-two-col{grid-template-columns:1fr}.pricing-grid{grid-template-columns:1fr}.pricing-card{min-height:0}.pricing-card ul{display:grid;grid-template-columns:1fr 1fr;gap:14px}.v5-project-list{grid-template-columns:1fr}.account-hero{align-items:flex-start}.content:has(#playground.active){padding:15px 20px}}
+@media(max-width:760px){.addon-grid{grid-template-columns:1fr}.v5-metrics{gap:9px}.v5-metric{padding:15px}.v5-metric strong{font-size:22px}.account-hero{flex-direction:column;padding:19px}.account-portrait{width:47px;height:47px;font-size:21px}.account-hello{align-items:flex-start;gap:12px}.addons-feature{padding:24px}.addons-orb{display:none}.addons-controls{align-items:stretch}.addons-tabs{width:100%;justify-content:space-between}.addons-tabs button{flex:1}.addons-controls #addonSearch{width:100%}.addons-custom{flex-direction:column;align-items:flex-start}.billing-toolbar{flex-direction:column;align-items:flex-start}.pricing-card ul{grid-template-columns:1fr}.content:has(#playground.active){padding:14px 12px 10px}.ai-stage{min-height:calc(100dvh - 92px)}.ai-heading{align-items:start}.ai-heading h1{font-size:27px}.ai-switchrow{flex-wrap:wrap}.ai-mode{padding:9px}.ai-toolbar{width:100%;justify-content:space-between}.ai-conversation{min-height:300px;padding:12px 4px}.ai-composer{margin-bottom:3px}.ai-composefoot{font-size:9px}.ai-composer .chatbox textarea{min-height:54px}}
+@media(max-width:410px){.v5-metrics{grid-template-columns:1fr 1fr}.v5-metric strong{font-size:19px}.addons-tabs button{padding:10px 9px;font-size:11px}.v5-page-heading h1{font-size:30px}.ai-heading .btn{padding:8px;font-size:10px}}
+
+</style>
+<style>
+/* Blorp V5.1 — Local AI Lab, same cinematic teal / burnt orange design */
+.local-ai-nav{background:transparent;border:1px solid transparent;color:#c2c7c7;width:100%;text-align:left;font:600 13px 'Segoe UI',sans-serif;border-radius:11px;padding:13px;display:flex;align-items:center;gap:8px;cursor:pointer}
+.local-ai-nav:hover{background:rgba(21,129,129,.14)}.local-ai-nav.active{background:linear-gradient(90deg,rgba(198,96,31,.34),rgba(46,111,115,.14));border-color:rgba(231,148,78,.48);color:#fff}.local-free{font-size:9px;letter-spacing:.7px;border:1px solid #7fb3b850;color:#a1dfcf;border-radius:7px;padding:4px 6px;margin-left:auto}
+.local-status{padding:14px 18px;border-radius:13px;border:1px solid rgba(127,179,184,.24);color:#c1d3d1;background:rgba(11,59,62,.4);font-size:12px;margin-bottom:18px;line-height:1.6}
+.local-status.ok{color:#b8edcc;border-color:#8bcfae55;background:rgba(37,104,69,.18)}.local-status.problem{color:#f1bc97;border-color:#c6601f80;background:rgba(113,62,30,.18)}
+.local-layout{display:grid;grid-template-columns:minmax(0,1.5fr) minmax(310px,1fr);gap:16px;align-items:start}.local-main,.local-results{min-width:0;padding:22px!important}.local-controls{margin-bottom:20px;display:grid;grid-template-columns:1fr;gap:6px}.local-controls label{margin:0}.local-model-note{font-size:10px;color:#91aaa8;line-height:1.5}
+.local-tabs{display:flex;border:1px solid rgba(127,179,184,.22);background:#07191880;border-radius:11px;padding:4px;gap:5px;margin-bottom:20px}.local-tabs button{flex:1;border:0;border-radius:9px;color:#b9c4bf;background:transparent;padding:12px 8px;cursor:pointer;font-size:12px}.local-tabs button.active{background:linear-gradient(110deg,#804423,#c6601f);color:white;font-weight:700}
+.local-chat-thread{min-height:130px;max-height:320px;overflow:auto;display:flex;flex-direction:column;gap:11px;margin-bottom:17px}.local-welcome{padding:15px;border:1px solid #83aba528;border-radius:12px;color:#a1b7b4;font-size:12px;line-height:1.6}.local-message{border:1px solid #83aba528;border-radius:13px;background:rgba(5,33,35,.5);padding:14px;line-height:1.65;font-size:12px;white-space:pre-wrap;overflow-wrap:anywhere;color:#e7efea}.local-message.user{align-self:flex-end;background:rgba(137,78,35,.3);max-width:90%}.local-message.assistant{align-self:stretch}.local-message strong{display:block;font-size:11px;color:#e7ac7a;margin-bottom:8px}.local-actions{display:flex;justify-content:space-between;gap:12px;margin-top:15px;flex-wrap:wrap}.local-disclaimer{font-size:10px;color:#8faca8;margin:16px 0 0;line-height:1.7}.local-agent-row{display:flex;align-items:center;gap:13px;padding:13px 0;border-bottom:1px solid #80a9a128}.local-agent-row>span{width:32px;height:32px;border-radius:10px;background:#bc663227;display:grid;place-items:center;color:#f0af7a;font-size:11px}.local-agent-row strong{font-size:12px}.local-agent-row small{display:block;color:#98b2b0;font-size:10px;margin-top:4px}.local-build-output{margin:17px 0;line-height:1.7;font-size:12px;color:#bfcfca;white-space:pre-wrap;overflow-wrap:anywhere;max-height:490px;overflow:auto}.local-build-output h3{font-size:14px;color:#e8d7c1;margin:16px 0 5px}.local-build-output p{margin:0 0 12px}.local-build-output ul{padding-left:18px}.local-results #localDownload{display:block;text-align:center;text-decoration:none}.local-results #localDownload[hidden]{display:none}.local-main button:disabled{opacity:.45;cursor:wait}
+@media(max-width:1100px){.local-layout{grid-template-columns:1fr}}@media(max-width:760px){.local-main,.local-results{padding:16px!important}.local-actions{flex-direction:column}.local-actions button{width:100%}}
+
+</style>
+</head>
+<body>
+<div class="app">
+<div class="sidebar-overlay" id="overlay"></div>
+<aside class="sidebar" id="sidebar">
+<div class="brand"><div class="brand-symbol">b<span style="color:#d9cdff">.</span></div><div><b>blorp</b><small>AI CONTROL CENTER</small></div></div>
+<div class="label">Workspace</div><nav class="nav" id="mainnav">
+<button data-view="account" class="active"><span class="v5-navsymbol">◫</span> Dashboard</button>
+<button data-view="projects"><span class="v5-navsymbol">▣</span> Projects</button>
+<button data-view="overview"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg> Overview</button>
+<button data-view="models"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><rect x="3" y="3" width="18" height="18" rx="4"/><path d="M9 3v18M3 9h18"/></svg> Model Explorer</button>
+<button data-view="playground"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M5 4h14v13H8l-3 3V4z"/><path d="M9 9h6M9 13h4"/></svg> Playground</button>
+<button data-view="providers"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="12" cy="12" r="3"/><path d="M12 2v7M12 15v7M2 12h7M15 12h7M5 5l5 5M14 14l5 5M5 19l5-5M14 10l5-5"/></svg> Providers</button>
+<div class="label buildfast-section"><span>Build Fast</span><span class="newflag">BETA</span></div>
+<button data-view="multitask"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.65"><path d="M12 3v4M4 12h4M16 12h4M12 17v4"/><rect x="8" y="7" width="8" height="10" rx="2"/><path d="m4 6 3 2M20 6l-3 2M4 18l3-2M20 18l-3-2"/></svg> Multi Task <span class="nav-end">↗</span></button>
+<button data-view="builder"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.65"><path d="M8 8 4 12l4 4M16 8l4 4-4 4M14 4l-4 16"/></svg> Build Playground</button>
+<button type="button" id="localAiNav" data-local-view="localai" class="local-ai-nav">◈ &nbsp; Local AI Lab <span class="local-free">FREE</span></button>
+<button data-view="workflows"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.65"><rect x="2.5" y="3" width="7" height="6" rx="1.4"/><rect x="14.5" y="15" width="7" height="6" rx="1.4"/><rect x="14.5" y="3" width="7" height="6" rx="1.4"/><path d="M9.5 6h5M6 9v9h8.5"/></svg> Workflows</button>
+<div class="label">Manage</div>
+<button data-view="addons"><span class="v5-navsymbol">✣</span> Add-ons</button>
+<button data-view="membership"><span class="v5-navsymbol">◈</span> Membership</button>
+<button data-view="keys"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="8" cy="15" r="5"/><path d="M11.5 11.5L20 3l2 2-3 3 2 2-3 3-2-2"/></svg> API Keys</button>
+<button data-view="analytics"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M3 20h18M6 17V9M12 17V4M18 17v-6"/></svg> Analytics</button>
+<button data-view="settings"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="12" cy="12" r="3"/><path d="M12 2v2M12 20v2M2 12h2M20 12h2M5 5l1.5 1.5M17.5 17.5L19 19M5 19l1.5-1.5M17.5 6.5L19 5"/></svg> Settings</button>
+</nav>
+<div class="sb-bottom"><div class="profile"><div class="avatar">B</div><div><strong>Blorp workspace</strong><small>Local environment · Preview</small></div></div></div>
+</aside>
+<main class="main">
+<div class="ambient-scene" aria-hidden="true">
+  <div class="morph-orb morph-one"></div>
+  <div class="morph-orb morph-two"></div>
+  <div class="morph-orb morph-three"></div>
+</div>
+<header class="top"><div style="display:flex;align-items:center;gap:12px"><button id="hamburger" class="iconbtn mobiletop">☰</button><div class="crumb">Workspace <span> / </span> <span id="crumb">Dashboard</span></div></div><div class="top-right"><span class="visual-chip" id="visualChip" title="Current visual effects profile">◈ <span id="visualLabel">Adaptive</span></span><span class="pill"><span class="dot"></span> Design preview</span><button class="iconbtn" title="About this preview" id="notice">ⓘ</button><div class="account-actions" id="guestAuth"><button class="auth-link" id="signInBtn" type="button">Sign in</button><button class="btn primary auth-signup" id="signUpBtn" type="button">Sign up</button></div><div class="account-actions" id="demoAuth" hidden><span class="account-email" id="accountEmail">Preview account</span><button class="auth-link" id="signOutBtn" type="button">Sign out</button><div class="avatar" style="height:33px;width:33px" id="accountAvatar">B</div></div></div></header>
+<div class="content">
+<section class="tab" id="overview"><p class="kicker">YOUR COMMAND CENTER</p><div class="heading"><div><h1>Welcome to <em>Blorp.</em></h1><p class="subtitle">All your AI models, one beautifully connected workspace.</p><div class="concept-notes"><span class="note-pill">✦ Glassmorphism V2</span><span class="note-pill">◇ Adaptive effects</span><span class="note-pill">⌁ Offline preview</span></div></div><div class="heading-actions"><button class="btn" id="endpointBtn">⎘ Copy API endpoint</button><button class="btn primary" data-open="playground">✧ Open playground</button></div></div>
+<div class="grid4"><div class="stat"><div class="stathead">Requests today <span class="glyph">↗</span></div><div class="statnumber">12,846</div><div class="statfoot"><span class="positive">↗ 12.8%</span> vs. previous day</div></div><div class="stat"><div class="stathead">Tokens routed <span class="glyph">◇</span></div><div class="statnumber">2.4<span style="font-size:20px">M</span></div><div class="statfoot"><span class="positive">↗ 8.2%</span> vs. previous day</div></div><div class="stat"><div class="stathead">Average latency <span class="glyph">ϟ</span></div><div class="statnumber">842<span style="font-size:17px">ms</span></div><div class="statfoot"><span class="positive">↘ 6.5%</span> from previous day</div></div><div class="stat"><div class="stathead">Connected providers <span class="glyph">◈</span></div><div class="statnumber">06<span style="font-size:17px;color:#797b90"> / 08</span></div><div class="statfoot"><span class="purple">●</span> Demo connections</div></div></div>
+<div class="lower"><div class="panel"><div class="panelhead"><div><h2>Request activity</h2><p class="subtle" style="margin:7px 0 0">Illustrative activity over the past week</p></div><span class="chooser">Last 7 days⌄</span></div><svg class="plot" viewBox="0 0 700 250" preserveAspectRatio="none" aria-label="Demonstration request activity line chart"><defs><linearGradient id="chartFill" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#9d83ff" stop-opacity=".23"/><stop offset="100%" stop-color="#9d83ff" stop-opacity="0"/></linearGradient></defs><g stroke="#2d2b3e" stroke-width="1" stroke-dasharray="3 6"><path d="M35 25H680M35 73H680M35 121H680M35 169H680M35 217H680"/></g><g><text x="2" y="29">24k</text><text x="2" y="77">18k</text><text x="2" y="125">12k</text><text x="2" y="173">6k</text><text x="8" y="221">0</text></g><path d="M35 174 C76 169 103 149 139 154 S205 98 246 118 S310 164 351 116 S421 80 455 101 S523 34 563 67 S632 41 680 23 V217H35Z" fill="url(#chartFill)"/><path d="M35 174 C76 169 103 149 139 154 S205 98 246 118 S310 164 351 116 S421 80 455 101 S523 34 563 67 S632 41 680 23" fill="none" stroke="#a28bff" stroke-width="3" stroke-linecap="round"/><g><circle cx="680" cy="23" r="5" fill="#b7a6ff" stroke="#5a4b90" stroke-width="5"/></g><g><text x="35" y="245">MON</text><text x="137" y="245">TUE</text><text x="238" y="245">WED</text><text x="339" y="245">THU</text><text x="439" y="245">FRI</text><text x="545" y="245">SAT</text><text x="652" y="245">SUN</text></g></svg><div class="legend"><span><i style="background:#a28bff"></i> Successful requests</span><span><i style="background:#676878"></i> Demo activity</span></div></div>
+<div class="panel"><div class="panelhead"><div><h2>Provider health</h2><p class="subtle" style="margin:7px 0 0">Example provider connections</p></div><button class="chooser" data-open="providers">View all ↗</button></div><div id="overviewProviders"></div></div></div>
+<div class="panel under"><div class="panelhead"><div><h2>Featured models</h2><p class="subtle" style="margin:7px 0 0">Explore supported models and their capabilities</p></div><button class="chooser" data-open="models">Explore models ↗</button></div><div class="table-wrapper"><table class="table"><thead><tr><th>Model</th><th>Provider</th><th>Best for</th><th>Sample latency</th><th>Availability</th></tr></thead><tbody id="overviewModels"></tbody></table></div></div>
+<div class="mutedbox">✦ This is a frontend-only design prototype. All numbers, provider health indicators, chat replies, and model entries are sample content—not live data. No real keys or API requests are used.</div></section>
+<section class="tab" id="models"><p class="kicker">DISCOVER AI</p><div class="heading"><div><h1>Model <em>Explorer.</em></h1><p class="subtitle">Search and compare models in one place.</p></div></div><div class="panel"><div class="select-row"><input class="search" placeholder="Search models, providers, capabilities..." id="modelSearch" aria-label="Search models"/><span class="tag">Demo catalog</span></div><div class="table-wrapper"><table class="table"><thead><tr><th>Model</th><th>Provider</th><th>Capability</th><th>Sample latency</th><th>Status</th></tr></thead><tbody id="allModels"></tbody></table></div></div></section>
+<section class="tab" id="playground">
+<div class="ai-stage">
+ <div class="ai-heading"><div><p class="kicker">BLORP / AI CHAT</p><h1>Ask <em>anything.</em></h1><p class="subtitle">One calm workspace for thinking, writing, and exploring models.</p></div><button type="button" class="btn" id="clearChat">↺ New conversation</button></div>
+ <div class="ai-switchrow"><div class="ai-modes" role="group" aria-label="Blorp working mode"><button class="ai-mode on" data-ai-mode="chat">☷ Chat</button><button class="ai-mode" data-ai-mode="build">⌘ Build</button><button class="ai-mode" data-ai-mode="autopilot">✦ Autopilot</button></div><div class="ai-toolbar"><label class="sr-only" for="aiModel">Chat model</label><select id="aiModel" class="ai-model-select"><option>Blorp V1</option><option>Blorp V2</option><option selected>Blorp V3</option><option>Blorp V4</option><option>Blorp V5</option></select><button type="button" class="btn" id="aiToolsBtn">✣ Tools</button></div></div>
+ <div class="ai-conversation"><div class="ai-trust"><span class="ai-dot"></span> Interface preview · No model requests are sent</div><div class="message-area" id="messages"><div class="bubble">Hey there! 👋 I'm Blorp's preview assistant. This chat is a local interface demo—not a connected AI model.</div></div></div>
+ <div class="ai-composer"><div class="chatbox"><textarea id="prompt" aria-label="Prompt" placeholder="Message Blorp..." rows="2"></textarea><button class="btn primary" id="send">↑</button></div><div class="ai-composefoot"><span>Model selection and tools are planned integrations</span><span>Enter to send · Shift+Enter newline</span></div></div>
+</div>
+</section>
+<section class="tab" id="providers"><p class="kicker">YOUR AI NETWORK</p><div class="heading"><div><h1>Connected <em>Providers.</em></h1><p class="subtitle">Choose which providers participate in routing.</p></div><button class="btn primary" id="addProvider">＋ Add provider</button></div><div class="panel"><div id="providerList"></div></div><div class="mutedbox">Provider toggles only affect the visual prototype. Connecting a real provider requires integration with the original project's backend and key-management workflow.</div></section>
+<section class="tab" id="keys"><p class="kicker">SECURE CREDENTIALS</p><div class="heading"><div><h1>API <em>Keys.</em></h1><p class="subtitle">A preview of the secure credentials manager.</p></div><button class="btn primary" id="addKey">＋ Add API key</button></div><div class="panel"><div class="panelhead"><h2>Your credentials</h2><span class="tag">Preview only</span></div><div class="empty"><div style="font-size:32px;margin-bottom:12px">⌁</div><h2 style="margin-bottom:12px">No credentials stored</h2><p>This preview doesn't collect or store API secrets. The final app will use the original backend's encrypted key-storage system.</p></div></div></section>
+<section class="tab" id="analytics"><p class="kicker">MEASURE WHAT MATTERS</p><div class="heading"><div><h1>Usage <em>Analytics.</em></h1><p class="subtitle">Understand request performance, latency, and tokens.</p></div></div><div class="grid4"><div class="stat"><div class="stathead">Success rate <span class="glyph">✓</span></div><div class="statnumber">99.2<span style="font-size:19px">%</span></div><div class="statfoot">Illustrative data</div></div><div class="stat"><div class="stathead">p95 latency <span class="glyph">ϟ</span></div><div class="statnumber">1.6<span style="font-size:17px">s</span></div><div class="statfoot">Illustrative data</div></div><div class="stat"><div class="stathead">Failed requests <span class="glyph">!</span></div><div class="statnumber">103</div><div class="statfoot">Illustrative data</div></div><div class="stat"><div class="stathead">Avg. tokens / req <span class="glyph">◇</span></div><div class="statnumber">187</div><div class="statfoot">Illustrative data</div></div></div><div class="panel under"><h2>Metrics integration</h2><p class="subtitle" style="margin-top:15px;line-height:1.7">Once connected to the target repository, this panel can visualize the existing request logs and analytics endpoints. No backend is connected in this preview.</p></div></section>
+
+<!-- BUILD FAST: a distinct workspace. Data and actions are local preview, not an agent backend. -->
+
+<section class="tab" id="localai">
+ <div class="section-overline"><p class="kicker">BLORP / LOCAL INTELLIGENCE</p><span class="preview-badge">● YOUR PC · NO PAID API NEEDED</span></div>
+ <div class="heading"><div><h1>Local <em>AI Lab.</em></h1><p class="subtitle">Real AI responses and three specialist agents, powered by an Ollama model running on your computer.</p></div><button type="button" class="btn" id="localRefresh">⟳ Detect Ollama</button></div>
+ <div class="local-status" id="localStatus" role="status" aria-live="polite">Checking for local models…</div>
+ <div class="local-layout">
+   <div class="panel local-main">
+     <div class="local-controls">
+       <label for="localModel" class="field-label">Installed model</label>
+       <select id="localModel" class="search"><option value="">Detecting models…</option></select>
+       <span class="local-model-note">These are real Ollama model names, not untrained Blorp V1–V5 product tiers.</span>
+     </div>
+     <div class="local-tabs" role="group" aria-label="Local AI mode">
+       <button type="button" data-local-mode="chat" class="active">☷ Local Chat</button>
+       <button type="button" data-local-mode="build">⌘ Build Website</button>
+     </div>
+     <div id="localChatThread" class="local-chat-thread" role="log" aria-live="polite"><div class="local-welcome">Ask a real local model a question, or switch to Build Website to run the agent team.</div></div>
+     <label class="field-label" for="localInput" id="localInputLabel">Message your local model</label>
+     <textarea id="localInput" class="large-prompt" rows="5" maxlength="3000" placeholder="Ask Blorp anything…"></textarea>
+     <div class="local-actions"><button class="btn" type="button" id="localClear">↺ Clear chat</button><button class="btn primary" type="button" id="localRun">↑ Send to local model</button></div>
+     <p class="local-disclaimer">Local model inference runs on your own PC. Local chat uses no cloud model API. Models may hallucinate; generated code is not executed by Blorp.</p>
+   </div>
+   <aside class="panel local-results">
+     <div class="panelhead"><div><h2>Agent workspace</h2><p class="subtle" style="margin-top:7px">Local static website MVP</p></div><span class="tag">3 agents</span></div>
+     <div class="local-agent-row"><span>01</span><div><strong>Architect Agent</strong><small>Creates the implementation plan</small></div></div>
+     <div class="local-agent-row"><span>02</span><div><strong>Builder Agent</strong><small>Creates HTML, CSS and JavaScript</small></div></div>
+     <div class="local-agent-row"><span>03</span><div><strong>QA Reviewer</strong><small>Reviews the code without running it</small></div></div>
+     <div class="local-build-output" id="localBuildOutput" aria-live="polite"><p>Switch to <b>Build Website</b>, enter a brief, and run the agent team. You'll get an actual ZIP containing files if the model completes the task.</p></div>
+     <a id="localDownload" class="btn primary" href="#" download hidden>↓ Download generated website ZIP</a>
+   </aside>
+ </div>
+</section>
+
+<section class="tab" id="multitask">
+  <div class="section-overline"><p class="kicker">BUILD FAST / AGENT CONTROL</p><span class="preview-badge">● OPEN PREVIEW · NO PAYWALL YET</span></div>
+  <div class="heading"><div><h1>Multi-Agent <em>Workspace.</em></h1><p class="subtitle">Give each agent one job. Organize them into one fast, focused build pipeline.</p></div><div class="heading-actions"><button type="button" class="btn" id="newWorkflowBtn">◇ Create workflow</button><button type="button" class="btn primary" id="newAgentBtn">＋ Add agent</button></div></div>
+  <div class="fast-metrics"><div class="metric-mini"><span>AGENTS</span><strong id="agentCount">05</strong><small>Customizable roles</small></div><div class="metric-mini"><span>WORKFLOWS</span><strong id="workflowCount">02</strong><small>Demo + your drafts</small></div><div class="metric-mini"><span>RUNTIME</span><strong class="purple">Preview</strong><small>No agent API connected</small></div><div class="metric-mini"><span>ACCESS</span><strong class="green">Open</strong><small>Subscriptions later</small></div></div>
+  <div class="section-title"><div><h2>Your specialist agents</h2><p class="subtle">Pick the right model and role when you connect a real runtime.</p></div><span class="tag">Local agent configurations</span></div>
+  <div class="agent-grid" id="agentGrid"></div>
+  <div class="panel under"><div class="panelhead"><div><h2>Workflow routing</h2><p class="subtle" style="margin:7px 0 0">Define the order of work before launching a build.</p></div><button type="button" class="chooser" data-open="workflows">All workflows ↗</button></div><div id="multiWorkflowList"></div></div>
+  <div class="soft-note">⌁ The agent cards, task queues, and workflows are editable previews. Running real agents will require an authenticated backend, model connections, and an isolated execution environment.</div>
+</section>
+<section class="tab" id="builder">
+  <div class="build-header-bar">
+    <div class="build-header-caption"><span class="build-mark">✦</span><span><strong>Build Playground</strong><small>Multi-agent web builder · Design preview</small></span></div>
+    <div class="build-header-controls">
+      <button type="button" class="build-toolbar-btn" id="projectPickerBtn" title="Choose or create a project"><span aria-hidden="true">▣</span><span id="activeProjectName">Untitled project</span><span aria-hidden="true">⌄</span></button>
+      <button type="button" class="build-toolbar-btn" id="buildModelPickerBtn" title="Choose a model tier"><span aria-hidden="true">◈</span><span id="activeModelName">Blorp V3</span><span aria-hidden="true">⌄</span></button>
+      <button type="button" class="build-toolbar-btn" id="buildSetupOpenBtn"><span aria-hidden="true">⚙</span> Setup</button>
+      <button type="button" class="build-toolbar-btn build-output-toggle" id="outputPanelToggle" aria-expanded="false" aria-controls="buildOutputDrawer"><span aria-hidden="true">◫</span> Output</button>
+    </div>
+  </div>
+  <div class="build-layout" id="buildLayout">
+    <div class="build-conversation">
+      <div class="build-conversation-scroll" id="buildConversationScroll" aria-label="Build conversation">
+        <div class="build-welcome" id="buildWelcome">
+          <div class="build-welcome-logo">b<span>.</span></div>
+          <p class="build-eyebrow">BLORP · BUILD FAST</p>
+          <h1>What should we <em>build?</em></h1>
+          <p class="build-welcome-desc">Describe your idea and let your specialist agent team shape the execution plan. Keep the complicated controls out of the way.</p>
+          <div class="build-suggest-grid" aria-label="Quick project prompts">
+            <button class="build-suggest" type="button" data-template="landing"><span>◈</span><strong>Landing page</strong><small>Elegant, animated website</small></button>
+            <button class="build-suggest" type="button" data-template="dashboard"><span>▦</span><strong>Dashboard</strong><small>Clean analytics & data</small></button>
+            <button class="build-suggest" type="button" data-template="api"><span>⌘</span><strong>Backend API</strong><small>Auth & endpoints</small></button>
+          </div>
+        </div>
+        <div class="build-thread" id="buildThread" role="log" aria-live="polite" aria-label="Chat messages"></div>
+      </div>
+      <div class="build-composer-wrap">
+        <div class="build-composer">
+          <textarea id="buildPrompt" maxlength="4000" rows="2" aria-label="Describe your build" placeholder="Message Blorp... describe the website or app you want to build"></textarea>
+          <div class="build-composer-footer">
+            <div class="build-compose-left">
+              <button type="button" class="build-icon-btn" id="composerAddBtn" title="Project options" aria-label="Project options">＋</button>
+              <button type="button" class="build-subtle-btn" id="composeSetupBtn"><span aria-hidden="true">⚙</span> Project setup</button>
+              <button type="button" class="build-subtle-btn" id="composeModelBtn"><span aria-hidden="true">✦</span> <span id="composerModelName">Blorp V3</span></button>
+            </div>
+            <div class="build-compose-right"><span id="promptCounter" class="build-count">0 / 4000</span><button type="button" id="preparePlanBtn" class="build-send" aria-label="Prepare build plan" title="Prepare build plan">↑</button></div>
+          </div>
+        </div>
+        <p class="build-demo-note">Preview only · Build plans are generated locally. No real AI models or agent workers are connected yet.</p>
+      </div>
+    </div>
+    <aside class="build-output-drawer" id="buildOutputDrawer" hidden aria-label="Build output">
+      <div class="build-output-header"><div><p class="build-eyebrow">YOUR PROJECT</p><h2>Build output</h2><small>Planning & agent routing</small></div><button type="button" class="build-icon-btn" id="closeBuildOutput" aria-label="Close build output">✕</button></div>
+      <div class="build-output-body" id="buildOutput" aria-live="polite"><div class="output-empty"><span class="output-icon">✧</span><h3>Nothing built yet</h3><p>Send your first message to prepare a local execution plan. Your specialist agents will be listed here.</p></div></div>
+      <div class="output-actions" id="buildOutputActions" hidden><button type="button" class="btn" id="copyPlanBtn">⎘ Copy</button><button type="button" class="btn" id="exportPlanBtn">↓ Export</button><button type="button" class="btn primary" id="saveWorkflowBtn">＋ Save workflow</button></div>
+    </aside>
+  </div>
+</section>
+<section class="tab" id="workflows">
+  <div class="section-overline"><p class="kicker">BUILD FAST / PIPELINES</p><span class="preview-badge">● LOCAL WORKFLOW DRAFTS</span></div>
+  <div class="heading"><div><h1>Workflow <em>Studio.</em></h1><p class="subtitle">Create repeatable pipelines for research, design, code, and QA.</p></div><button type="button" class="btn primary" id="newWorkflowFromPage">＋ New workflow</button></div>
+  <div class="panel"><div class="panelhead"><div><h2>Saved workflows</h2><p class="subtle" style="margin:7px 0 0">Examples and personal drafts. Nothing runs on a server yet.</p></div><span class="tag" id="workflowTotalTag">2 workflows</span></div><div id="allWorkflowList"></div></div>
+</section>
+
+<section class="tab active" id="account">
+  <div class="v5-page-heading"><div><p class="kicker">YOUR BLORP WORKSPACE</p><h1>Your space to <em>create.</em></h1><p class="subtitle">Projects, membership, credits, and the tools that power your work.</p></div><button type="button" class="btn primary" data-open="builder">✦ Start a build</button></div>
+  <div class="account-hero panel"><div class="account-hello"><div class="account-portrait">b.</div><div><span class="account-eyebrow">WELCOME TO BLORP</span><h2 id="v5Hello">Your creator dashboard</h2><p id="v5AccountLead">Sign in to save your profile on the local development server.</p></div></div><span class="account-plan-pill" id="v5AccountPlan">FREE PLAN</span></div>
+  <div class="v5-metrics"><div class="v5-metric"><span>YOUR PLAN</span><strong id="v5PlanMetric">Free</strong><small>Local membership status</small></div><div class="v5-metric"><span>AVAILABLE CREDITS</span><strong id="v5CreditsMetric">—</strong><small>4M on local signup · No live billing</small></div><div class="v5-metric"><span>MY PROJECTS</span><strong id="v5ProjectsMetric">0</strong><small>Drafts stored in this browser</small></div><div class="v5-metric"><span>BUILD FAST</span><strong id="v5BuildAccess">Locked</strong><small>Agent execution requires paid access</small></div></div>
+  <div class="v5-two-col"><div class="panel"><div class="panelhead"><div><h2>Continue building</h2><p class="subtle" style="margin:7px 0 0">Keep your creative momentum.</p></div><button class="chooser" data-open="projects">All projects ↗</button></div><div id="v5RecentProjects" class="v5-recent"><div class="v5-empty">No projects yet. Start with your first idea.</div></div></div><div class="panel v5-profile-panel"><div class="panelhead"><h2>Account & access</h2><span class="tag">Local foundation</span></div><p class="v5-profile-line"><span>Email</span><strong id="v5ProfileEmail">Not signed in</strong></p><p class="v5-profile-line"><span>Membership</span><strong id="v5ProfilePlan">Free</strong></p><p class="v5-profile-line"><span>Multi-agent runs</span><strong id="v5ProfileRuns">Not connected</strong></p><button class="btn" type="button" data-open="membership">Explore plans →</button><p class="form-hint">Free credits are stored in the local backend. No actual inference is metered yet.</p></div></div>
+</section>
+<section class="tab" id="projects"><div class="v5-page-heading"><div><p class="kicker">YOUR WORK</p><h1>Project <em>Library.</em></h1><p class="subtitle">Find your drafts and continue in the Build Playground.</p></div><button class="btn primary" id="v5NewProject">＋ New project</button></div><div class="panel"><div class="panelhead"><h2>My projects</h2><div class="v5-sync-actions"><button class="btn" type="button" id="v5BackupProjects">↑ Back up</button><button class="btn" type="button" id="v5RestoreProjects">↓ Restore</button></div></div><div id="v5ProjectsList" class="v5-project-list"></div></div><div class="mutedbox">Drafts remain in browser storage. Signed-in users can manually back up and restore them on this local development server. Browser drafts are not isolated between accounts using the same browser; do not store sensitive project data yet.</div></section>
+<section class="tab" id="addons"><div class="v5-page-heading"><div><p class="kicker">EXTEND YOUR WORKSPACE</p><h1>Blorp <em>Add-ons.</em></h1><p class="subtitle">Explore tools, reusable skills, and future MCP integrations—all in one place.</p></div><span class="preview-badge">◉ CONNECTIONS NOT LIVE</span></div>
+ <div class="addons-feature panel"><div><p class="kicker">YOUR TOOLS, YOUR RULES</p><h2>Give your agents superpowers.</h2><p>Find the right tools for research, design, code, and deployment. Set agent permissions before connecting anything.</p></div><span class="addons-orb" aria-hidden="true">✣</span></div>
+ <div class="addons-controls"><div class="addons-tabs" role="group" aria-label="Add-on library section"><button class="selected" data-addontab="discover">Discover</button><button data-addontab="mine">My add-ons</button><button data-addontab="skills">Skills</button></div><input class="search" id="addonSearch" placeholder="Search tools and skills..." aria-label="Search add-ons"/></div>
+ <div id="addonsDiscover"><div class="addons-filter" id="addonFilters"></div><div class="addon-grid" id="addonGrid"></div></div>
+ <div id="addonsMine" hidden><div id="addonInstalled" class="addon-grid"></div><p class="form-hint">These are browser-only configuration preferences. No external account is connected.</p></div>
+ <div id="addonsSkills" hidden><div class="addon-grid" id="skillGrid"></div><p class="form-hint">Skill switches are saved as local preferences; they are not injected into actual models yet.</p></div>
+ <div class="panel under addons-custom"><div><h2>Custom MCP integrations</h2><p class="subtitle" style="margin-top:6px">Bring your own compatible tool server after our secure connector runtime is available.</p></div><button type="button" class="btn" id="customMcpBtn">＋ Register a draft</button></div>
+</section>
+<section class="tab" id="membership"><div class="v5-page-heading"><div><p class="kicker">MEMBERSHIP & CREDITS</p><h1>Plans built for <em>makers.</em></h1><p class="subtitle">Start free. Unlock managed multi-agent execution when our billing service launches.</p></div><span class="account-plan-pill" id="memberCurrentPlan">CURRENT · FREE</span></div>
+ <div class="billing-toolbar"><div class="billing-switch" role="group" aria-label="Billing frequency"><button type="button" data-billing="monthly" class="selected">Monthly</button><button type="button" data-billing="annual">Annual <span>Save 10%</span></button></div><p>USD · No payments enabled in this version</p></div>
+ <div class="pricing-grid">
+  <article class="pricing-card"><span class="pricing-index">START HERE</span><h2>Free</h2><p>Explore Blorp and plan your ideas.</p><div class="pricing-price"><strong>$0</strong><small>/ forever</small></div><ul><li>4,000,000 starter credits</li><li>AI interface preview</li><li>Project drafts and design planning</li><li>Multi-agent execution locked</li></ul><button class="btn" type="button" disabled>Current default plan</button></article>
+  <article class="pricing-card featured"><span class="pricing-index">FOR BUILDERS</span><h2>Builder</h2><p>More power for everyday shipping.</p><div class="pricing-price"><strong id="builderPrice">$20</strong><small>/mo</small></div><p class="billed-yearly" id="builderBilled">$20 billed monthly</p><ul><li>Multi Task access when launched</li><li>Five-hour rolling compute window</li><li>Token allowance: to be set by testing</li><li>Model routing up to eligible tiers</li></ul><button class="btn primary" type="button" id="builderPlanBtn">Preview Builder benefits</button></article>
+  <article class="pricing-card"><span class="pricing-index">FOR STUDIOS</span><h2>Studio</h2><p>High-capacity workflows for teams.</p><div class="pricing-price"><strong id="studioPrice">$50</strong><small>/mo</small></div><p class="billed-yearly" id="studioBilled">$50 billed monthly</p><ul><li>High-capacity build sessions</li><li>Premium model routing priority</li><li>More parallel agent capacity</li><li>Fair-use and security safeguards</li></ul><button class="btn" type="button" id="studioPlanBtn">Preview Studio benefits</button></article>
+ </div>
+ <div class="mutedbox">These are proposed prices, not active subscriptions. Credits and allowances have no monetary value until our real model billing and server-side metering are connected. No plan can be purchased here.</div>
+</section>
+<section class="tab" id="settings"><p class="kicker">WORKSPACE PREFERENCES</p><div class="heading"><div><h1>Blorp <em>Settings.</em></h1><p class="subtitle">Customize the feel of your workspace.</p></div></div><div class="panel preferences-panel">
+  <div class="fx-title"><div><h2>Visual performance</h2><p class="subtle" style="margin:8px 0 0">Choose how much glass and motion Blorp renders. Auto is recommended.</p></div><span class="tag" id="performanceTag">Detecting profile…</span></div>
+  <div class="fx-options" role="group" aria-label="Visual effects quality">
+    <button type="button" class="fx-option is-selected" data-fx="auto" aria-pressed="true"><span>⚡ Auto</span><small>Adapts to your device</small></button>
+    <button type="button" class="fx-option" data-fx="cinematic" aria-pressed="false"><span>✦ Cinematic</span><small>Full glass effects</small></button>
+    <button type="button" class="fx-option" data-fx="balanced" aria-pressed="false"><span>◈ Balanced</span><small>Lightweight glass</small></button>
+    <button type="button" class="fx-option" data-fx="lite" aria-pressed="false"><span>◌ Lite</span><small>Minimal effects</small></button>
+  </div>
+  <div class="fx-reason" id="fxReason" role="status">Choosing a suitable effects profile…</div>
+</div>
+<div class="panel under"><div class="prov"><div class="prov-main"><b>Reduced motion</b><small>Turn off interface transitions and animations</small></div><button class="toggle" id="motionToggle" aria-label="Toggle reduced motion" aria-pressed="false"></button></div><div class="prov"><div class="prov-main"><b>Compact navigation</b><small>Use a smaller sidebar in a future version</small></div><button class="toggle" id="compactToggle" aria-label="Toggle compact navigation" aria-pressed="false"></button></div><div class="prov"><div class="prov-main"><b>Color theme</b><small>Midnight Glass · Dark theme</small></div><span class="tag">V1 concept</span></div></div><div class="mutedbox">Visual effect preferences are saved locally in this browser. The model/provider controls remain a frontend demo until we select and integrate the upstream repository.</div>
+<div class="trust-panel"><span class="trust-icon">🛡</span><div><strong>Windows-friendly release approach</strong><p>Blorp V2 is a standalone HTML design preview, not an EXE installer. The future Windows app should use transparent permissions, clean signed builds and verified distribution. Antivirus settings never need to be disabled.</p></div></div></section>
+</div>
+</main></div>
+
+<dialog id="buildSetupDialog" class="blorp-modal build-dialog" aria-labelledby="buildSetupTitle">
+  <div class="modal-form"><div class="dialog-head"><div><p class="kicker">PROJECT CONTROLS</p><h2 id="buildSetupTitle">Project setup</h2><p class="build-dialog-desc">Select a project type, technology stack, and specialist team before starting.</p></div><button type="button" class="dialog-close" data-close-dialog="buildSetupDialog" aria-label="Close">✕</button></div>
+    <label class="field-label" for="buildType">What are we building?</label><select class="search" id="buildType"><option value="Website">Website / Landing page</option><option value="Dashboard">Business dashboard</option><option value="Full-stack app">Full-stack app</option><option value="API">Backend / API</option></select>
+    <label class="field-label" for="buildStack">Preferred stack</label><select class="search" id="buildStack"><option>React + Vite + Tailwind</option><option>Next.js + Tailwind</option><option>Vanilla HTML / CSS / JS</option><option>Node.js + Express</option><option>Python + FastAPI</option></select>
+    <div class="builder-divider"></div>
+    <div class="panelhead" style="margin-bottom:14px"><h2>Agent team</h2><span id="selectedAgentCount" class="tag">5 selected</span></div>
+    <div id="agentChecklist" class="agent-checklist"></div>
+    <button id="manageBuildAgents" class="btn fill-btn" type="button" data-open="multitask">◇ Customize agents</button>
+    <div class="dialog-actions"><button type="button" class="btn primary" id="saveBuildSetupBtn">Apply settings</button></div>
+  </div>
+</dialog>
+<dialog id="buildModelDialog" class="blorp-modal build-dialog" aria-labelledby="buildModelTitle">
+ <div class="modal-form"><div class="dialog-head"><div><p class="kicker">COMPUTE PROFILE</p><h2 id="buildModelTitle">Choose a Blorp model</h2><p class="build-dialog-desc">Five planned capability tiers. These are UI concepts until real models are connected.</p></div><button type="button" class="dialog-close" data-close-dialog="buildModelDialog" aria-label="Close">✕</button></div>
+ <div id="buildModelOptions" class="build-model-options"></div>
+ <p class="build-model-notice">Higher tiers are designed to use more compute. Selecting one here does not start inference or charge credits.</p>
+ </div>
+</dialog>
+<dialog id="buildProjectDialog" class="blorp-modal build-dialog" aria-labelledby="buildProjectTitle">
+ <div class="modal-form"><div class="dialog-head"><div><p class="kicker">YOUR BUILDS</p><h2 id="buildProjectTitle">Projects</h2><p class="build-dialog-desc">Switch projects or start another idea without losing your previous preview chat.</p></div><button type="button" class="dialog-close" data-close-dialog="buildProjectDialog" aria-label="Close">✕</button></div>
+ <div class="build-project-list" id="buildProjectList"></div>
+ <form id="createBuildProjectForm" class="build-new-project"><label class="field-label" for="newBuildProjectName">New project name</label><div class="build-project-entry"><input class="search" id="newBuildProjectName" required maxlength="42" placeholder="e.g. My portfolio"/><button type="submit" class="btn primary">＋ Create</button></div></form>
+ </div>
+</dialog>
+
+<dialog id="agentDialog" class="blorp-modal" aria-labelledby="agentDialogTitle"><form id="agentForm" class="modal-form"><div class="dialog-head"><div><p class="kicker">CUSTOM AGENT</p><h2 id="agentDialogTitle">Add new agent</h2></div><button type="button" class="dialog-close" data-close-dialog="agentDialog" aria-label="Close">✕</button></div><input id="agentEditId" type="hidden"/><label class="field-label" for="agentName">Agent name</label><input class="search" id="agentName" required maxlength="45" placeholder="e.g. Frontend Specialist"/><label class="field-label" for="agentRole">Responsibility</label><select class="search" id="agentRole"><option>Research</option><option>Design</option><option>Development</option><option>Testing</option><option>Orchestration</option><option>Content</option><option>DevOps</option><option>Custom</option></select><label class="field-label" for="agentModel">Preferred model</label><select class="search" id="agentModel"><option>Auto-select (not connected)</option><option>Gemini / Google</option><option>Claude / Anthropic</option><option>GPT / OpenAI</option><option>Llama / Groq</option><option>OpenRouter model</option><option>Local model</option></select><label class="field-label" for="agentInstructions">Agent instructions</label><textarea class="search modal-textarea" id="agentInstructions" maxlength="400" rows="3" placeholder="Describe this agent's responsibilities and boundaries."></textarea><div class="dialog-actions"><button type="button" class="btn" data-close-dialog="agentDialog">Cancel</button><button type="submit" class="btn primary">Save agent</button></div><p class="form-hint">Saved only in this browser. Model selection does not connect an API.</p></form></dialog>
+<dialog id="workflowDialog" class="blorp-modal" aria-labelledby="workflowDialogTitle"><form id="workflowForm" class="modal-form"><div class="dialog-head"><div><p class="kicker">BUILD FAST PIPELINE</p><h2 id="workflowDialogTitle">Create workflow</h2></div><button type="button" class="dialog-close" data-close-dialog="workflowDialog" aria-label="Close">✕</button></div><label class="field-label" for="workflowName">Workflow name</label><input class="search" id="workflowName" maxlength="65" required placeholder="e.g. Production website build"/><label class="field-label" for="workflowDescription">Description</label><input class="search" id="workflowDescription" maxlength="120" placeholder="One sentence on what this workflow does"/><label class="field-label">Route through these agents (top to bottom)</label><div id="workflowAgentChecks" class="dialog-checkboxes"></div><div class="dialog-actions"><button type="button" class="btn" data-close-dialog="workflowDialog">Cancel</button><button type="submit" class="btn primary">Create draft</button></div><p class="form-hint">This saves a workflow definition; it does not start agent execution.</p></form></dialog>
+<dialog id="authDialog" class="blorp-modal auth-modal" aria-labelledby="authTitle"><form id="authForm" class="modal-form"><div class="dialog-head"><div><p class="kicker">YOUR BLORP ACCOUNT</p><h2 id="authTitle">Sign in</h2></div><button type="button" class="dialog-close" data-close-dialog="authDialog" aria-label="Close">✕</button></div><div class="auth-switch" role="group" aria-label="Account action"><button type="button" class="selected" id="authSignInTab" aria-pressed="true">Sign in</button><button type="button" id="authSignUpTab" aria-pressed="false">Sign up</button></div><div id="authNameWrap" hidden><label class="field-label" for="authName">Display name</label><input class="search" id="authName" maxlength="55" placeholder="Your name" autocomplete="name"/></div><label class="field-label" for="authEmail">Email address</label><input type="email" class="search" id="authEmail" required placeholder="you@example.com" autocomplete="email"/><label class="field-label" for="authPassword">Password</label><input type="password" class="search" id="authPassword" required minlength="6" autocomplete="current-password" placeholder="Use a demo-only password"/><p class="form-hint warn-hint">Local development sign-in uses the bundled Python + SQLite server. Not yet production hardened.</p><button class="btn primary fill-btn" id="authSubmit" type="submit">Sign in</button><p class="auth-bottom">Local account data is stored in SQLite on your own PC. Public launch requires a production auth and security review.</p></form></dialog>
+<dialog id="addonDialog" class="blorp-modal v5-dialog"><form id="addonForm" class="modal-form"><div class="dialog-head"><div><p class="kicker">ADD-ON CONFIGURATION</p><h2 id="addonDialogTitle">Set permissions</h2><p class="build-dialog-desc" id="addonDialogDesc">Preview-only configuration. No external service is connected.</p></div><button type="button" class="dialog-close" data-close-dialog="addonDialog">✕</button></div><input type="hidden" id="addonId"/><label class="field-label">Which agents may request this tool?</label><div class="v5-check-row"><label><input type="checkbox" name="addonRole" value="Research"/> Research</label><label><input type="checkbox" name="addonRole" value="Design"/> Design</label><label><input type="checkbox" name="addonRole" value="Builder"/> Builder</label><label><input type="checkbox" name="addonRole" value="QA"/> QA</label></div><label class="v5-approve"><input type="checkbox" id="addonAskBefore" checked/> Require approval for sensitive actions</label><p class="form-hint">This saves a browser preference only. Real integrations will require OAuth or verified MCP credentials and server-side authorization.</p><div class="dialog-actions"><button type="button" class="btn" id="addonDisable">Disable</button><button type="submit" class="btn primary">Save preview settings</button></div></form></dialog>
+<dialog id="mcpDialog" class="blorp-modal v5-dialog"><form id="mcpForm" class="modal-form"><div class="dialog-head"><div><p class="kicker">CUSTOM INTEGRATION DRAFT</p><h2>MCP server</h2></div><button type="button" class="dialog-close" data-close-dialog="mcpDialog">✕</button></div><label class="field-label" for="mcpName">Display name</label><input id="mcpName" class="search" required maxlength="55" placeholder="My tools"/><label class="field-label" for="mcpAddress">Server URL (metadata only)</label><input id="mcpAddress" class="search" type="url" required maxlength="300" placeholder="https://example.com/mcp"/><p class="form-hint">URLs are not contacted. Never enter secrets or tokens here.</p><button class="btn primary fill-btn" type="submit">Save draft</button></form></dialog>
+<div class="toast" id="toast" role="status"></div>
+<script>
+
+const models=[{name:'Gemini Flash',provider:'Google',cap:'Multimodal',lat:'~0.8s',icon:'✦'},{name:'Llama Instruct',provider:'Groq',cap:'Fast chat',lat:'~0.4s',icon:'◇'},{name:'Codestral',provider:'Mistral',cap:'Coding',lat:'~1.1s',icon:'⌘'},{name:'Qwen Coder',provider:'OpenRouter',cap:'Coding',lat:'~1.0s',icon:'◈'},{name:'DeepSeek',provider:'NVIDIA',cap:'Reasoning',lat:'~1.4s',icon:'△'},{name:'Command R',provider:'Cohere',cap:'Retrieval',lat:'~1.2s',icon:'▧'}];
+const providers=[{name:'Google AI',subtitle:'Gemini family',letter:'G',enabled:true,load:68},{name:'Groq',subtitle:'Low-latency models',letter:'ϟ',enabled:true,load:41},{name:'Mistral',subtitle:'Open model family',letter:'M',enabled:true,load:55},{name:'OpenRouter',subtitle:'Multiple model routes',letter:'O',enabled:true,load:38},{name:'NVIDIA',subtitle:'Hosted inference',letter:'N',enabled:true,load:23},{name:'Cohere',subtitle:'Command models',letter:'C',enabled:true,load:62},{name:'Cerebras',subtitle:'High-speed inference',letter:'◎',enabled:false,load:0},{name:'Hugging Face',subtitle:'Community models',letter:'H',enabled:false,load:0}];
+let toastTimeout;function showToast(s){const t=document.querySelector('#toast');t.textContent=s;t.classList.add('visible');clearTimeout(toastTimeout);toastTimeout=setTimeout(()=>t.classList.remove('visible'),2800)}
+function changeView(id){document.querySelectorAll('.tab').forEach(el=>el.classList.toggle('active',el.id===id));document.querySelectorAll('[data-view]').forEach(el=>el.classList.toggle('active',el.dataset.view===id));const labels={account:'Dashboard',projects:'Projects',addons:'Add-ons',membership:'Membership',overview:'Overview',models:'Model Explorer',playground:'Playground',providers:'Providers',keys:'API Keys',analytics:'Analytics',multitask:'Multi Task',builder:'Build Playground',workflows:'Workflows',settings:'Settings'};document.querySelector('#crumb').textContent=labels[id];document.querySelector('#sidebar').classList.remove('open');document.querySelector('#overlay').classList.remove('open');scrollTo({top:0,behavior:'smooth'})}
+document.querySelectorAll('[data-view],[data-open]').forEach(el=>el.addEventListener('click',()=>changeView(el.dataset.view||el.dataset.open)));
+function modelRows(arr){return arr.map(x=>`<tr><td><span class="modelicon">${x.icon}</span><b>${x.name}</b></td><td>${x.provider}</td><td>${x.cap}</td><td class="monospace">${x.lat}</td><td><span class="status">● Sample</span></td></tr>`).join('')}
+function renderModels(filter=''){document.querySelector('#allModels').innerHTML=modelRows(models.filter(m=>(m.name+' '+m.provider+' '+m.cap).toLowerCase().includes(filter.toLowerCase())))||'<tr><td colspan="5">No matching models</td></tr>';document.querySelector('#overviewModels').innerHTML=modelRows(models.slice(0,4))}renderModels();document.querySelector('#modelSearch').addEventListener('input',e=>renderModels(e.target.value));
+function renderProviders(){document.querySelector('#overviewProviders').innerHTML=providers.slice(0,4).map(p=>`<div class="prov"><div class="prov-icon">${p.letter}</div><div class="prov-main"><b>${p.name}</b><small>${p.subtitle}</small><div class="usagebar"><div style="width:${p.load}%"></div></div></div><span class="status ${p.enabled?'':'off'}">● ${p.enabled?'Demo':'Off'}</span></div>`).join('');document.querySelector('#providerList').innerHTML=providers.map((p,i)=>`<div class="prov"><div class="prov-icon">${p.letter}</div><div class="prov-main"><b>${p.name}</b><small>${p.subtitle} · ${p.enabled?'Enabled in preview':'Disabled in preview'}</small></div><button class="toggle ${p.enabled?'on':''}" data-toggleprovider="${i}" aria-label="Toggle ${p.name}" aria-pressed="${p.enabled}"></button></div>`).join('');document.querySelectorAll('[data-toggleprovider]').forEach(el=>el.addEventListener('click',()=>{let i=Number(el.dataset.toggleprovider);providers[i].enabled=!providers[i].enabled;renderProviders();showToast(providers[i].name+' preview status updated')}))}renderProviders();
+function submitPrompt(){const text=document.querySelector('#prompt').value.trim();if(!text)return;const wrap=document.querySelector('#messages');const u=document.createElement('div');u.className='bubble user';u.textContent=text;wrap.appendChild(u);document.querySelector('#prompt').value='';const ai=document.createElement('div');ai.className='bubble';ai.textContent='This is a visual demonstration of Blorp. Once we connect the original FreeLLM backend, this area will stream real model responses and show routing details.';wrap.appendChild(ai);wrap.scrollTop=wrap.scrollHeight}document.querySelector('#send').addEventListener('click',submitPrompt);document.querySelector('#prompt').addEventListener('keydown',e=>{if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();submitPrompt()}});document.querySelector('#clearChat').addEventListener('click',()=>{document.querySelector('#messages').innerHTML='<div class="bubble">Fresh conversation. What would you like to try?</div>';showToast('Preview conversation cleared')});
+document.querySelector('#endpointBtn').addEventListener('click',()=>{showToast('Demo only — endpoint becomes available after backend setup')});document.querySelector('#notice').addEventListener('click',()=>showToast('Blorp V1 — interactive design preview, not a connected application'));document.querySelector('#addProvider').addEventListener('click',()=>showToast('Connect provider workflow in the next implementation phase'));document.querySelector('#addKey').addEventListener('click',()=>showToast('API keys are intentionally disabled in the demo for safety'));
+document.querySelector('#hamburger').addEventListener('click',()=>{document.querySelector('#sidebar').classList.add('open');document.querySelector('#overlay').classList.add('open')});document.querySelector('#overlay').addEventListener('click',()=>{document.querySelector('#sidebar').classList.remove('open');document.querySelector('#overlay').classList.remove('open')});document.querySelector('#motionToggle').addEventListener('click',e=>{const on=e.currentTarget.classList.toggle('on');e.currentTarget.setAttribute('aria-pressed',on);let el=document.querySelector('#reduced-motion');if(on){if(!el){el=document.createElement('style');el.id='reduced-motion';el.textContent='*,*:before,*:after{animation:none!important;transition:none!important;scroll-behavior:auto!important}';document.head.appendChild(el)}}else if(el)el.remove()});document.querySelector('#compactToggle').addEventListener('click',()=>showToast('Compact layout will be available after component integration'));
+
+
+/* Build Fast V3 — isolated client-side demo state; no auth, AI model, payment, or runtime service is connected. */
+const defaultAgents = [
+  {id:'research',name:'Research Agent',role:'Research',model:'Auto-select (not connected)',instructions:'Investigate requirements and prepare concise specifications.',symbol:'⌕'},
+  {id:'design',name:'Design Agent',role:'Design',model:'Auto-select (not connected)',instructions:'Create UI direction, layout decisions, and component specifications.',symbol:'✎'},
+  {id:'builder',name:'Builder Agent',role:'Development',model:'Auto-select (not connected)',instructions:'Implement clean, maintainable code and integration boundaries.',symbol:'⌘'},
+  {id:'qa',name:'QA Agent',role:'Testing',model:'Auto-select (not connected)',instructions:'Check accessibility, responsive behavior, tests, and regressions.',symbol:'✓'},
+  {id:'router',name:'Router Agent',role:'Orchestration',model:'Auto-select (not connected)',instructions:'Coordinate tasks and route work to the appropriate specialist.',symbol:'⌁'}
+];
+const defaultWorkflows = [
+  {id:'example-landing',name:'Landing page build',description:'Plan, design, implement, and validate a landing page.',agents:['research','design','builder','qa'],isExample:true},
+  {id:'example-api',name:'API integration',description:'Coordinate implementation and API checks.',agents:['router','builder','qa'],isExample:true}
+];
+const safeLoad = (key, fallback) => {try {const v=JSON.parse(localStorage.getItem(key));return Array.isArray(v)?v:fallback;}catch(e){return fallback;}};
+let blorpAgents=safeLoad('blorp-v3-agents',defaultAgents);
+let blorpWorkflows=safeLoad('blorp-v3-workflows',defaultWorkflows);
+let latestBuildPlan=null;
+let authMode='signin',previewAccount=null;
+let selectedBuilderIds=new Set(blorpAgents.map(a=>a.id));
+const esc = (value) => String(value??'').replace(/[&<>"']/g,ch=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch]));
+const keyId=()=> 'local-'+(typeof crypto!=='undefined' && crypto.randomUUID ? crypto.randomUUID() : String(Date.now())+'-'+Math.random().toString(36).slice(2));
+const persistBuild = () => {try {localStorage.setItem('blorp-v3-agents',JSON.stringify(blorpAgents));localStorage.setItem('blorp-v3-workflows',JSON.stringify(blorpWorkflows));}catch(e){showToast('Local storage unavailable; changes last for this session only');}};
+const agentSymbol=(role)=>({Research:'⌕',Design:'✎',Development:'⌘',Testing:'✓',Orchestration:'⌁',Content:'✧',DevOps:'⚙',Custom:'◇'}[role]||'◇');
+const describeRole=(role)=>({Research:'Requirements & discovery',Design:'UI/UX and visual concepts',Development:'Code & implementation',Testing:'Tests and quality assurance',Orchestration:'Delegation and routing',Content:'Content and copywriting',DevOps:'Build, release and deployment',Custom:'Custom specialist work'}[role]||'Specialist role');
+const agentById = (id) => blorpAgents.find(a=>a.id===id);
+function renderAgents(){
+ document.getElementById('agentCount').textContent=String(blorpAgents.length).padStart(2,'0');
+ document.getElementById('workflowCount').textContent=String(blorpWorkflows.length).padStart(2,'0');
+ const holder=document.getElementById('agentGrid');
+ holder.innerHTML=blorpAgents.map(a=>`<article class="agent-card"><div class="agent-card-header"><div class="agent-symbol">${esc(agentSymbol(a.role))}</div><div class="agent-card-header-text"><h3>${esc(a.name)}</h3><div class="role-description">${esc(describeRole(a.role))}</div></div><span class="agent-state">● Ready</span></div><div class="agent-facts"><span>◇ ${esc(a.role)}</span><span>▣ ${esc(a.model)}</span></div><div class="agent-guidance">${esc(a.instructions||'No instructions set. Edit to customize this specialist.')}</div><div class="agent-actions"><button type="button" class="btn primary" data-assign-agent="${esc(a.id)}">Assign ↗</button><button type="button" class="btn" data-edit-agent="${esc(a.id)}">Edit</button><button type="button" class="btn" data-remove-agent="${esc(a.id)}" aria-label="Remove ${esc(a.name)}">✕</button></div></article>`).join('')+`<button type="button" class="agent-add" id="addAgentTile"><span class="plus-icon">＋</span><b>Add new agent</b><small>Define a specialized job for your next project.</small></button>`;
+ holder.querySelector('#addAgentTile').addEventListener('click',()=>openAgentDialog());
+ holder.querySelectorAll('[data-assign-agent]').forEach(el=>el.addEventListener('click',()=>{selectedBuilderIds = new Set([el.dataset.assignAgent]);renderAgentChecks();changeView('builder');document.getElementById('buildPrompt').focus();showToast('Agent assigned to the Build Playground plan')}));
+ holder.querySelectorAll('[data-edit-agent]').forEach(el=>el.addEventListener('click',()=>openAgentDialog(el.dataset.editAgent)));
+ holder.querySelectorAll('[data-remove-agent]').forEach(el=>el.addEventListener('click',()=>{const agent=agentById(el.dataset.removeAgent);if(!agent||!confirm('Remove '+agent.name+' from your local agent configurations?'))return;blorpAgents=blorpAgents.filter(a=>a.id!==agent.id);selectedBuilderIds.delete(agent.id);blorpWorkflows=blorpWorkflows.map(w=>({...w,agents:w.agents.filter(id=>id!==agent.id)}));persistBuild();renderBuildFast();showToast(agent.name+' removed')}));
+}
+function dialogShow(id){const el=document.getElementById(id);if(typeof el.showModal==='function')el.showModal();else el.setAttribute('open','');}
+function dialogHide(id){const el=document.getElementById(id);if(typeof el.close==='function')el.close();else el.removeAttribute('open');}
+function openAgentDialog(id){
+ const form=document.getElementById('agentForm');form.reset();const a=id?agentById(id):null;
+ document.getElementById('agentDialogTitle').textContent=a?'Edit agent':'Add new agent';document.getElementById('agentEditId').value=a?.id||'';
+ if(a){document.getElementById('agentName').value=a.name;document.getElementById('agentRole').value=a.role;document.getElementById('agentModel').value=a.model;document.getElementById('agentInstructions').value=a.instructions||'';}
+ dialogShow('agentDialog');document.getElementById('agentName').focus();
+}
+document.getElementById('newAgentBtn').addEventListener('click',()=>openAgentDialog());
+document.getElementById('agentForm').addEventListener('submit',e=>{
+ e.preventDefault();const id=document.getElementById('agentEditId').value;
+ const agent={id:id||keyId(),name:document.getElementById('agentName').value.trim(),role:document.getElementById('agentRole').value,model:document.getElementById('agentModel').value,instructions:document.getElementById('agentInstructions').value.trim()};
+ if(!agent.name)return;
+ if(id){blorpAgents=blorpAgents.map(a=>a.id===id?agent:a);}else{blorpAgents.push(agent);selectedBuilderIds.add(agent.id);}
+ persistBuild();renderBuildFast();dialogHide('agentDialog');showToast('Agent saved to this browser');
+});
+function renderAgentChecks(){
+ const box=document.getElementById('agentChecklist');selectedBuilderIds=new Set([...selectedBuilderIds].filter(id=>agentById(id)));
+ box.innerHTML=blorpAgents.length?blorpAgents.map(a=>`<label class="agent-check"><input type="checkbox" data-agent-check="${esc(a.id)}" ${selectedBuilderIds.has(a.id)?'checked':''}/><span>${esc(a.name)}</span><small>${esc(a.role)}</small></label>`).join(''):'<p class="subtle">Create an agent to build a workflow.</p>';
+ box.querySelectorAll('[data-agent-check]').forEach(el=>el.addEventListener('change',()=>{if(el.checked)selectedBuilderIds.add(el.dataset.agentCheck);else selectedBuilderIds.delete(el.dataset.agentCheck);updateSelectedAgentCount();}));
+ updateSelectedAgentCount();
+}
+function updateSelectedAgentCount(){document.getElementById('selectedAgentCount').textContent=selectedBuilderIds.size+' selected';}
+function workflowRow(w,showDelete){
+ const chips=w.agents.map(id=>agentById(id)).filter(Boolean).map(a=>`<span class="flow-chip">${esc(a.name)}</span>`).join('<span class="flow-arrow">→</span>')||'<span class="subtle">No agents assigned</span>';
+ return `<div class="flow-row"><div class="flow-info"><strong>${esc(w.name)}</strong><small>${esc(w.description||'No description')}</small></div><div class="flow-chain">${chips}</div><div class="flow-actions"><span class="flow-status">${w.isExample?'● Example':'● Draft'}</span><button class="btn" type="button" data-use-workflow="${esc(w.id)}">Use ↗</button>${showDelete&&!w.isExample?`<button type="button" class="flow-delete" data-delete-workflow="${esc(w.id)}" aria-label="Delete ${esc(w.name)}">Delete</button>`:''}</div></div>`;
+}
+function renderWorkflows(){
+ const brief=blorpWorkflows.slice(0,3);document.getElementById('multiWorkflowList').innerHTML=brief.length?brief.map(w=>workflowRow(w,false)).join(''):'<div class="workflow-empty">No workflows yet. Create one above.</div>';
+ document.getElementById('allWorkflowList').innerHTML=blorpWorkflows.length?blorpWorkflows.map(w=>workflowRow(w,true)).join(''):'<div class="workflow-empty">No workflows yet. Create a pipeline to get started.</div>';
+ document.getElementById('workflowTotalTag').textContent=blorpWorkflows.length+' workflows';
+ document.querySelectorAll('[data-use-workflow]').forEach(el=>el.addEventListener('click',()=>{const w=blorpWorkflows.find(w=>w.id===el.dataset.useWorkflow);if(!w)return;selectedBuilderIds=new Set(w.agents.filter(id=>agentById(id)));renderAgentChecks();changeView('builder');showToast(w.name+' loaded into Build Playground')}));
+ document.querySelectorAll('[data-delete-workflow]').forEach(el=>el.addEventListener('click',()=>{const w=blorpWorkflows.find(w=>w.id===el.dataset.deleteWorkflow);if(!w||w.isExample||!confirm('Delete your workflow draft "'+w.name+'"?'))return;blorpWorkflows=blorpWorkflows.filter(t=>t.id!==w.id);persistBuild();renderBuildFast();showToast('Workflow draft deleted')}));
+}
+function renderBuildFast(){renderAgents();renderAgentChecks();renderWorkflows();}
+renderBuildFast();
+const setupWorkflowModal=()=>{
+ document.getElementById('workflowForm').reset();
+ document.getElementById('workflowAgentChecks').innerHTML=blorpAgents.length?blorpAgents.map(a=>`<label><input type="checkbox" data-workflow-agent="${esc(a.id)}" ${selectedBuilderIds.has(a.id)?'checked':''}/> ${esc(a.name)} <small style="color:#807b99">· ${esc(a.role)}</small></label>`).join(''):'<p class="subtle">Add an agent before creating a workflow.</p>';
+ dialogShow('workflowDialog');
+};
+['newWorkflowBtn','newWorkflowFromPage'].forEach(id=>document.getElementById(id).addEventListener('click',setupWorkflowModal));
+document.getElementById('workflowForm').addEventListener('submit',e=>{
+ e.preventDefault();const ids=[...document.querySelectorAll('#workflowAgentChecks input:checked')].map(el=>el.dataset.workflowAgent);
+ if(!ids.length){showToast('Select at least one agent');return;}
+ blorpWorkflows.push({id:keyId(),name:document.getElementById('workflowName').value.trim(),description:document.getElementById('workflowDescription').value.trim()||'Custom build pipeline',agents:ids,isExample:false});persistBuild();renderBuildFast();dialogHide('workflowDialog');changeView('workflows');showToast('Workflow draft created');
+});
+document.querySelectorAll('[data-close-dialog]').forEach(el=>el.addEventListener('click',()=>dialogHide(el.dataset.closeDialog)));
+document.querySelectorAll('.blorp-modal').forEach(el=>el.addEventListener('click',e=>{if(e.target===el)dialogHide(el.id);}));
+
+const templateProjects={landing:{type:'Website',stack:'React + Vite + Tailwind',brief:'Build an elegant responsive SaaS landing page with clear product storytelling, a smooth hero reveal, feature sections, pricing presentation, FAQ, accessible navigation, and a strong call to action.'},dashboard:{type:'Dashboard',stack:'React + Vite + Tailwind',brief:'Build a premium admin dashboard with role-based navigation, analytics cards, searchable data tables, clear status indicators, responsive layouts, and accessible form states.'},api:{type:'API',stack:'Node.js + Express',brief:'Design and implement a secure REST API with account authentication, role checks, input validation, CRUD endpoints, tests, configuration management, and clear setup documentation.'}};
+document.querySelectorAll('[data-template]').forEach(el=>el.addEventListener('click',()=>{const t=templateProjects[el.dataset.template];document.getElementById('buildType').value=t.type;document.getElementById('buildStack').value=t.stack;document.getElementById('buildPrompt').value=t.brief;updatePromptCounter();document.getElementById('buildPrompt').focus();showToast('Starting template loaded')}));
+function updatePromptCounter(){const v=document.getElementById('buildPrompt').value;document.getElementById('promptCounter').textContent=v.length+' / 4000';}
+document.getElementById('buildPrompt').addEventListener('input',updatePromptCounter);
+const rolePlan={Research:'Capture requirements, dependencies, and acceptance criteria.',Design:'Propose the page structure, components, responsive behavior, and visual system.',Development:'Scaffold the application and implement reviewed features in small, testable steps.',Testing:'Run functional, accessibility, performance, and responsive QA checks.',Orchestration:'Break work into bounded tasks, set handoff order, and track progress.',Content:'Draft concise, purposeful copy and improve the information hierarchy.',DevOps:'Prepare reproducible builds, environment configuration, deployment, and rollback.',Custom:'Deliver the scoped work outlined in the agent instructions.'};
+function planAsText(p){return `BLORP BUILD FAST — LOCAL PREVIEW PLAN\n\nProject: ${p.type}\nStack: ${p.stack}\n\nBrief:\n${p.brief}\n\nAgent pipeline:\n${p.steps.map((step,i)=>`${i+1}. ${step.name} (${step.role}) — ${step.task}`).join('\n')}\n\nHandoff checks:\n- Review scope before implementation\n- Validate output and tests before release\n- Do not run agent code without approval and sandboxing\n\nPreview only. No agents were executed.`;}
+function prepareBuildPlan(){
+ const brief=document.getElementById('buildPrompt').value.trim();const type=document.getElementById('buildType').value;const stack=document.getElementById('buildStack').value;
+ const agents=blorpAgents.filter(a=>selectedBuilderIds.has(a.id));
+ if(!brief){document.getElementById('buildPrompt').focus();showToast('Write a brief to plan your build');return;}
+ if(!agents.length){showToast('Select at least one agent to continue');return;}
+ latestBuildPlan={type,stack,brief,createdAt:new Date().toISOString(),steps:agents.map(a=>({agentId:a.id,name:a.name,role:a.role,task:a.instructions||rolePlan[a.role]||rolePlan.Custom})),preview:true};
+ document.getElementById('buildOutput').innerHTML=`<div class="out-heading"><strong>${esc(type)}</strong> · ${esc(stack)}<br/><span style="color:#89829f">${agents.length} specialist${agents.length===1?'':'s'} assigned · Demo plan</span></div>`+latestBuildPlan.steps.map((step,i)=>`<div class="out-item"><span class="out-num">${i+1}</span><div><b>${esc(step.name)}</b><p>${esc(step.task)}</p></div></div>`).join('')+'<p class="form-hint">Planning only. Real code generation needs a configured agent backend.</p>';
+ document.getElementById('buildOutputActions').hidden=false;showToast('Build plan prepared locally');
+}
+document.getElementById('preparePlanBtn').addEventListener('click',prepareBuildPlan);
+document.getElementById('copyPlanBtn').addEventListener('click',async()=>{
+ if(!latestBuildPlan)return;const content=planAsText(latestBuildPlan);
+ try{await navigator.clipboard.writeText(content);showToast('Plan copied');}catch(e){showToast('Clipboard blocked by browser: use Export JSON');}
+});
+document.getElementById('exportPlanBtn').addEventListener('click',()=>{
+ if(!latestBuildPlan)return;const blob=new Blob([JSON.stringify(latestBuildPlan,null,2)],{type:'application/json'});
+ const url=URL.createObjectURL(blob);const a=document.createElement('a');a.href=url;a.download='blorp-build-plan.json';document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),1000);showToast('Build plan exported as JSON');
+});
+document.getElementById('saveWorkflowBtn').addEventListener('click',()=>{
+ if(!latestBuildPlan)return;
+ blorpWorkflows.push({id:keyId(),name:latestBuildPlan.type+' build · '+new Date().toLocaleDateString(),description:latestBuildPlan.brief.slice(0,115),agents:latestBuildPlan.steps.map(step=>step.agentId),isExample:false});persistBuild();renderBuildFast();changeView('workflows');showToast('Build plan saved as workflow draft');
+});
+
+// Auth is a clearly labelled UI-only preview. Password input is never persisted or submitted.
+function setAuthMode(next){authMode=next;const isSignUp=next==='signup';document.getElementById('authTitle').textContent=isSignUp?'Create an account':'Sign in';document.getElementById('authNameWrap').hidden=!isSignUp;document.getElementById('authName').required=isSignUp;document.getElementById('authPassword').autocomplete=isSignUp?'new-password':'current-password';document.getElementById('authSignInTab').classList.toggle('selected',!isSignUp);document.getElementById('authSignUpTab').classList.toggle('selected',isSignUp);document.getElementById('authSignInTab').setAttribute('aria-pressed',String(!isSignUp));document.getElementById('authSignUpTab').setAttribute('aria-pressed',String(isSignUp));document.getElementById('authSubmit').textContent=isSignUp?'Sign up':'Sign in';}
+function openAuth(mode){document.getElementById('authForm').reset();setAuthMode(mode);dialogShow('authDialog');document.getElementById('authEmail').focus();}
+document.getElementById('signInBtn').addEventListener('click',()=>openAuth('signin'));
+document.getElementById('signUpBtn').addEventListener('click',()=>openAuth('signup'));
+document.getElementById('authSignInTab').addEventListener('click',()=>setAuthMode('signin'));
+document.getElementById('authSignUpTab').addEventListener('click',()=>setAuthMode('signup'));
+function renderPreviewAuth(){document.getElementById('guestAuth').hidden=!!previewAccount;document.getElementById('demoAuth').hidden=!previewAccount;if(previewAccount){document.getElementById('accountEmail').textContent=previewAccount.email;document.getElementById('accountAvatar').textContent=previewAccount.name.slice(0,1).toUpperCase()||'B';}}
+document.getElementById('authForm').addEventListener('submit',async e=>{
+ e.preventDefault();const email=document.getElementById('authEmail').value.trim();const password=document.getElementById('authPassword').value;
+ const name=authMode==='signup'?document.getElementById('authName').value.trim():'';
+ if(!email||!password)return;
+ if(location.protocol==='file:'){showToast('Start the Blorp local server to use real sign-in');return;}
+ const submit=document.getElementById('authSubmit');submit.disabled=true;submit.textContent='Checking account…';
+ try{const r=await fetch('/api/auth/'+(authMode==='signup'?'signup':'signin'),{method:'POST',credentials:'same-origin',headers:{'Content-Type':'application/json'},body:JSON.stringify({email,password,name})});const body=await r.json();if(!r.ok)throw Error(body.error||'Sign in failed');previewAccount=body.user;renderPreviewAuth();dialogHide('authDialog');document.getElementById('authPassword').value='';window.dispatchEvent(new CustomEvent('blorp:authchange',{detail:body.user}));showToast('Signed in to local Blorp');}catch(err){showToast(err.message)}finally{submit.disabled=false;submit.textContent=authMode==='signup'?'Sign up':'Sign in'}
+});
+document.getElementById('signOutBtn').addEventListener('click',async()=>{try{await fetch('/api/auth/signout',{method:'POST',credentials:'same-origin',headers:{'Content-Type':'application/json'},body:'{}'});}catch(e){}previewAccount=null;renderPreviewAuth();window.dispatchEvent(new CustomEvent('blorp:authchange',{detail:null}));showToast('Signed out');});
+renderPreviewAuth();
+
+/* Auto visual quality is a heuristic, not a hardware benchmark. */
+(function initVisualQuality(){
+  const buttons=Array.from(document.querySelectorAll('[data-fx]'));
+  const label=document.getElementById('visualLabel');
+  const tag=document.getElementById('performanceTag');
+  const explanation=document.getElementById('fxReason');
+  const media=window.matchMedia('(prefers-reduced-motion: reduce)');
+  const modes={cinematic:'Cinematic',balanced:'Balanced',lite:'Lite'};
+  function computeAuto(){
+    const threads=Number(navigator.hardwareConcurrency)||0;
+    const memory=Number(navigator.deviceMemory)||0;
+    const saveData=!!(navigator.connection&&navigator.connection.saveData);
+    const limited=media.matches||saveData||(threads&&threads<=4)||(memory&&memory<=4)||window.innerWidth<800;
+    return limited?'lite':'balanced';
+  }
+  let preference='auto';
+  try {const saved=localStorage.getItem('blorp-v2-fx');if(['auto','cinematic','balanced','lite'].includes(saved))preference=saved;}catch(e){}
+  function applyEffects(){
+    const effective=preference==='auto'?computeAuto():preference;
+    document.body.classList.remove('fx-cinematic','fx-balanced','fx-lite');
+    document.body.classList.add('fx-'+effective);
+    buttons.forEach(button=>{const chosen=button.dataset.fx===preference;button.classList.toggle('is-selected',chosen);button.setAttribute('aria-pressed',String(chosen));});
+    label.textContent=preference==='auto'?'Auto · '+modes[effective]:modes[effective];
+    tag.textContent=modes[effective]+' effects';
+    explanation.textContent=preference==='auto'
+      ?'Auto is using '+modes[effective].toLowerCase()+' effects based on device and display hints. This is an estimate, not a performance benchmark.'
+      :modes[effective]+' visuals selected manually. You can switch back to Auto at any time.';
+  }
+  buttons.forEach(button=>button.addEventListener('click',()=>{
+    preference=button.dataset.fx;
+    try{localStorage.setItem('blorp-v2-fx',preference);}catch(e){}
+    applyEffects();
+  }));
+  if(media.addEventListener)media.addEventListener('change',()=>{if(preference==='auto')applyEffects()});
+  let wasSmall=window.innerWidth<800;window.addEventListener('resize',()=>{const isSmall=window.innerWidth<800;if(preference==='auto'&&isSmall!==wasSmall)applyEffects();wasSmall=isSmall;});
+  applyEffects();
+})();
+
+
+
+/* Blorp V4.1 chat-first UI controls. These customize the existing local planner, not AI inference. */
+(function initChatFirstBuilder(){
+ const ids=id=>document.getElementById(id);
+ const projectStorage='blorp-v41-projects';
+ const modelStorage='blorp-v41-model';
+ let projects;
+ try{projects=JSON.parse(localStorage.getItem(projectStorage));}catch(e){projects=null;}
+ if(!Array.isArray(projects)||!projects.length)projects=[{id:'starter',name:'Untitled project',messages:[],brief:'',type:'Website',stack:'React + Vite + Tailwind',model:'Blorp V3'}];
+ projects=projects.filter(p=>p&&typeof p.id==='string'&&typeof p.name==='string').slice(0,50);
+ if(!projects.length)projects=[{id:'starter',name:'Untitled project',messages:[],brief:'',type:'Website',stack:'React + Vite + Tailwind',model:'Blorp V3'}];
+ let activeProjectId;try{activeProjectId=localStorage.getItem('blorp-v41-active-project');}catch(e){}
+ if(!projects.some(p=>p.id===activeProjectId))activeProjectId=projects[0].id;
+ const modelInfo=[['Blorp V1','Light · lowest planned compute'],['Blorp V2','Fast · efficient planning'],['Blorp V3','Balanced · advanced build assistant'],['Blorp V4','Power · more planned reasoning compute'],['Blorp V5','Max · highest planned compute']];
+ function current(){return projects.find(p=>p.id===activeProjectId)||projects[0]}
+ function save(){try{localStorage.setItem(projectStorage,JSON.stringify(projects));localStorage.setItem('blorp-v41-active-project',activeProjectId);}catch(e){/* Browsers may restrict local-file storage; keep the in-memory project state. */}}
+ function setModel(value){if(!modelInfo.some(m=>m[0]===value))return;current().model=value;ids('activeModelName').textContent=value;ids('composerModelName').textContent=value;save();renderModels();}
+ function renderModels(){ids('buildModelOptions').innerHTML=modelInfo.map(([name,desc],i)=>`<button class="build-model-option ${current().model===name?'active':''}" type="button" data-choose-model="${name}" aria-pressed="${current().model===name}"><span class="build-model-icon">V${i+1}</span><span class="build-model-copy"><strong>${name}</strong><small>${desc}</small></span><span>${current().model===name?'✓':''}</span></button>`).join('');ids('buildModelOptions').querySelectorAll('[data-choose-model]').forEach(btn=>btn.addEventListener('click',()=>{setModel(btn.dataset.chooseModel);dialogHide('buildModelDialog');showToast(btn.dataset.chooseModel+' selected (preview)')}));}
+ function renderProjects(){ids('buildProjectList').innerHTML=projects.map(p=>`<button type="button" class="build-project-option ${p.id===activeProjectId?'active':''}" data-project-id="${esc(p.id)}"><span>▣</span><div><strong>${esc(p.name)}</strong><small>${(p.messages||[]).length} chat messages · ${esc(p.type||'Website')}</small></div>${p.id===activeProjectId?'<b>✓</b>':''}</button>`).join('');ids('buildProjectList').querySelectorAll('[data-project-id]').forEach(btn=>btn.addEventListener('click',()=>{selectProject(btn.dataset.projectId);dialogHide('buildProjectDialog')}));}
+ function messageElement(m){const article=document.createElement('article');article.className='build-chat-msg '+(m.role==='user'?'user':'assistant');const avatar=document.createElement('span');avatar.className='build-chat-avatar';avatar.textContent=m.role==='user'?'Y':'b';const body=document.createElement('div');body.className='build-message-bubble';if(m.role==='assistant'){
+  const lead=document.createElement('strong');lead.textContent='Blorp · local planning preview';body.append(lead);
+  const p=document.createElement('p');p.textContent=m.content;body.append(p);
+  if(m.isPlan){const b=document.createElement('button');b.type='button';b.className='build-plan-link';b.textContent='◫ View latest execution plan';b.addEventListener('click',openOutput);body.append(b)}
+ }else{body.textContent=m.content}article.append(avatar,body);return article;}
+ function renderThread(){const messages=Array.isArray(current().messages)?current().messages:[];ids('buildWelcome').hidden=messages.length>0;ids('buildThread').replaceChildren(...messages.map(messageElement));ids('buildConversationScroll').scrollTop=ids('buildConversationScroll').scrollHeight;}
+ function restorePlan(plan){
+  latestBuildPlan=plan||null;
+  if(!plan){ids('buildOutput').innerHTML='<div class="output-empty"><span class="output-icon">✧</span><h3>Nothing built yet</h3><p>Send a message to prepare a local build plan. Your selected agents will appear here.</p></div>';ids('buildOutputActions').hidden=true;return;}
+  ids('buildOutput').innerHTML=`<div class="out-heading"><strong>${esc(plan.type)}</strong> · ${esc(plan.stack)}<br/><span style="color:#94b1ab">${plan.steps.length} specialists · Local demo plan</span></div>`+plan.steps.map((step,i)=>`<div class="out-item"><span class="out-num">${i+1}</span><div><b>${esc(step.name)}</b><p>${esc(step.task)}</p></div></div>`).join('')+'<p class="form-hint">Planning preview only — real code generation requires backend integration.</p>';
+  ids('buildOutputActions').hidden=false;
+ }
+ function selectProject(id){const p=projects.find(p=>p.id===id);if(!p)return;activeProjectId=id;ids('activeProjectName').textContent=p.name;ids('buildType').value=p.type||'Website';ids('buildStack').value=p.stack||'React + Vite + Tailwind';ids('buildPrompt').value=p.brief||'';ids('promptCounter').textContent=ids('buildPrompt').value.length+' / 4000';setModel(p.model||'Blorp V3');restorePlan(p.plan);renderThread();save();closeOutput();}
+ function openOutput(){ids('buildOutputDrawer').hidden=false;ids('outputPanelToggle').setAttribute('aria-expanded','true')}
+ function closeOutput(){ids('buildOutputDrawer').hidden=true;ids('outputPanelToggle').setAttribute('aria-expanded','false')}
+ ids('buildSetupOpenBtn').addEventListener('click',()=>dialogShow('buildSetupDialog'));
+ ids('composeSetupBtn').addEventListener('click',()=>dialogShow('buildSetupDialog'));
+ ids('composerAddBtn').addEventListener('click',()=>dialogShow('buildSetupDialog'));
+ ids('manageBuildAgents').addEventListener('click',()=>dialogHide('buildSetupDialog'));
+ ids('saveBuildSetupBtn').addEventListener('click',()=>{current().type=ids('buildType').value;current().stack=ids('buildStack').value;save();dialogHide('buildSetupDialog');showToast('Project settings updated')});
+ ids('buildModelPickerBtn').addEventListener('click',()=>{renderModels();dialogShow('buildModelDialog')});
+ ids('composeModelBtn').addEventListener('click',()=>{renderModels();dialogShow('buildModelDialog')});
+ ids('projectPickerBtn').addEventListener('click',()=>{renderProjects();dialogShow('buildProjectDialog')});
+ ids('outputPanelToggle').addEventListener('click',()=>ids('buildOutputDrawer').hidden?openOutput():closeOutput());
+ ids('closeBuildOutput').addEventListener('click',closeOutput);
+ ids('createBuildProjectForm').addEventListener('submit',e=>{e.preventDefault();const name=ids('newBuildProjectName').value.trim();if(!name)return;const p={id:keyId(),name,messages:[],brief:'',type:'Website',stack:'React + Vite + Tailwind',model:current().model};projects.unshift(p);if(projects.length>50)projects.pop();selectProject(p.id);ids('newBuildProjectName').value='';dialogHide('buildProjectDialog');showToast('Created local project: '+name)});
+ document.querySelectorAll('#buildSetupDialog .dialog-close,#buildModelDialog .dialog-close,#buildProjectDialog .dialog-close').forEach(btn=>btn.addEventListener('click',()=>dialogHide(btn.closest('dialog').id)));
+ ['buildSetupDialog','buildModelDialog','buildProjectDialog'].forEach(id=>ids(id).addEventListener('click',e=>{if(e.target===ids(id))dialogHide(id)}));
+ // A template may update the underlying project settings, but it must not submit a fake AI request.
+ document.querySelectorAll('#builder [data-template]').forEach(btn=>btn.addEventListener('click',()=>{current().type=ids('buildType').value;current().stack=ids('buildStack').value;current().brief=ids('buildPrompt').value;save();}));
+ ids('buildPrompt').addEventListener('input',()=>{current().brief=ids('buildPrompt').value;save()});
+ ids('buildPrompt').addEventListener('keydown',e=>{if(e.key==='Enter'&&!e.shiftKey&&!e.isComposing){e.preventDefault();ids('preparePlanBtn').click()}});
+ // This listener runs after the original local plan generator, retaining its existing Copy/Export/Save logic.
+ ids('preparePlanBtn').addEventListener('click',()=>{
+  const p=current();const plan=latestBuildPlan;
+  if(!plan||!plan.brief.trim()||plan.brief.trim()!==ids('buildPrompt').value.trim())return;
+  if(!Array.isArray(p.messages))p.messages=[];
+  p.messages.push({role:'user',content:plan.brief});
+  const chain=plan.steps.map(s=>s.name.replace(/ Agent$/,'')).join(' → ');
+  p.messages.push({role:'assistant',isPlan:true,content:`I've prepared an editable build outline for your ${plan.type.toLowerCase()} using ${plan.stack}.\n\nAgent chain: ${chain}.\n\nThis is a local preview plan, not an actual website build. Open Build output to inspect tasks, copy the plan, or save it as a workflow.`});
+  p.messages=p.messages.slice(-80);p.brief='';p.type=plan.type;p.stack=plan.stack;p.model=ids('activeModelName').textContent;p.plan=plan;save();
+  ids('buildPrompt').value='';ids('promptCounter').textContent='0 / 4000';renderThread();
+ });
+ // Model + project selection can live independently from the busy agent editor.
+ selectProject(activeProjectId);
+ window.addEventListener('keydown',e=>{if(e.key==='Escape'&&!ids('buildOutputDrawer').hidden)closeOutput()});
+})();
+
+
+</script>
+<script>
+/* Blorp V5 Foundation: UI enhancements and local-dev API session. No remote model calls or billing. */
+(() => {
+ 'use strict';
+ const $=id=>document.getElementById(id);
+ const addons=[
+  {id:'github',name:'GitHub',category:'Development',icon:'⌘',desc:'Repository context, pull requests, and code collaboration.'},
+  {id:'vercel',name:'Vercel',category:'Development',icon:'▲',desc:'Preview, inspect, and deploy websites with review gates.'},
+  {id:'figma',name:'Figma',category:'Design',icon:'◩',desc:'Connect design files and UI components to build tasks.'},
+  {id:'supabase',name:'Supabase',category:'Development',icon:'◈',desc:'Databases, authentication, storage, and backend services.'},
+  {id:'notion',name:'Notion',category:'Productivity',icon:'▤',desc:'Product documentation, specs, and project notes.'},
+  {id:'drive',name:'Google Drive',category:'Productivity',icon:'△',desc:'Browse and use project documents and assets.'},
+  {id:'browser',name:'Web Browser',category:'Research',icon:'◎',desc:'Web research and testing through approved browser tools.'},
+  {id:'terminal',name:'Developer Terminal',category:'Development',icon:'>_',desc:'Sandboxed commands, builds, and automated tests.'},
+  {id:'mcp',name:'Custom MCP',category:'Development',icon:'✣',desc:'Register approved Model Context Protocol tools.'},
+ ];
+ const skills=[
+  {id:'frontend',name:'Premium Frontend',icon:'✦',desc:'Component systems, typography, responsive layouts, and subtle animation.'},
+  {id:'backend',name:'Backend Architect',icon:'⌘',desc:'APIs, databases, auth boundaries, and clean architecture.'},
+  {id:'testing',name:'QA & Accessibility',icon:'✓',desc:'Regression checks, keyboard navigation, and responsive QA.'},
+  {id:'security',name:'Security Review',icon:'◇',desc:'Permission reviews, secret hygiene, and secure-by-default flows.'},
+  {id:'deploy',name:'Deployment Expert',icon:'▲',desc:'Build pipelines, preview validation, and safe releases.'},
+  {id:'performance',name:'Performance Lab',icon:'ϟ',desc:'Load time, memory budgets, and adaptive visual quality.'}
+ ];
+ const load=(key,fallback)=>{try{return JSON.parse(localStorage.getItem(key))??fallback;}catch(e){return fallback}};
+ const save=(key,content)=>{try{localStorage.setItem(key,JSON.stringify(content));}catch(e){showToast('Browser storage is unavailable')}};
+ let prefs=load('blorp-v5-addons',{});if(!prefs||typeof prefs!=='object'||Array.isArray(prefs))prefs={};
+ let savedSkills=load('blorp-v5-skills',{});if(!savedSkills||typeof savedSkills!=='object')savedSkills={};
+ let custom=load('blorp-v5-mcp',[]);if(!Array.isArray(custom))custom=[];
+ let tab='discover',category='All',term='';
+ const safe=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+ const all=()=>addons.concat(custom.map((c,i)=>({id:'user-'+i,name:c.name,category:'Development',icon:'✣',desc:'Local MCP integration draft · Not connected'})));
+ const activePref=id=>prefs[id]&&prefs[id].enabled;
+ function addonCard(a){return `<article class="addon-card"><div class="addon-card-top"><span class="addon-logo">${a.icon}</span><div><div class="addon-name">${safe(a.name)}</div><div class="addon-category">${safe(a.category)} · ${a.id==='mcp'?'Protocol':'Integration'}</div></div></div><p class="addon-desc">${safe(a.desc)}</p><div class="addon-card-bottom"><span class="addon-status ${activePref(a.id)?'on':''}">${activePref(a.id)?'● Preview enabled':'○ Not configured'}</span><button type="button" class="btn" data-config-addon="${safe(a.id)}">${activePref(a.id)?'Manage':'Configure'}</button></div></article>`}
+ function bindAddons(root){root.querySelectorAll('[data-config-addon]').forEach(b=>b.addEventListener('click',()=>openAddon(b.dataset.configAddon)))}
+ function renderAddons(){
+  const q=term.trim().toLowerCase();
+  const filtered=all().filter(a=>(category==='All'||a.category===category)&&(a.name+' '+a.desc+' '+a.category).toLowerCase().includes(q));
+  const discover=$('addonGrid');discover.innerHTML=filtered.map(addonCard).join('')||'<div class="v5-empty">No matching add-ons found.</div>';bindAddons(discover);
+  const installed=all().filter(a=>activePref(a.id)&&(a.name+' '+a.desc).toLowerCase().includes(q));$('addonInstalled').innerHTML=installed.map(addonCard).join('')||'<div class="v5-empty">No preview add-ons enabled yet. Discover one to configure its permissions.</div>';bindAddons($('addonInstalled'));
+  $('skillGrid').innerHTML=skills.filter(s=>(s.name+' '+s.desc).toLowerCase().includes(q)).map(s=>`<article class="addon-card"><div class="addon-card-top"><span class="addon-logo">${s.icon}</span><div><div class="addon-name">${safe(s.name)}</div><div class="addon-category">Blorp skill · Draft</div></div></div><p class="addon-desc">${safe(s.desc)}</p><div class="addon-card-bottom"><span class="addon-status ${savedSkills[s.id]?'on':''}">${savedSkills[s.id]?'● Enabled in preview':'○ Disabled'}</span><button type="button" class="btn" data-skill="${s.id}">${savedSkills[s.id]?'Disable':'Enable'}</button></div></article>`).join('')||'<div class="v5-empty">No matching skills.</div>';
+  $('skillGrid').querySelectorAll('[data-skill]').forEach(b=>b.addEventListener('click',()=>{savedSkills[b.dataset.skill]=!savedSkills[b.dataset.skill];save('blorp-v5-skills',savedSkills);renderAddons();showToast('Skill preference saved locally · no agent runtime connected')}));
+ }
+ function renderFilters(){const labels=['All','Development','Design','Productivity','Research'];$('addonFilters').innerHTML=labels.map(c=>`<button type="button" data-category="${c}" class="${category===c?'selected':''}">${c}</button>`).join('');$('addonFilters').querySelectorAll('button').forEach(b=>b.addEventListener('click',()=>{category=b.dataset.category;renderFilters();renderAddons()}))}
+ function openAddon(id){const a=all().find(x=>x.id===id);if(!a)return;$('addonId').value=id;$('addonDialogTitle').textContent=a.name+' permissions';$('addonDialogDesc').textContent='Who may request '+a.name+'? This is a configuration preview only.';const x=prefs[id]||{};document.querySelectorAll('#addonForm [name="addonRole"]').forEach(input=>input.checked=(x.roles||['Research','Design','Builder','QA']).includes(input.value));$('addonAskBefore').checked=x.askBefore!==false;dialogShow('addonDialog')}
+ $('addonForm').addEventListener('submit',e=>{e.preventDefault();const id=$('addonId').value;prefs[id]={enabled:true,roles:Array.from(document.querySelectorAll('#addonForm [name="addonRole"]:checked')).map(x=>x.value),askBefore:$('addonAskBefore').checked};save('blorp-v5-addons',prefs);dialogHide('addonDialog');renderAddons();showToast('Configuration saved locally · connection not active')});
+ $('addonDisable').addEventListener('click',()=>{const id=$('addonId').value;if(prefs[id])prefs[id].enabled=false;save('blorp-v5-addons',prefs);dialogHide('addonDialog');renderAddons();showToast('Preview add-on disabled')});
+ $('customMcpBtn').addEventListener('click',()=>dialogShow('mcpDialog'));
+ $('mcpForm').addEventListener('submit',e=>{e.preventDefault();const name=$('mcpName').value.trim(),address=$('mcpAddress').value.trim();let u;try{u=new URL(address);if(!['https:','http:'].includes(u.protocol))throw Error('protocol');}catch(e){showToast('Enter a valid HTTP(S) server URL');return}if(!name)return;custom.push({name:name.slice(0,55),url:address.slice(0,300)});custom=custom.slice(-20);save('blorp-v5-mcp',custom);dialogHide('mcpDialog');$('mcpForm').reset();renderAddons();showToast('MCP draft saved · server was not contacted')});
+ document.querySelectorAll('#addonDialog .dialog-close,#mcpDialog .dialog-close').forEach(b=>b.addEventListener('click',()=>dialogHide(b.closest('dialog').id)));
+ ['addonDialog','mcpDialog'].forEach(id=>$(id).addEventListener('click',e=>{if(e.target===$(id))dialogHide(id)}));
+ document.querySelectorAll('[data-addontab]').forEach(b=>b.addEventListener('click',()=>{tab=b.dataset.addontab;document.querySelectorAll('[data-addontab]').forEach(x=>x.classList.toggle('selected',x===b));$('addonsDiscover').hidden=tab!=='discover';$('addonsMine').hidden=tab!=='mine';$('addonsSkills').hidden=tab!=='skills';renderAddons()}));
+ $('addonSearch').addEventListener('input',e=>{term=e.target.value;renderAddons()});renderFilters();renderAddons();
+ // Prices are only an informational design; no client-side upgrades or billing state changes.
+ document.querySelectorAll('[data-billing]').forEach(b=>b.addEventListener('click',()=>{const annual=b.dataset.billing==='annual';document.querySelectorAll('[data-billing]').forEach(x=>x.classList.toggle('selected',x===b));$('builderPrice').textContent=annual?'$18':'$20';$('studioPrice').textContent=annual?'$45':'$50';$('builderBilled').textContent=annual?'$216 billed annually (10% off)':'$20 billed monthly';$('studioBilled').textContent=annual?'$540 billed annually (10% off)':'$50 billed monthly'}));
+ $('builderPlanBtn').addEventListener('click',()=>showToast('Builder is planned · checkout not yet available'));$('studioPlanBtn').addEventListener('click',()=>showToast('Studio is planned · checkout not yet available'));
+ function getDrafts(){try{const d=JSON.parse(localStorage.getItem('blorp-v41-projects'));return Array.isArray(d)?d.filter(p=>p&&typeof p.name==='string').slice(0,50):[]}catch(e){return []}}
+ function renderProjects(){const p=getDrafts();$('v5ProjectsMetric').textContent=String(p.length);$('v5RecentProjects').innerHTML=p.slice(0,4).map(x=>`<button type="button" class="v5-recent-item" data-open-draft><span><strong>${safe(x.name)}</strong><small>${safe(x.stack||'React + Vite + Tailwind')} · ${(x.messages||[]).length} messages</small></span><span>↗</span></button>`).join('')||'<div class="v5-empty">No drafts yet. Start with a new project.</div>';
+ $('v5ProjectsList').innerHTML=p.map(x=>`<article class="v5-project-tile"><div class="v5-project-art">▣</div><h3>${safe(x.name)}</h3><p>${safe(x.type||'Website')} · ${safe(x.stack||'React + Vite + Tailwind')}<br/>${(x.messages||[]).length} messages · ${safe(x.model||'Blorp V3')}</p><button type="button" class="btn" data-open-draft>Open in Build Playground →</button></article>`).join('')||'<div class="v5-empty">You have no project drafts yet.</div>';
+ document.querySelectorAll('[data-open-draft]').forEach(b=>b.addEventListener('click',()=>{changeView('builder');$('projectPickerBtn').click()}));
+ }
+ $('v5NewProject').addEventListener('click',()=>{changeView('builder');$('projectPickerBtn').click()});
+ async function requestJSON(path,body){const resp=await fetch(path,{method:body?'POST':'GET',credentials:'same-origin',headers:body?{'Content-Type':'application/json'}:{},body:body?JSON.stringify(body):undefined});const value=await resp.json();if(!resp.ok)throw Error(value.error||'Request failed');return value;}
+ $('v5BackupProjects').addEventListener('click',async()=>{
+  if(!account){showToast('Sign in to back up project drafts');return;}
+  const drafts=getDrafts();if(!drafts.length){showToast('No project drafts to back up');return;}
+  let success=0;try{for(const p of drafts){const payload={id:p.id,name:p.name,type:p.type,stack:p.stack,model:p.model,brief:String(p.brief||'').slice(0,1800),messages:(p.messages||[]).slice(-12),plan:p.plan||null};await requestJSON('/api/projects',{id:p.id,title:p.name,payload});success++;}showToast('Backed up '+success+' local project drafts to your account');}catch(e){showToast('Saved '+success+' projects; '+e.message)}
+ });
+ $('v5RestoreProjects').addEventListener('click',async()=>{
+  if(!account){showToast('Sign in to restore project drafts');return;}
+  try{const remote=(await requestJSON('/api/projects')).projects||[];if(!remote.length){showToast('No backed-up projects found');return;}const existing=getDrafts();const ids=new Set(existing.map(p=>p.id));let added=0;for(const r of remote){if(!r.payload||typeof r.payload!=='object'||ids.has(r.id))continue;existing.push({...r.payload,id:r.id,name:r.title});ids.add(r.id);added++;}if(!added){showToast('All backed-up projects are already present');return;}save('blorp-v41-projects',existing.slice(0,50));showToast('Restored '+added+' projects; refreshing the workspace');setTimeout(()=>location.reload(),600);}catch(e){showToast('Restore failed: '+e.message)}
+ });
+ // Local Python backend only. On file://, show the UI but do not simulate authentication.
+ let account=null;
+ function renderAccount(user){account=user;const a=user?user.name||user.email.split('@')[0]:'Your creator';$('v5Hello').textContent=user?'Welcome back, '+a+'.':'Your creator dashboard';$('v5AccountLead').textContent=user?'Your local workspace is ready. Build confidently.':'Sign in to get your local profile and free credit allocation.';const plan=user?user.plan||'free':'free';$('v5AccountPlan').textContent=plan.toUpperCase()+' PLAN';$('memberCurrentPlan').textContent='CURRENT · '+plan.toUpperCase();$('v5PlanMetric').textContent=plan.slice(0,1).toUpperCase()+plan.slice(1);$('v5CreditsMetric').textContent=user?Number(user.credits_remaining||0).toLocaleString('en-US'):'—';$('v5BuildAccess').textContent='Locked';$('v5ProfileEmail').textContent=user?user.email:'Not signed in';$('v5ProfilePlan').textContent=plan.slice(0,1).toUpperCase()+plan.slice(1);$('v5ProfileRuns').textContent='No runtime connected'}
+ window.addEventListener('blorp:authchange',e=>renderAccount(e.detail));renderAccount(null);
+ async function restoreAccount(){if(location.protocol==='file:')return;try{const r=await fetch('/api/auth/me',{credentials:'same-origin',cache:'no-store'});if(!r.ok)return;const data=await r.json();if(data.user){previewAccount=data.user;renderPreviewAuth();renderAccount(data.user)}}catch(e){/* server offline: leave guest UI */}}
+ restoreAccount();
+ // Chat/Build/Autopilot. Build and Autopilot never execute hidden operations.
+ document.querySelectorAll('[data-ai-mode]').forEach(b=>b.addEventListener('click',()=>{const m=b.dataset.aiMode;if(m==='build'){changeView('builder');return}if(m==='autopilot'){showToast('Autopilot execution is planned; no agents have terminal access yet');return}document.querySelectorAll('[data-ai-mode]').forEach(x=>x.classList.toggle('on',x===b))}));
+ $('aiToolsBtn').addEventListener('click',()=>changeView('addons'));
+ $('aiModel').addEventListener('change',e=>showToast(e.target.value+' selected · no inference connected'));
+ // Keep project counts fresh when opening dashboard and projects after using the existing builder.
+ const nav=Array.from(document.querySelectorAll('[data-view]'));nav.filter(b=>['account','projects'].includes(b.dataset.view)).forEach(b=>b.addEventListener('click',()=>renderProjects()));
+ document.querySelectorAll('[data-open="projects"]').forEach(b=>b.addEventListener('click',()=>renderProjects()));
+ renderProjects();
+})();
+
+</script>
+<script>
+/* Blorp V5.1: Real local Ollama requests. UI never executes generated code. */
+(() => {
+ 'use strict';
+ const el=id=>document.getElementById(id);
+ const modeButtons=[...document.querySelectorAll('[data-local-mode]')];
+ let mode='chat',busy=false,history=[];
+ const showStatus=(message,kind='')=>{const e=el('localStatus');e.textContent=message;e.className='local-status '+kind;};
+ const append=(role,content)=>{
+   const box=document.createElement('div');box.className='local-message '+role;
+   const lead=document.createElement('strong');lead.textContent=role==='user'?'You':'Blorp · local Ollama';
+   const body=document.createElement('div');body.textContent=content;
+   box.append(lead,body);el('localChatThread').append(box);
+   el('localChatThread').scrollTop=el('localChatThread').scrollHeight;
+   return body;
+ };
+ const call=async(path,obj)=>{
+   const resp=await fetch(path,{method:'POST',credentials:'same-origin',headers:{'Content-Type':'application/json'},body:JSON.stringify(obj)});
+   const answer=await resp.json();if(!resp.ok)throw Error(answer.error||`Request failed (HTTP ${resp.status})`);
+   return answer;
+ };
+ async function reload(){
+   const select=el('localModel');const old=select.value;select.replaceChildren(new Option('Checking Ollama…',''));
+   showStatus('Connecting to Ollama running on this computer…');
+   try{
+     const resp=await fetch('/api/local/models',{credentials:'same-origin'});const data=await resp.json();
+     if(!resp.ok)throw Error(data.error||'Ollama is not running');
+     select.replaceChildren();
+     const items=data.models||[];
+     if(!items.length){select.add(new Option('No models installed — run ollama pull', ''));showStatus('Ollama is online, but no models are installed. Run ollama pull qwen2.5-coder:3b or another model in PowerShell.','problem');return;}
+     items.forEach(model=>select.add(new Option(model,model)));
+     if(items.includes(old))select.value=old;
+     showStatus('Connected to local Ollama · '+items.length+' installed model(s) detected. Model inference is performed on your PC.','ok');
+   }catch(err){select.replaceChildren(new Option('Ollama offline',''));showStatus(err.message+' · Install Ollama and run it, then click Detect Ollama.','problem');}
+ }
+ async function run(){
+   if(busy)return;
+   const model=el('localModel').value;
+   const prompt=el('localInput').value.trim();
+   if(!model){showStatus('Choose an installed Ollama model first.','problem');return}
+   if(prompt.length<5){showStatus('Write a prompt of at least 5 characters.','problem');return}
+   busy=true;el('localRun').disabled=true;modeButtons.forEach(b=>b.disabled=true);el('localModel').disabled=true;el('localDownload').hidden=true;
+   const prev=el('localRun').textContent;el('localRun').textContent='Working on your PC…';
+   showStatus(mode==='chat'?'Your local model is composing a response…':'Architect → Builder → QA: your local model may take several minutes. Nothing is being executed.','ok');
+   const input=el('localInput');input.value='';
+   try{
+     if(mode==='chat'){
+       append('user',prompt);
+       const live=append('assistant','Thinking locally…');
+       const response=await call('/api/local/chat',{model,message:prompt,history});
+       live.textContent=response.reply;
+       history.push({role:'user',content:prompt},{role:'assistant',content:response.reply});
+       history=history.slice(-10);
+       showStatus(`Local chat complete · ${response.usage.completion_tokens} output tokens · no paid API used.`,'ok');
+     } else {
+       const output=el('localBuildOutput');output.replaceChildren();
+       const status=document.createElement('p');status.textContent='Working: planning, coding, and reviewing the website. This may take several minutes…';output.append(status);
+       const response=await call('/api/local/agents/build',{model,brief:prompt});
+       output.replaceChildren();
+       const section=(title,content)=>{const h=document.createElement('h3');h.textContent=title;const p=document.createElement('p');p.textContent=content;output.append(h,p)};
+       section('Architect plan',response.plan);
+       section('Generated files',response.files.join(' · '));
+       section('QA review (model only)',response.review);
+       section('Execution status','Not executed. No scripts, builds, or tests have been run.');
+       const link=el('localDownload');link.href=response.download_url;link.hidden=false;
+       showStatus(`Agent run completed · ${response.files.length} files generated · ${response.usage.completion_tokens} output tokens.`,'ok');
+     }
+   }catch(err){el('localInput').value=prompt;showStatus('Local run failed: '+err.message,'problem');if(mode==='build')el('localBuildOutput').textContent=err.message;else append('assistant','Request failed: '+err.message)}
+   finally{busy=false;el('localRun').disabled=false;modeButtons.forEach(b=>b.disabled=false);el('localModel').disabled=false;el('localRun').textContent=prev;}
+ }
+ function changeMode(value){mode=value;modeButtons.forEach(b=>b.classList.toggle('active',b.dataset.localMode===value));el('localInputLabel').textContent=value==='build'?'Describe the website you want the agents to build':'Message your local model';el('localInput').placeholder=value==='build'?'Build a responsive bakery website with a warm palette, a menu and contact section…':'Ask Blorp anything…';el('localRun').textContent=value==='build'?'✦ Run three agents':'↑ Send to local model';el('localClear').hidden=value==='build';}
+ modeButtons.forEach(b=>b.addEventListener('click',()=>changeMode(b.dataset.localMode)));
+ el('localRun').addEventListener('click',run);
+ el('localInput').addEventListener('keydown',e=>{if(e.key==='Enter'&&!e.shiftKey&&mode==='chat'&&!e.isComposing){e.preventDefault();run()}});
+ el('localClear').addEventListener('click',()=>{history=[];el('localChatThread').replaceChildren();const intro=document.createElement('div');intro.className='local-welcome';intro.textContent='Fresh local conversation. What would you like to ask?';el('localChatThread').append(intro)});
+ el('localRefresh').addEventListener('click',reload);
+ const previewOnly=window.location.protocol==='file:';
+ const nav=el('localAiNav');nav.addEventListener('click',()=>{changeView('localai');el('crumb').textContent='Local AI Lab';if(!previewOnly)reload()});
+ if(previewOnly){el('localModel').replaceChildren(new Option('Start Blorp server to use Ollama',''));showStatus('UI-only preview. To connect real local AI, extract the project ZIP, start Python with START_BLORP_WINDOWS.bat and open the localhost URL shown.','problem');el('localRun').disabled=true;}
+ else{reload()}
+ if(window.location.hash==='#localai'){nav.click()}
+})();
+
+</script>
+</body>
+</html>

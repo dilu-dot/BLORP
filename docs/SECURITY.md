@@ -1,0 +1,14 @@
+# Blorp V5.1 — Local Model Security Notes
+
+- Blorp's Python server binds to `127.0.0.1` only, not the public internet. Do not modify it to bind `0.0.0.0` or deploy it publicly without a complete security redesign.
+- Ollama is contacted over loopback (`127.0.0.1`, default port 11434) by the Python server, not directly by the browser. Model calls do not require paid API keys. `:cloud` model names are excluded from the UI model list; the user must still verify their Ollama installation and model source.
+- A local account is required for chat, agent builds and generated-file downloads. Passwords use PBKDF2-HMAC-SHA256, with random salt; sessions are random tokens whose hashes are stored in SQLite. Browser cookies are HttpOnly and SameSite=Strict. HTTP-only localhost does not set Secure cookies. This is NOT sufficient for production public authentication.
+- Local builds currently accept only dependency-free static HTML/CSS/JS with strictly limited filenames and total bytes. A conservative filter blocks obvious remote URLs and network-capable JavaScript calls; **this is not a reliable security proof or malware scanner**. Models can emit dangerous or broken code despite filters.
+- **No generated code is executed automatically.** No npm/pip installs, terminal commands, arbitrary file writes or background jobs are triggered from the AI response. Download generated ZIPs and inspect all files before opening or publishing.
+- The QA role **only examines text**. It does not run Playwright, lint, execute tests, assess accessibility in a browser or review the full codebase.
+- The three “agents” are three prompts to the same installed model, run in sequence. They are not an isolated multi-tenant agent cloud or autonomous tool-use system.
+- The server enforces a serialized inference lock, model-name allowlist, prompt/body limits, attempt limits and account-scoped artifact IDs. Local generated ZIPs are stored under `data/artifacts/`, and download requires authentication.
+- Never enter real API secrets into plugin/MCP drafts, project demos or prompts. Plugin cards and skills are UI-only preferences, not connected external integrations. Existing browser-local draft state is not scoped to signed-in user accounts.
+- The `4,000,000` credits are a demo account field, not chargeable money, real billing entitlement or model usage ledger. `/api/agents/run` remains blocked with HTTP 503; checkout/billing requests remain disabled.
+- Security controls required before any real service launch include comprehensive CSRF/CSP policy, OAuth, credential vault, account-scoped project data, immutable audit trail, rigorous sandbox and resource limits, payment webhooks, abuse controls, secure model provider routing, backups, dependency audits and penetration testing.
+- Windows Defender does not need to be disabled, bypassed or excluded. The project runs as normal Python localhost code; future signed distribution is a separate goal.

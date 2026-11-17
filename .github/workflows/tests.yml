@@ -1,0 +1,22 @@
+name: Blorp local foundation tests
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  python-tests:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Syntax check
+        run: python -m compileall -q server.py local_runtime.py build_frontend.py patch_frontend.py
+      - name: Local account and API tests
+        run: python tests/test_api.py
+      - name: Mock Ollama agent tests
+        run: python tests/test_local_agents.py
