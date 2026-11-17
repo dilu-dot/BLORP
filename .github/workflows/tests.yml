@@ -28,3 +28,4 @@ jobs:
           node --check public/assets/v5.js
           node --check public/assets/v51.js
           node --check public/assets/v52.js
+          node --check public/assets/v53.js

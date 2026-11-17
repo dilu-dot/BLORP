@@ -10,6 +10,8 @@ from http.cookies import SimpleCookie
 from pathlib import Path
 from urllib.parse import urlsplit
 import hashlib
+import base64
+import binascii
 import hmac
 import json
 import mimetypes
@@ -39,6 +41,7 @@ PLAN_PRICES = {('builder', 'monthly'): 2000, ('builder', 'annual'): 21600,
                ('studio', 'monthly'): 5000, ('studio', 'annual'): 54000}
 GOOGLE_CLIENT_ID = os.environ.get('BLORP_GOOGLE_CLIENT_ID', '').strip()
 PAYMENT_INSTRUCTIONS = os.environ.get('BLORP_PAYMENT_INSTRUCTIONS', '').strip()[:700]
+MAX_QR_BYTES = 350_000
 ITERATIONS = 310_000
 _attempts: dict[str, list[float]] = {}
 _attempt_lock = threading.Lock()
@@ -83,6 +86,15 @@ def init_db():
            reviewed_by TEXT,
            created_at INTEGER NOT NULL,
            reviewed_at INTEGER);
+        CREATE TABLE IF NOT EXISTS payment_settings (
+           id INTEGER PRIMARY KEY CHECK(id=1),
+           upi_id TEXT NOT NULL DEFAULT '',
+           prices_inr_json TEXT NOT NULL DEFAULT '{}',
+           qr_image BLOB,
+           qr_mime TEXT,
+           updated_by TEXT,
+           updated_at INTEGER);
+        INSERT OR IGNORE INTO payment_settings(id) VALUES (1);
         CREATE TABLE IF NOT EXISTS membership_audit (
            id TEXT PRIMARY KEY, actor_id TEXT NOT NULL, user_id TEXT NOT NULL,
            old_plan TEXT NOT NULL, new_plan TEXT NOT NULL, expires_at INTEGER,
@@ -100,6 +112,11 @@ def init_db():
             if col not in columns:
                 conn.execute(f'ALTER TABLE users ADD COLUMN {col} {definition}')
         conn.execute('CREATE UNIQUE INDEX IF NOT EXISTS users_google_sub_unique ON users(google_sub) WHERE google_sub IS NOT NULL')
+        payment_columns={r['name'] for r in conn.execute('PRAGMA table_info(payment_requests)')}
+        for col,definition in {'paid_inr_paise':'INTEGER','payer_name':"TEXT NOT NULL DEFAULT ''"}.items():
+            if col not in payment_columns:
+                conn.execute(f'ALTER TABLE payment_requests ADD COLUMN {col} {definition}')
+        conn.execute("CREATE UNIQUE INDEX IF NOT EXISTS payments_unique_submitted_utr ON payment_requests(UPPER(reference)) WHERE reference<>'' AND method='manual'")
 
 
 def hash_password(password, salt):
@@ -115,6 +132,35 @@ def effective_plan(row):
 
 def has_build_access(row):
     return bool(row and (row['role']=='owner' or effective_plan(row) in ('builder','studio')))
+
+
+def public_payment_settings(conn):
+    row=conn.execute('SELECT * FROM payment_settings WHERE id=1').fetchone()
+    try: prices=json.loads(row['prices_inr_json']) if row else {}
+    except (TypeError, ValueError): prices={}
+    return {'upi_id':row['upi_id'] if row else '', 'prices_inr_paise':prices,
+            'qr_configured':bool(row and row['qr_image']),
+            'updated_at':row['updated_at'] if row else None}
+
+
+def validate_qr_image(source):
+    if not isinstance(source,str) or len(source)>500000:
+        raise ValueError('Upload a PNG or JPEG image smaller than 350 KB')
+    if source.startswith('data:image/png;base64,'):
+        mime='image/png'; raw=source[len('data:image/png;base64,'):]
+    elif source.startswith('data:image/jpeg;base64,'):
+        mime='image/jpeg'; raw=source[len('data:image/jpeg;base64,'):]
+    else:
+        raise ValueError('Only PNG or JPEG QR images are supported')
+    try: decoded=base64.b64decode(raw,validate=True)
+    except (ValueError,binascii.Error): raise ValueError('Invalid image data')
+    if not (100<=len(decoded)<=MAX_QR_BYTES):
+        raise ValueError('QR image must be smaller than 350 KB')
+    if mime=='image/png' and not decoded.startswith(b'\x89PNG\r\n\x1a\n'):
+        raise ValueError('Invalid PNG image')
+    if mime=='image/jpeg' and not (decoded.startswith(b'\xff\xd8\xff') and decoded.endswith(b'\xff\xd9')):
+        raise ValueError('Invalid JPEG image')
+    return decoded,mime
 
 
 def safe_checkout_url(plan, interval):
@@ -165,7 +211,7 @@ def allow_attempt(key):
 
 
 class Handler(BaseHTTPRequestHandler):
-    server_version = 'BlorpLocal/0.5.2'
+    server_version = 'BlorpLocal/0.5.3'
 
     def log_message(self, fmt, *args):
         # Avoid printing credentials, cookies or JSON payloads.
@@ -193,7 +239,8 @@ class Handler(BaseHTTPRequestHandler):
             length = int(self.headers.get('Content-Length', '0'))
         except ValueError:
             return None
-        if length < 1 or length > MAX_JSON:
+        max_bytes = 500_000 if urlsplit(self.path).path=='/api/owner/payments/settings' else MAX_JSON
+        if length < 1 or length > max_bytes:
             return None
         if self.headers.get('Content-Type', '').split(';')[0].lower() != 'application/json':
             return None
@@ -238,20 +285,34 @@ class Handler(BaseHTTPRequestHandler):
     def do_GET(self):
         path = urlsplit(self.path).path
         if path == '/api/health':
-            return self.response(200, {'ok': True, 'version': 'v5.2-member-access', 'local_ollama_supported': True, 'billing_connected': False,
+            return self.response(200, {'ok': True, 'version': 'v5.3-owner-payments', 'local_ollama_supported': True, 'billing_connected': False,
                                        'manual_requests': True, 'google_configured': bool(GOOGLE_CLIENT_ID)})
         if path == '/api/auth/config':
             return self.response(200, {'google_client_id': GOOGLE_CLIENT_ID})
+        if path == '/api/billing/qr':
+            user=self.find_user()
+            if not user:return self.response(401,{'error':'Sign in to see payment QR'})
+            with database() as conn:
+                record=conn.execute('SELECT qr_image,qr_mime FROM payment_settings WHERE id=1').fetchone()
+            if not record or not record['qr_image']:
+                return self.response(404,{'error':'Owner has not configured a payment QR'})
+            payload=record['qr_image']
+            self.send_response(200);self.headers_common()
+            self.send_header('Content-Type',record['qr_mime'])
+            self.send_header('Content-Length',str(len(payload)))
+            self.end_headers()
+            return self.wfile.write(payload)
         if path == '/api/billing/plans':
             prices=[{'plan':p,'interval':i,'currency':'USD','amount_cents':c,'checkout_url':safe_checkout_url(p,i)}
                     for (p,i),c in PLAN_PRICES.items()]
+            with database() as conn: payment_config=public_payment_settings(conn)
             return self.response(200, {'plans':prices,'payment_instructions':PAYMENT_INSTRUCTIONS,
-                                       'manual_approval':True,'automatic_billing':False})
+                                       'upi':payment_config, 'manual_approval':True,'automatic_billing':False})
         if path == '/api/billing/requests':
             user=self.find_user()
             if not user:return self.response(401,{'error':'Sign in required'})
             with database() as conn:
-                records=conn.execute('SELECT id,plan,interval,amount_cents,currency,method,status,reference,created_at,reviewed_at FROM payment_requests WHERE user_id=? ORDER BY created_at DESC LIMIT 30',(user['id'],)).fetchall()
+                records=conn.execute('SELECT id,plan,interval,amount_cents,currency,method,status,reference,paid_inr_paise,payer_name,created_at,reviewed_at FROM payment_requests WHERE user_id=? ORDER BY created_at DESC LIMIT 30',(user['id'],)).fetchall()
             return self.response(200,{'requests':[dict(r) for r in records]})
         if path == '/api/owner/overview':
             user=self.find_user()
@@ -261,9 +322,20 @@ class Handler(BaseHTTPRequestHandler):
                 members=conn.execute('SELECT id,email,name,plan,plan_expires_at,credits_remaining,role,created_at FROM users ORDER BY created_at DESC LIMIT 250').fetchall()
                 pending=conn.execute('''SELECT p.id,p.plan,p.interval,p.amount_cents,p.currency,p.method,p.status,p.reference,p.owner_note,p.created_at,p.reviewed_at,u.email,u.name
                     FROM payment_requests p JOIN users u ON u.id=p.user_id ORDER BY p.created_at DESC LIMIT 250''').fetchall()
-                audits=conn.execute('SELECT * FROM membership_audit ORDER BY created_at DESC LIMIT 40').fetchall()
+                audits=conn.execute('SELECT * FROM membership_audit ORDER BY created_at DESC LIMIT 60').fetchall()
+                settings=public_payment_settings(conn)
+                approved=conn.execute("SELECT paid_inr_paise,reviewed_at FROM payment_requests WHERE status='approved' AND paid_inr_paise IS NOT NULL ORDER BY reviewed_at DESC").fetchall()
             members=[dict(r) | {'effective_plan':effective_plan(r)} for r in members]
-            return self.response(200,{'members':members,'payments':[dict(r) for r in pending],'audit':[dict(r) for r in audits]})
+            revenue=sum(r['paid_inr_paise'] for r in approved)
+            # Last seven days of verified manual receipts, not invented analytics.
+            now=int(time.time()); buckets=[]
+            for ago in range(6,-1,-1):
+                start=((now//86400)-ago)*86400
+                total=sum(r['paid_inr_paise'] for r in approved if r['reviewed_at'] and start <= r['reviewed_at'] < start+86400)
+                buckets.append({'day':time.strftime('%d %b',time.gmtime(start)),'amount_inr_paise':total})
+            return self.response(200,{'members':members,'payments':[dict(r) for r in pending],
+                        'audit':[dict(r) for r in audits], 'settings':settings,
+                        'verified_revenue_inr_paise':revenue,'revenue_7d':buckets})
         if path == '/api/local/models':
             try:
                 return self.response(200, {'models':local_runtime.models(),'provider':'Ollama (this computer)','connected':True})
@@ -399,21 +471,59 @@ class Handler(BaseHTTPRequestHandler):
             user=self.find_user()
             if not user:return self.response(401,{'error':'Sign in required'})
             plan=data.get('plan'); interval=data.get('interval'); method=data.get('method','manual')
-            if (plan,interval) not in PLAN_PRICES or method not in ('manual','hosted_link'):
-                return self.response(422,{'error':'Invalid plan, billing period or payment method'})
-            if method=='hosted_link' and not safe_checkout_url(plan,interval):
-                return self.response(503,{'error':'Hosted checkout is not configured yet'})
+            if (plan,interval) not in PLAN_PRICES or method!='manual':
+                return self.response(422,{'error':'Choose Builder or Studio and pay with the configured UPI QR'})
+            reference=str(data.get('reference','')).strip().upper()
+            payer_name=str(data.get('payer_name','')).strip()
+            if not re.fullmatch('[A-Z0-9-]{8,35}',reference):
+                return self.response(422,{'error':'Enter a valid 8–35 character UTR / transaction reference'})
+            if not (2<=len(payer_name)<=80):
+                return self.response(422,{'error':'Enter the name used for your UPI payment'})
             now=int(time.time())
             with database() as conn:
+                config=public_payment_settings(conn)
+                amount=config['prices_inr_paise'].get(f'{plan}:{interval}')
+                if not config['qr_configured'] or not config['upi_id'] or type(amount) is not int or amount<100:
+                    return self.response(503,{'error':'Owner has not enabled QR payments for this plan yet'})
+                conn.execute('BEGIN IMMEDIATE')
                 count=conn.execute("SELECT COUNT(*) FROM payment_requests WHERE user_id=? AND status='pending'",(user['id'],)).fetchone()[0]
                 if count>=3:return self.response(429,{'error':'Up to three pending payment requests are allowed'})
                 req_id=uuid.uuid4().hex
-                conn.execute('''INSERT INTO payment_requests(id,user_id,plan,interval,amount_cents,currency,method,status,created_at)
-                    VALUES (?,?,?,?,?,?,?,?,?)''',(req_id,user['id'],plan,interval,PLAN_PRICES[(plan,interval)],'USD',method,'pending',now))
-            return self.response(201,{'request_id':req_id,'status':'pending','amount_cents':PLAN_PRICES[(plan,interval)],'currency':'USD',
-                                      'checkout_url':safe_checkout_url(plan,interval) if method=='hosted_link' else None,
-                                      'payment_instructions':PAYMENT_INSTRUCTIONS if method=='manual' else '',
-                                      'message':'No membership has been activated. Owner must verify payment separately.'})
+                try:
+                    conn.execute('''INSERT INTO payment_requests(id,user_id,plan,interval,amount_cents,currency,method,status,reference,paid_inr_paise,payer_name,created_at)
+                        VALUES (?,?,?,?,?,?,?,?,?,?,?,?)''',(req_id,user['id'],plan,interval,PLAN_PRICES[(plan,interval)],'USD','manual','pending',reference,amount,payer_name,now))
+                except sqlite3.IntegrityError:
+                    return self.response(409,{'error':'This UTR has already been submitted. Contact the owner if it is your payment.'})
+            return self.response(201,{'request_id':req_id,'status':'pending','reference':reference,
+                 'paid_inr_paise':amount,'currency':'INR',
+                 'message':'Pending owner verification. Submitting a UTR does not prove or confirm payment.'})
+        if path == '/api/owner/payments/settings':
+            owner=self.find_user()
+            if not owner:return self.response(401,{'error':'Sign in required'})
+            if owner['role']!='owner':return self.response(403,{'error':'Owner access only'})
+            upi_id=str(data.get('upi_id','')).strip()
+            amounts=data.get('prices_inr_paise')
+            if not re.fullmatch(r'[A-Za-z0-9._-]{2,100}@[A-Za-z0-9.-]{2,100}',upi_id):
+                return self.response(422,{'error':'Enter a valid UPI ID (e.g. merchant@bank)'})
+            keys={'builder:monthly','builder:annual','studio:monthly','studio:annual'}
+            if not isinstance(amounts,dict) or set(amounts)!=keys or any(type(amounts[k]) is not int or not (100<=amounts[k]<=1000000000) for k in keys):
+                return self.response(422,{'error':'Set the four INR amounts in paise (₹1–₹10,000,000)'})
+            decoded=mime=None
+            if data.get('qr_data_url'):
+                try:decoded,mime=validate_qr_image(data['qr_data_url'])
+                except ValueError as exc:return self.response(422,{'error':str(exc)})
+            if data.get('remove_qr') is True:
+                decoded=b'';mime=None
+            now=int(time.time())
+            with database() as conn:
+                conn.execute('BEGIN IMMEDIATE')
+                if decoded is None:
+                    conn.execute('UPDATE payment_settings SET upi_id=?,prices_inr_json=?,updated_by=?,updated_at=? WHERE id=1',
+                        (upi_id,json.dumps(amounts),owner['id'],now))
+                else:
+                    conn.execute('UPDATE payment_settings SET upi_id=?,prices_inr_json=?,qr_image=?,qr_mime=?,updated_by=?,updated_at=? WHERE id=1',
+                        (upi_id,json.dumps(amounts),decoded or None,mime,owner['id'],now))
+            return self.response(200,{'ok':True,'message':'Payment settings updated'})
         if path in ('/api/owner/payments/decision','/api/owner/memberships/set'):
             owner=self.find_user()
             if not owner:return self.response(401,{'error':'Sign in required'})
@@ -432,6 +542,12 @@ class Handler(BaseHTTPRequestHandler):
                     if request['status']!='pending':return self.response(409,{'error':'Request already reviewed'})
                     user=conn.execute('SELECT * FROM users WHERE id=?',(request['user_id'],)).fetchone()
                     if decision=='approve':
+                        if (not request['reference'] or not request['paid_inr_paise'] or
+                            data.get('verified_reference','').strip().upper()!=request['reference'] or
+                            data.get('verified_amount_paise')!=request['paid_inr_paise']):
+                            return self.response(422,{'error':'Owner must independently confirm exact UTR and INR amount before approval'})
+                        if len(note)<8:
+                            return self.response(422,{'error':'Record a verification note (at least 8 characters)'})
                         old=effective_plan(user)
                         base=max(now,user['plan_expires_at'] or now) if old==request['plan'] else now
                         expires=base+(365 if request['interval']=='annual' else 30)*86400

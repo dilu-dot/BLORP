@@ -1,3 +1,13 @@
+# V5.3 — Private Owner Console and UPI/UTR purchase workflow
+
+- Rebuilt Owner Console to resemble the approved dark teal / burnt-orange glassmorphism design.
+- Added owner-only QR image upload, UPI ID and exact INR price configuration (not seeded with real amounts).
+- Added customer QR payment preview, payer name and UTR submission with duplicate-reference rejection.
+- Added manual owner approval dialog requiring independently verified UTR, rupee amount and recorded confirmation note.
+- Added revenue and membership statistics derived from local database records; no invented production figures.
+- Preserved V5.2 Google sign-in integration and the server-side Build Fast membership gate.
+- Still a **local development prototype**, not a public production merchant system.
+
 # V5.2 — Owner-approved memberships and Google account integration
 
 - Build Fast locked for Free and expired members (UI + server-side build API checks).

@@ -3,11 +3,12 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width,initial-scale=1" />
-<title>Blorp V5.2 — Account & Membership</title>
+<title>Blorp V5.3 — Owner Control Center</title>
 <link rel="stylesheet" href="/assets/base.css"/>
 <link rel="stylesheet" href="/assets/v5.css"/>
 <link rel="stylesheet" href="/assets/v51.css"/>
 <link rel="stylesheet" href="/assets/v52.css"/>
+<link rel="stylesheet" href="/assets/v53.css"/>
 </head>
 <body>
 <div class="app">
@@ -182,30 +183,81 @@
   <article class="pricing-card featured"><span class="pricing-index">FOR BUILDERS</span><h2>Builder</h2><p>More power for everyday shipping.</p><div class="pricing-price"><strong id="builderPrice">$20</strong><small>/mo</small></div><p class="billed-yearly" id="builderBilled">$20 billed monthly</p><ul><li>Multi Task access when launched</li><li>Five-hour rolling compute window</li><li>Token allowance: to be set by testing</li><li>Model routing up to eligible tiers</li></ul><button class="btn primary" type="button" id="builderPlanBtn">Request Builder membership</button></article>
   <article class="pricing-card"><span class="pricing-index">FOR STUDIOS</span><h2>Studio</h2><p>High-capacity workflows for teams.</p><div class="pricing-price"><strong id="studioPrice">$50</strong><small>/mo</small></div><p class="billed-yearly" id="studioBilled">$50 billed monthly</p><ul><li>High-capacity build sessions</li><li>Premium model routing priority</li><li>More parallel agent capacity</li><li>Fair-use and security safeguards</li></ul><button class="btn" type="button" id="studioPlanBtn">Request Studio membership</button></article>
  </div>
- <div class="panel under v52-pay-card" id="paymentPanel" hidden>
-   <div class="panelhead"><h2 id="paymentTitle">Request membership</h2><span class="tag">Owner approval required</span></div>
-   <p id="paymentSummary" class="subtitle">Choose a plan to continue.</p>
-   <form id="paymentRequestForm" class="v52-inline-form">
-     <label for="paymentMethod">Payment method</label>
-     <select id="paymentMethod" class="search"><option value="manual">Manual transfer · owner verifies</option><option value="hosted_link">Secure hosted payment link (if configured)</option></select>
-     <button type="submit" class="btn primary">Create payment request</button>
-   </form>
-   <p id="paymentInstructions" class="form-hint">No payment instructions configured yet. Contact the Blorp owner after submitting a request.</p>
-   <p id="paymentStatus" class="v52-status" role="status"></p>
+ <div class="panel under v53-payment-card" id="paymentPanel" hidden>
+  <div class="panelhead"><div><h2 id="paymentTitle">Pay for your membership</h2><p class="subtle" style="margin:7px 0 0">Manual UPI payment · Owner verification required</p></div><span class="tag">Pending until approved</span></div>
+  <p id="paymentSummary" class="subtitle">Select Builder or Studio above.</p>
+  <div class="v53-payment-grid">
+    <div class="v53-qr-wrap"><img id="memberQrImage" alt="Owner-configured UPI payment QR" hidden/><div id="memberQrEmpty" class="v53-qr-placeholder">⌗<small>Owner has not uploaded a QR yet</small></div><p class="v53-upi-label">UPI ID: <strong id="memberUpiId">Not configured</strong></p></div>
+    <div><div class="v53-pay-total"><small>Pay exactly</small><strong id="memberInrAmount">Not configured</strong><span>USD plan prices are informational. Pay the displayed INR total.</span></div>
+      <p class="form-hint">Scan the QR in your UPI app. After successful payment, paste your transaction UTR below. Submission does <strong>not</strong> activate membership.</p>
+      <form id="paymentRequestForm" class="v53-payment-form">
+        <label for="paymentPayerName">Name used for payment</label><input class="search" id="paymentPayerName" placeholder="Account holder / payer name" minlength="2" maxlength="80" required/>
+        <label for="paymentUtr">UTR / Transaction reference number</label><input class="search" id="paymentUtr" placeholder="Enter your UPI transaction reference" pattern="[A-Za-z0-9-]{8,35}" minlength="8" maxlength="35" autocomplete="off" required/>
+        <button type="submit" class="btn primary" id="submitUtrBtn" disabled>Submit UTR for owner verification →</button>
+      </form>
+      <p id="paymentInstructions" class="form-hint">Your QR payment instructions will appear here.</p>
+      <p id="paymentStatus" class="v52-status" role="status"></p>
+    </div>
+  </div>
  </div>
  <div class="panel under"><div class="panelhead"><h2>My payment requests</h2><button type="button" class="chooser" id="refreshPayments">Refresh ↻</button></div><div id="myPaymentRequests" class="v52-list"><p class="subtitle">Sign in to view your requests.</p></div></div>
  <div class="mutedbox">Membership requests are recorded locally. No card is charged in Blorp. Owner approval requires independent payment verification. Compute quotas are still being implemented.</div>
 </section>
 <section class="tab" id="owner">
- <div class="heading"><div><p class="kicker">PRIVATE OWNER WORKSPACE</p><h1>Blorp <em>Owner Console.</em></h1><p class="subtitle">Review member requests and control access. Changes are audited by the server.</p></div><button class="btn" type="button" id="ownerRefresh">Refresh ↻</button></div>
- <div class="v52-owner-summary" id="ownerSummary"></div>
- <div class="panel under"><div class="panelhead"><h2>Payment requests</h2><span class="tag">Verify payment independently</span></div><div class="v52-list" id="ownerPaymentRequests">Loading…</div></div>
- <div class="panel under"><div class="panelhead"><h2>Member accounts</h2><span class="tag">Owner only</span></div><div class="v52-list" id="ownerMembers">Loading…</div></div>
- <div class="panel under"><h2>Manual membership adjustment</h2><p class="subtitle">For complimentary access or a separately verified payment. This cannot charge anyone.</p>
- <form id="ownerGrantForm" class="v52-grant-form"><label for="ownerTarget">Account</label><select id="ownerTarget" class="search" required></select><label for="ownerPlan">Plan</label><select class="search" id="ownerPlan"><option value="builder">Builder</option><option value="studio">Studio</option><option value="free">Free (revoke)</option></select><label for="ownerDays">Days</label><input id="ownerDays" class="search" type="number" min="1" max="365" value="30" required/><label for="ownerReason">Reason</label><input id="ownerReason" class="search" required minlength="5" maxlength="240" placeholder="e.g. Verified payment reference"/><button class="btn primary" type="submit">Update membership</button></form>
- </div>
- <div class="panel under"><h2>Recent access changes</h2><div id="ownerAudit" class="v52-list"></div></div>
- <p class="form-hint">This local development console is not a production billing service. Never publish this Python server to the open internet.</p>
+  <div class="v53-owner-head">
+    <div><p class="kicker">♛ &nbsp; PRIVATE OWNER CONTROL CENTER</p><h1>Welcome, <em>Owner.</em> 👑</h1><p class="subtitle">Your Blorp business, subscriptions and payment approvals in one secure workspace.</p></div>
+    <div class="v53-owner-head-actions"><span class="v53-owner-only">♛ &nbsp; Owner only</span><button class="btn" id="ownerRefresh" type="button">↻ &nbsp; Refresh</button></div>
+  </div>
+  <nav class="v53-owner-tabs" id="ownerTabBar" aria-label="Owner Console sections">
+    <button data-owner-tab="dashboard" type="button" class="selected">◫ Overview</button><button data-owner-tab="payments" type="button">▤ Payments <span id="ownerPendingChip">0</span></button><button data-owner-tab="users" type="button">♧ Users</button><button data-owner-tab="settings" type="button">⌗ UPI & Pricing</button><button data-owner-tab="audit" type="button">☷ Activity</button>
+  </nav>
+  <div class="v53-owner-view" data-owner-screen="dashboard">
+    <div class="v53-kpi-grid" id="ownerSummary">
+      <div class="v53-kpi"><span>◉ &nbsp; Total users</span><strong>—</strong><small>Real account records only</small></div>
+      <div class="v53-kpi"><span>♛ &nbsp; Active members</span><strong>—</strong><small>Current paid access</small></div>
+      <div class="v53-kpi"><span>◷ &nbsp; Pending payments</span><strong>—</strong><small>Awaiting your review</small></div>
+      <div class="v53-kpi"><span>◈ &nbsp; Verified revenue</span><strong>—</strong><small>Approved INR transactions</small></div>
+    </div>
+    <div class="v53-owner-grid">
+      <div class="v53-owner-primary">
+        <div class="panel v53-glass"><div class="panelhead"><div><h2>Payment verification requests</h2><p class="subtle">Confirm the UTR and amount in your bank or UPI app before approving.</p></div><button class="chooser" data-owner-open="payments" type="button">View all ↗</button></div><div id="ownerPendingPreview" class="v53-list-table"></div></div>
+        <div class="v53-summary-bottom">
+          <div class="panel v53-glass"><div class="panelhead"><div><h2>Revenue overview</h2><p class="subtle">Verified UPI payments · Last 7 days</p></div><strong id="ownerRevenueTotal" class="v53-amount">₹0</strong></div><div class="v53-chart" id="ownerRevenueChart" aria-label="Verified payment revenue chart"></div></div>
+          <div class="panel v53-glass"><div class="panelhead"><h2>Membership distribution</h2></div><div class="v53-donut-flex"><div class="v53-donut" id="ownerDonut"><span id="ownerDonutCount">0<small>active</small></span></div><div id="ownerDistribution" class="v53-chart-legend"></div></div></div>
+        </div>
+      </div>
+      <div class="v53-owner-side">
+        <div class="panel v53-glass"><div class="panelhead"><div><h2>Payment QR (UPI)</h2><p class="subtle">Shown to buyers when purchasing a plan.</p></div><span class="v53-mini-icon">⌗</span></div><div class="v53-owner-qr"><img id="ownerQrImage" alt="Configured UPI QR" hidden/><div class="v53-owner-qr-empty" id="ownerQrEmpty">⌗<small>Not configured</small></div><div><strong id="ownerUpiLabel">UPI not configured</strong><p class="subtle">Upload your own real QR in settings.</p><button class="btn" data-owner-open="settings" type="button">Manage QR ↗</button></div></div></div>
+        <div class="panel v53-glass"><div class="panelhead"><h2>Quick actions</h2></div><div class="v53-quick-actions"><button type="button" data-owner-open="settings">◈ &nbsp; Configure QR & INR prices <span>→</span></button><button type="button" data-owner-open="payments">✓ &nbsp; Verify UTR requests <span>→</span></button><button type="button" data-owner-open="users">♛ &nbsp; Grant or revoke membership <span>→</span></button></div></div>
+        <div class="panel v53-glass"><div class="panelhead"><h2>Recent activity</h2></div><div id="ownerActivityPreview" class="v53-recent"></div></div>
+      </div>
+    </div>
+  </div>
+  <div class="v53-owner-view" data-owner-screen="payments" hidden>
+    <div class="panel v53-glass"><div class="panelhead"><div><h2>All payment requests</h2><p class="subtle">Only payments verified independently by you should be approved.</p></div><select class="search v53-filter" id="ownerPaymentFilter"><option value="pending">Pending</option><option value="all">All requests</option><option value="approved">Approved</option><option value="rejected">Rejected</option></select></div><div id="ownerPaymentRequests" class="v53-list-table"></div></div>
+  </div>
+  <div class="v53-owner-view" data-owner-screen="users" hidden>
+    <div class="panel v53-glass"><div class="panelhead"><h2>Member accounts</h2><span class="tag">Server-authorized Owner only</span></div><div id="ownerMembers" class="v53-list-table"></div></div>
+    <div class="panel under v53-glass"><div class="panelhead"><div><h2>Manual membership adjustment</h2><p class="subtle">For complimentary access or separately verified payments. Every change is audited.</p></div></div>
+      <form id="ownerGrantForm" class="v53-grant-form"><label for="ownerTarget">Customer</label><select id="ownerTarget" class="search" required></select><label for="ownerPlan">Plan</label><select class="search" id="ownerPlan"><option value="builder">Builder</option><option value="studio">Studio</option><option value="free">Free (revoke access)</option></select><label for="ownerDays">Duration (days)</label><input id="ownerDays" class="search" type="number" min="1" max="365" value="30" required/><label for="ownerReason">Reason</label><input id="ownerReason" class="search" required minlength="5" maxlength="240" placeholder="e.g. Complimentary access for testing"/><button class="btn primary" type="submit">Update membership</button></form>
+    </div>
+  </div>
+  <div class="v53-owner-view" data-owner-screen="settings" hidden>
+    <div class="panel v53-glass v53-settings-card"><div class="panelhead"><div><h2>QR payments & pricing</h2><p class="subtle">Only your account can change these settings. INR totals are set by you, not estimated exchange rates.</p></div><span class="tag">Owner controlled</span></div>
+      <form id="ownerPaymentSettingsForm" class="v53-settings-grid">
+        <div><label for="ownerUpiInput" class="field-label">Your UPI ID</label><input class="search" id="ownerUpiInput" placeholder="yourbusiness@bank" required maxlength="200"/>
+          <label for="ownerQrFile" class="field-label">Upload payment QR image · PNG/JPEG · 350 KB max</label><input id="ownerQrFile" class="search" type="file" accept="image/png,image/jpeg"/>
+          <p class="form-hint">The QR must belong to your bank or UPI account. Only publish it after checking it in your UPI app. The current QR is shown above in Overview.</p></div>
+        <div><div class="v53-price-heading">Exact INR amounts collected by your QR</div>
+          <div class="v53-prices-grid"><label>Builder · Monthly ($20)<input id="inrBuilderMonthly" class="search" inputmode="decimal" type="number" min="1" max="10000000" step="0.01" placeholder="Amount in ₹" required/></label><label>Builder · Annual ($216)<input id="inrBuilderAnnual" class="search" type="number" min="1" max="10000000" step="0.01" placeholder="Amount in ₹" required/></label><label>Studio · Monthly ($50)<input id="inrStudioMonthly" class="search" type="number" min="1" max="10000000" step="0.01" placeholder="Amount in ₹" required/></label><label>Studio · Annual ($540)<input id="inrStudioAnnual" class="search" type="number" min="1" max="10000000" step="0.01" placeholder="Amount in ₹" required/></label></div>
+          <button class="btn primary" type="submit">Save payment settings</button><span id="ownerSettingsStatus" class="v52-status" role="status"></span></div>
+      </form>
+    </div>
+  </div>
+  <div class="v53-owner-view" data-owner-screen="audit" hidden>
+    <div class="panel v53-glass"><div class="panelhead"><h2>Membership audit history</h2><span class="tag">Change records</span></div><div id="ownerAudit" class="v53-list-table"></div></div>
+  </div>
+  <p class="form-hint v53-owner-caution">🔒 Local development environment — never expose this Python server to the public internet. Transactions are not automatically verified or charged.</p>
 </section>
 <section class="tab" id="settings"><p class="kicker">WORKSPACE PREFERENCES</p><div class="heading"><div><h1>Blorp <em>Settings.</em></h1><p class="subtitle">Customize the feel of your workspace.</p></div></div><div class="panel preferences-panel">
   <div class="fx-title"><div><h2>Visual performance</h2><p class="subtle" style="margin:8px 0 0">Choose how much glass and motion Blorp renders. Auto is recommended.</p></div><span class="tag" id="performanceTag">Detecting profile…</span></div>
@@ -256,5 +308,6 @@
 <script src="/assets/v5.js"></script>
 <script src="/assets/v51.js"></script>
 <script src="/assets/v52.js"></script>
+<script src="/assets/v53.js"></script>
 </body>
 </html>

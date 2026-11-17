@@ -8,7 +8,7 @@
 - New accounts get the **Free** plan and 4,000,000 **demo** credits.
 - API access rules: `/api/local/agents/build` and `/api/agents/run` require a valid Builder/Studio membership (or owner role). General local `/api/local/chat` does not require a paid plan. The legacy external agent endpoint still returns HTTP 503 to paid users because a secure hosted execution system does not exist yet.
 - Build Fast navigation and tools are gated in the UI, but **server-side API checks are the security boundary**.
-- Users create a manual or hosted-checkout-link **payment request**. Requests start as `pending`; **a request or a checkout link never activates paid access**. A real owner verifies the transaction *outside Blorp* and approves it in the Owner Console. Owner can also directly grant/revoke plans with an audit log.
+- Users create a manual QR/UTR **payment request**. Requests start as `pending`; **a request or a checkout link never activates paid access**. A real owner verifies the transaction *outside Blorp* and approves it in the Owner Console. Owner can also directly grant/revoke plans with an audit log.
 - Membership expires after **30 days** (monthly) or **365 days** (annual). For renewals of the same active plan, remaining time is preserved. Price list: Free $0, Builder $20/month or $216/year, Studio $50/month or $540/year.
 
 ## Google authentication setup
@@ -45,25 +45,16 @@
 
 This command edits your **local SQLite database** and is intentionally not available as a web endpoint. Do not commit your `data/` folder. Never make an arbitrary user owner based on an unverified email or a browser-only role flag.
 
-## Payment methods
+## UPI QR + UTR (V5.3)
 
-At the moment, Blorp supports **manual payment requests** and optional **owner-configured external HTTPS checkout links**. Both require an owner to verify funds and approve. **No money is charged directly by Blorp.** Do not ask users to type card numbers, CVVs or bank passwords into Blorp.
+V5.3 uses the **owner-configured manual UPI QR + UTR** workflow. Manual checkout is not automatically collected or verified, and optional hosted checkout links from the earlier prototype are no longer offered in the V5.3 customer UI.
 
-Option A: Set public transfer instructions in the server environment (shown after a customer requests manual payment):
+1. Owner signs in to **Manage → Owner Console → UPI & Pricing**, uploads a real QR and UPI ID, and configures four exact INR amounts. Nothing is preconfigured by Blorp.
+2. Customer chooses Builder or Studio, Monthly or Annual, scans the QR in their UPI app, pays the displayed INR amount, and submits payer name plus transaction UTR.
+3. Request remains `pending`; Build Fast stays locked. Duplicate UTRs are rejected globally.
+4. Owner independently verifies the bank/UPI transaction, then enters the exact UTR and INR amount with a verification note and confirmation checkbox to approve. The server activates the membership for 30 or 365 days and logs the change. Unapproved requests do not unlock anything.
 
-```powershell
-$env:BLORP_PAYMENT_INSTRUCTIONS='Contact the Blorp owner for payment details. Include your request ID as reference.'
-py -3 server.py
-```
-
-Option B: Configure a provider-hosted checkout link (which you must obtain using your own merchant account and customize for the correct plan/amount):
-
-```powershell
-$env:BLORP_CHECKOUT_URL_BUILDER_MONTHLY='https://your-approved-payment-provider.example/checkout/...'
-py -3 server.py
-```
-
-Supported environment variables: `BLORP_CHECKOUT_URL_BUILDER_MONTHLY`, `BLORP_CHECKOUT_URL_BUILDER_ANNUAL`, `BLORP_CHECKOUT_URL_STUDIO_MONTHLY`, and `BLORP_CHECKOUT_URL_STUDIO_ANNUAL`. Only `https://` links are exposed; **links alone are not webhook-verified, recurring, or fraud-proof**.
+See **[UPI_OWNER.md](UPI_OWNER.md)** for complete instructions and limitations.
 
 ### Before real online payments
 

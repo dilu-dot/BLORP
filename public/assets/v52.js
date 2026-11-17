@@ -44,55 +44,16 @@
    $('v5ProfileRuns').textContent=hasBuild()?'Membership enabled · runtime availability varies':'Upgrade required';
    const status=$('membershipExpiry');if(status)status.textContent=account?.plan_expires_at?'Access ends '+prettyDate(account.plan_expires_at):'No active paid membership';
    if(!account){$('myPaymentRequests').replaceChildren(node('p','subtitle','Sign in to view payment requests.'));return;}
-   loadMyPayments().catch(err=>say(err.message));
-   if(isOwner())loadOwner().catch(err=>say(err.message));
+   window.blorpRefreshPayments?.();
+   if(isOwner())window.blorpLoadOwner?.();
  }
  window.addEventListener('blorp:authchange',e=>updateAccount(e.detail));
  // Existing V5 account restore emits blorp:authchange after /api/auth/me succeeds.
  if(!sitePreview)api('/api/auth/me').then(r=>updateAccount(r.user)).catch(()=>{});
  const expiry=node('p','form-hint');expiry.id='membershipExpiry';$('v5ProfilePlan').after(expiry);
 
- // Model selection, local chat, and project drafts stay independent of payment.
- window.addEventListener('blorp:selectplan',e=>{
-   pendingPlan=e.detail;
-   if(!account){say('Sign in to request a membership');if(typeof openAuth==='function')openAuth('signin');return;}
-   const annual=document.querySelector('[data-billing="annual"].selected')!==null;
-   const interval=annual?'annual':'monthly',amt=prices.find(x=>x.plan===pendingPlan&&x.interval===interval);
-   $('paymentPanel').hidden=false;
-   $('paymentTitle').textContent=`Request ${pendingPlan==='builder'?'Builder':'Studio'} membership`;
-   $('paymentSummary').textContent=`${amt?'$'+(amt.amount_cents/100).toFixed(2):'—'} USD · ${interval}. Your membership starts only after payment is independently verified and approved by the owner.`;
-   $('paymentStatus').textContent='No charge is made by submitting this form.';
-   $('paymentPanel').scrollIntoView({behavior:'smooth',block:'center'});
- });
- async function loadPlans(){if(sitePreview)return;
-   const result=await api('/api/billing/plans');prices=result.plans||[];paymentInstructions=result.payment_instructions||'';
-   $('paymentInstructions').textContent=paymentInstructions||'No bank or UPI details configured. Request access and contact the owner for payment instructions.';
-   checkout=Object.fromEntries(prices.map(p=>[`${p.plan}:${p.interval}`,p.checkout_url]));
- }
- async function loadMyPayments(){if(sitePreview||!account)return;
-   const result=await api('/api/billing/requests');const container=$('myPaymentRequests');container.replaceChildren();
-   if(!result.requests.length)container.append(node('p','subtitle','No payment requests yet.'));
-   for(const r of result.requests)row(container,`${r.plan.toUpperCase()} · ${r.interval}`,`$${(r.amount_cents/100).toFixed(2)} USD · ${r.status.toUpperCase()} · ${prettyDate(r.created_at)} · ${r.method==='hosted_link'?'Hosted payment link':'Manual payment'}`);
- }
- $('refreshPayments').addEventListener('click',()=>loadMyPayments().catch(err=>say(err.message)));
- $('paymentMethod').addEventListener('change',()=>{const method=$('paymentMethod').value;const annual=document.querySelector('[data-billing="annual"].selected')!==null;const url=checkout[`${pendingPlan}:${annual?'annual':'monthly'}`];
-   $('paymentInstructions').textContent=method==='hosted_link'?(url?'An external hosted checkout link will open. The owner must still verify payment.':'No hosted payment link has been configured for this plan yet.'):(paymentInstructions||'Contact the owner for bank/UPI details; no payment is collected by Blorp.');
- });
- $('paymentRequestForm').addEventListener('submit',async e=>{
-   e.preventDefault();if(!account){say('Sign in first');return;}
-   const interval=document.querySelector('[data-billing="annual"].selected')?'annual':'monthly';
-   const method=$('paymentMethod').value,button=e.currentTarget.querySelector('[type=submit]');button.disabled=true;
-   try{
-     const res=await api('/api/billing/request',{plan:pendingPlan,interval,method});
-     $('paymentStatus').textContent=`Request ${res.request_id.slice(0,9)} created · PENDING OWNER REVIEW. This is not a payment confirmation.`;
-     await loadMyPayments();
-     if(res.checkout_url){ // This URL is only supplied by a server admin via env config; validate on the server.
-       const a=node('a','btn primary','Open secure hosted checkout ↗');a.href=res.checkout_url;a.target='_blank';a.rel='noopener noreferrer';$('paymentStatus').append(node('span','', ' '),a);
-     }
-   }catch(err){$('paymentStatus').textContent=err.message;}
-   finally{button.disabled=false;}
- });
-
+ // V5.3: QR/UTR membership flow is implemented in v53.js.
+ // General model selection and local chat remain independent of paid Build Fast.
  // Google Identity Services: official Google SDK button, token checked server-side by google-auth.
  async function googleCallback(response){
    try{
@@ -121,43 +82,6 @@
  }
  initGoogle().catch(err=>{$('googleAuthHint').textContent=err.message});
 
- // Private owner actions. Every request is re-authorized by server; DOM visibility does not confer access.
- const money=r=>`$${(r.amount_cents/100).toFixed(2)} USD`;
- async function loadOwner(){if(!isOwner()||sitePreview)return;
-   const data=await api('/api/owner/overview');
-   const summary=$('ownerSummary');summary.replaceChildren();
-   for(const [label,count] of [['Members',data.members.length],['Pending requests',data.payments.filter(x=>x.status==='pending').length],['Active paid accounts',data.members.filter(x=>['builder','studio'].includes(x.effective_plan)).length]]){
-     const stat=node('div','panel v52-owner-stat');stat.append(node('small','',label),node('strong','',String(count)));summary.append(stat);
-   }
-   const payments=$('ownerPaymentRequests');payments.replaceChildren();
-   if(!data.payments.length)payments.append(node('p','subtitle','No payment requests yet.'));
-   for(const p of data.payments){
-     const actions=p.status==='pending'?[{label:'Approve · verified payment',primary:true,onClick:()=>reviewRequest(p,'approve')},{label:'Reject',onClick:()=>reviewRequest(p,'reject')}]:[];
-     row(payments,`${p.name} (${p.email})`,`${p.plan.toUpperCase()} · ${p.interval} · ${money(p)} · ${p.status.toUpperCase()} · ${prettyDate(p.created_at)} · ${p.method}`,actions);
-   }
-   const members=$('ownerMembers');members.replaceChildren();const target=$('ownerTarget');target.replaceChildren();
-   for(const member of data.members){
-     row(members,member.email,`${member.name} · ${member.effective_plan.toUpperCase()} · ${member.role} · expires ${prettyDate(member.plan_expires_at)}`);
-     target.append(new Option(member.email,member.id));
-   }
-   const audit=$('ownerAudit');audit.replaceChildren();for(const entry of data.audit)row(audit,`${entry.old_plan} → ${entry.new_plan}`,`${entry.reason} · ${prettyDate(entry.created_at)}`);
- }
- async function reviewRequest(p,decision){
-   if(decision==='approve'&&!confirm(`Confirm you've independently verified ${money(p)} from ${p.email}? This will activate ${p.plan.toUpperCase()} access.`))return;
-   if(decision==='reject'&&!confirm(`Reject payment request from ${p.email}?`))return;
-   try{await api('/api/owner/payments/decision',{request_id:p.id,decision,verified_payment:decision==='approve',note:decision==='approve'?'Payment confirmed independently by owner':'Request rejected by owner'});say(`Request ${decision}d`);await loadOwner();}
-   catch(err){say(err.message)}
- }
- $('ownerRefresh').addEventListener('click',()=>loadOwner().catch(err=>say(err.message)));
- $('ownerGrantForm').addEventListener('submit',async e=>{
-   e.preventDefault();if(!isOwner())return;
-   const data={user_id:$('ownerTarget').value,plan:$('ownerPlan').value,days:Number($('ownerDays').value),reason:$('ownerReason').value.trim()};
-   const label=$('ownerTarget').selectedOptions[0]?.textContent||'this user';
-   if(!confirm(`Change ${label} to ${data.plan.toUpperCase()} for ${data.days} days? This will be audited.`))return;
-   try{await api('/api/owner/memberships/set',data);$('ownerReason').value='';say('Member access updated');await loadOwner();}
-   catch(err){say(err.message)}
- });
- document.querySelectorAll('[data-view="owner"]').forEach(b=>b.addEventListener('click',()=>loadOwner().catch(err=>say(err.message))));
- loadPlans().catch(err=>say(err.message));
+ // V5.3 Owner Console logic is kept in v53.js. The backend enforces every role check.
  refreshGates();
 })();

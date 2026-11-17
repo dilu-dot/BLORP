@@ -1,21 +1,31 @@
-# BLORP V5.2 — Google Sign-in & Owner Membership (local prototype)
+# BLORP V5.3 — Private Owner Console & UPI / UTR payments (local prototype)
 
 This is the next iteration of the Blorp project. It builds on **the existing V5 foundation and original V4.1 frontend**, preserving Multi Task, Build Playground, Workflows, AI Playground, Model Explorer, Projects, account dashboard, membership UI and Add-ons. It adds **Local AI Lab**, a real integration with an Ollama model running on the *same computer*.
 
 > **Scope:** Local learning/development software. Not a production website-building SaaS, not a trained Blorp V1–V5 model, not a Hermes/Codex replacement, and not a public deployment.
 
 
+## New in V5.3 — Owner Control Center
+
+- Premium, responsive teal/orange **Owner Console** with real local account counts, pending UTR reviews, verified INR revenue charts and membership distribution.
+- Owner-only **UPI & Pricing** configuration: upload your actual QR image (PNG/JPEG), set your UPI ID and the exact INR prices for Builder/Studio monthly and annual plans. **Nothing is preconfigured** and no secret payment details are committed.
+- The **Membership** page shows that QR and amount, collects a payer name and transaction UTR, and submits a pending request. A UTR alone never unlocks Build Fast.
+- The Owner must independently check the transaction and enter the exact UTR, INR amount, verification statement and note before approving. Duplicate UTR submissions and repeated approvals are blocked; membership changes remain audited.
+- No automatic UPI validation or recurring billing. This is still a localhost prototype, not a public merchant service.
+
+**Full instructions:** [docs/UPI_OWNER.md](docs/UPI_OWNER.md). After your own owner account is created, use `py -3 manage_owner.py your-account@example.com` locally with the server stopped. **Do not upload the local `data/` folder.**
+
 ## New in V5.2 — Accounts and paid-access foundation
 
 - Google sign-in / sign-up integration using **Google Identity Services** (only enabled after owner configures a Google OAuth web client ID and installs optional dependencies).
 - **Build Fast** UI lock plus **server-side denial** of agent build/run endpoints for Free accounts. The owner role may access local build tests.
 - Private **Manage → Owner Console**, protected by a server-side role check. Owner can approve/reject membership requests, set/revoke plans, and inspect access audit entries.
-- **Payment requests**, not automatic card collection: manual transfer or optional provider-hosted HTTPS checkout link. Owner must independently verify payment before activating a membership. Monthly access lasts 30 days; annual 365 days.
+- **Payment requests**, not automatic card collection: owner-configured UPI QR and user-submitted UTR. Owner must independently verify payment before activating a membership. Monthly access lasts 30 days; annual 365 days.
 - Existing `data/` stays local; migrations preserve earlier accounts and projects. Starter credits remain unmetered demo credits. **Do not host this development server publicly.**
 
 **Owner setup:** Sign up normally, stop the local server, run `py -3 manage_owner.py your-email@example.com`, restart and sign in. Full setup, payment limitations, and Google instructions: [docs/AUTH_BILLING.md](docs/AUTH_BILLING.md).
 
-> This is **not** a production checkout. You cannot charge customers or authenticate with Google until you configure actual merchant links and Google credentials. The requested subscriptions can be activated manually by an authorized owner after verifying payment externally. Full hosted agent execution remains unimplemented.
+> This is **not** a production checkout or automatically verified UPI service. You cannot charge customers or authenticate with Google until you configure actual merchant links and Google credentials. The requested subscriptions can be activated manually by an authorized owner after verifying payment externally. Full hosted agent execution remains unimplemented.
 
 ## Quick start (Windows)
 
@@ -75,11 +85,14 @@ public/index.html            Blorp app HTML
 public/assets/base.*         Original Blorp V4.1 features
 public/assets/v5.*           V5 account, plan, add-on, chat UI
 public/assets/v51.*          Local AI Lab UI
+public/assets/v52.*          Google sign-in and Build Fast gate
+public/assets/v53.*          Owner dashboard and UPI/UTR flow
 blorp-v5.1-ui-preview.html   Offline design preview (cannot run AI)
 build_frontend.py            Rebuilds foundation and reapplies local agent UI patch
 patch_frontend.py            Re-adds V5.1 HTML/CSS/JS asset references
 legacy-source-v41.html       Prior source preserved for reference
 docs/LOCAL_AI.md             Setup, troubleshooting and API reference
+docs/UPI_OWNER.md            Owner QR and manual UTR verification guide
 docs/SECURITY.md             Current guardrails and known limitations
 docs/ROADMAP.md              Longer-term development plan
 tests/                       Automated API, agent and browser tests
@@ -87,7 +100,7 @@ tests/                       Automated API, agent and browser tests
 
 ## Testing
 
-`build_frontend.py` and `patch_frontend.py` are legacy V5.1 regeneration scripts; do not run them to regenerate V5.2 until they are updated to preserve the new UI.
+`build_frontend.py` and `patch_frontend.py` are legacy V5.1 regeneration scripts; do not run them to regenerate V5.3 until they are updated to preserve the new UI.
 
 ```powershell
 py -3 tests\test_api.py
