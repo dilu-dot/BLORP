@@ -29,3 +29,20 @@ jobs:
           node --check public/assets/v51.js
           node --check public/assets/v52.js
           node --check public/assets/v53.js
+
+  supabase-cloud-source:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Validate Blorp membership backend contract
+        run: python tests/test_cloud_backend.py
+      - uses: denoland/setup-deno@v2
+        with:
+          deno-version: v2.x
+      - name: Check Supabase Edge Function TypeScript
+        run: deno check supabase/functions/blorp-membership/index.ts
