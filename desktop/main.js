@@ -43,8 +43,8 @@ async function health(origin) {
   finally { clearTimeout(timer); }
 }
 
-function registerOfflinePreview() {
-  protocol.handle("blorp", async request => {
+function registerOfflinePreview(appSession) {
+  appSession.protocol.handle("blorp", async request => {
     let url;
     try { url = new URL(request.url); }
     catch { return new Response("Invalid URL", {status: 400}); }
@@ -87,8 +87,8 @@ function showPreviewNotice(window) {
 }
 
 app.whenReady().then(async () => {
-  registerOfflinePreview();
   const appSession = session.fromPartition("persist:blorp-customer");
+  registerOfflinePreview(appSession);
   appSession.setPermissionRequestHandler((_contents, _permission, callback) => callback(false));
   appSession.setPermissionCheckHandler(() => false);
 
