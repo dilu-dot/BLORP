@@ -8,6 +8,7 @@ on:
       - 'desktop/**'
       - 'public/**'
       - '.github/workflows/customer-desktop-windows.yml'
+      - '.github/workflows/publish-customer-preview.yml'
   workflow_dispatch:
 
 permissions:

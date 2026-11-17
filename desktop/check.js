@@ -62,3 +62,7 @@ assert.ok(cloud.includes("exchangeCodeForSession"));
 assert.ok(cloud.includes("piwcwmspjhtalryzpkez"));
 assert.ok(!cloud.includes("service_role"));
 console.log("Cloud auth source checks passed");
+
+const partitionSource=fs.readFileSync("desktop/main.js","utf8");
+assert.ok(partitionSource.includes('appSession.protocol.handle("blorp"'),'Bundled app protocol must be registered on its session');
+console.log("Electron session protocol source check passed");

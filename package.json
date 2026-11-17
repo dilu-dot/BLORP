@@ -6,7 +6,7 @@
   "main": "desktop/main.js",
   "scripts": {
     "desktop:start": "electron .",
-    "desktop:check": "node --check desktop/main.js && node desktop/check.js",
+    "desktop:check": "node --check desktop/main.js && node --check desktop/cloud-auth.js && node --check public/assets/cloud-desktop.js && node desktop/check.js",
     "desktop:build": "electron-builder --win portable --publish never"
   },
   "devDependencies": {
