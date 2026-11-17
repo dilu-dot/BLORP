@@ -2,7 +2,7 @@
 (() => {
  'use strict';
  const $ = id => document.getElementById(id);
- const localPreview = location.protocol === 'file:';
+ const localPreview = location.protocol === 'file:' || location.protocol === 'blorp:';
  const build = (tag, className='', text) => {const e=document.createElement(tag); if(className)e.className=className; if(text!==undefined)e.textContent=String(text); return e;};
  const api = async (url, payload) => {
    const res=await fetch(url,{method:payload===undefined?'GET':'POST',headers:payload===undefined?{}:{'Content-Type':'application/json'},credentials:'same-origin',cache:'no-store',body:payload===undefined?undefined:JSON.stringify(payload)});

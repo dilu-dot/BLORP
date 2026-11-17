@@ -1,8 +1,8 @@
 {
   "name": "blorp-ai-customer-desktop",
   "private": true,
-  "version": "0.5.4",
-  "description": "Blorp AI Windows desktop client - local demo until backend is hosted",
+  "version": "0.5.6",
+  "description": "Blorp AI Windows customer cloud signup and membership preview",
   "main": "desktop/main.js",
   "scripts": {
     "desktop:start": "electron .",
@@ -21,6 +21,7 @@
     },
     "files": [
       "desktop/main.js",
+      "desktop/cloud-auth.js",
       "desktop/google-oauth.js",
       "desktop/preload.js",
       "desktop/owner-exclusion.txt",
@@ -33,5 +34,8 @@
       ],
       "icon": "desktop/blorp.ico"
     }
+  },
+  "dependencies": {
+    "@supabase/supabase-js": "2.95.0"
   }
 }

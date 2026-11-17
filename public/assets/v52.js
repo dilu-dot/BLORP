@@ -3,7 +3,7 @@
 (() => {
  'use strict';
  const $=id=>document.getElementById(id);
- const sitePreview=location.protocol==='file:';
+ const sitePreview=location.protocol==='file:'||location.protocol==='blorp:';
  const guarded=new Set(['builder','multitask','workflows','localai']);
  let account=null, googleReady=false, linking=false, pendingPlan='builder', prices=[], checkout={}, paymentInstructions='';
  const say=(message)=>{if(typeof showToast==='function')showToast(message);else console.info(message);};

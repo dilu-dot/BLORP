@@ -5,7 +5,8 @@
  * Actual sign-in, payments, and AI building require a backend.
  * The private Blorp Owner desktop app is NOT included.
  */
-const {app, BrowserWindow, protocol, net, session, shell, ipcMain} = require("electron");
+const {app, BrowserWindow, protocol, net, session, shell, ipcMain, safeStorage} = require("electron");
+const {BlorpCloudAuth} = require("./cloud-auth");
 const {authorizeWithGoogle,isGoogleDesktopId} = require("./google-oauth");
 const {pathToFileURL} = require("node:url");
 const path = require("node:path");
@@ -92,16 +93,33 @@ app.whenReady().then(async () => {
   appSession.setPermissionCheckHandler(() => false);
 
   let backend = null;
-  const configured = process.env.BLORP_SERVER_URL;
+  // The public desktop uses Supabase by default; local Python backend only via explicit dev opt-in.
+  const configured = process.env.BLORP_USE_LEGACY_BACKEND === "1" ? (process.env.BLORP_SERVER_URL || LOCAL_BACKEND) : null;
   try {
-    const origin = validateOrigin(configured || LOCAL_BACKEND);
+    if (!configured) throw Error("Legacy backend disabled for cloud desktop");
+    const origin = validateOrigin(configured);
     if (await health(origin)) backend = origin;
   } catch (error) {
     console.warn("Blorp server configuration invalid:", error.message);
   }
 
-  let oauthInProgress = false;
+  const cloud = new BlorpCloudAuth({dir:app.getPath("userData"),safeStorage,shell});
   let window;
+  ipcMain.handle("blorp:cloud",async(event,operation,payload)=>{
+    if(!window||event.sender!==window.webContents||
+       event.senderFrame!==window.webContents.mainFrame||
+       !allowedPage(window.webContents.getURL(),backend))
+      throw Error("Untrusted desktop operation.");
+    switch(operation){
+      case "status":return cloud.status();
+      case "signIn":return cloud.signIn(payload);
+      case "signUp":return cloud.signUp(payload);
+      case "signOut":return cloud.signOut();
+      case "google":return cloud.google();
+      default:throw Error("Unsupported cloud operation");
+    }
+  });
+  let oauthInProgress = false;
   ipcMain.handle("blorp:google:authorize", async event => {
     if (!window || event.sender !== window.webContents ||
         !allowedPage(window.webContents.getURL(), backend))
@@ -143,7 +161,7 @@ app.whenReady().then(async () => {
   if (backend) {
     await window.loadURL(backend + "/");
   } else {
-    window.webContents.once("did-finish-load", () => showPreviewNotice(window));
+    // Cloud auth is active via Supabase; no legacy "cloud not connected" banner.
     await window.loadURL(OFFLINE);
   }
 });
