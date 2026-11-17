@@ -1,0 +1,40 @@
+name: Publish Blorp AI Windows preview
+
+on:
+  workflow_run:
+    workflows:
+      - Build public Blorp AI Windows app
+    types: [completed]
+
+permissions:
+  actions: read
+  contents: write
+
+jobs:
+  publish:
+    name: Publish customer preview to GitHub Releases
+    if: ${{ github.event.workflow_run.conclusion == 'success' && github.event.workflow_run.head_branch == 'main' }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Download verified Windows executable artifact
+        env:
+          GH_TOKEN: ${{ github.token }}
+          BUILD_RUN_ID: ${{ github.event.workflow_run.id }}
+          REPOSITORY: ${{ github.repository }}
+        run: |
+          gh run download "$BUILD_RUN_ID" --repo "$REPOSITORY" --name Blorp-AI-Windows-Preview --dir ./download
+          test -n "$(find ./download -type f -name '*.exe' -print -quit)"
+
+      - name: Publish public preview release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          REPOSITORY: ${{ github.repository }}
+          SOURCE_SHA: ${{ github.event.workflow_run.head_sha }}
+        run: |
+          TAG="desktop-v0.5.3-preview"
+          EXE="$(find ./download -type f -name '*.exe' -print -quit)"
+          if gh release view "$TAG" --repo "$REPOSITORY" >/dev/null 2>&1; then
+            gh release upload "$TAG" "$EXE" --repo "$REPOSITORY" --clobber
+          else
+            gh release create "$TAG" "$EXE" --repo "$REPOSITORY" --target "$SOURCE_SHA" --title "Blorp AI for Windows — Preview" --prerelease --notes "This is a downloadable Windows desktop UI preview, not a production AI service. Without a compatible running backend it opens the Blorp demo; sign-in, payments, cloud sync, AI responses and builds do not work offline. Do not expose the local development backend to the internet. The private Blorp Owner app is NOT included."
+          fi
