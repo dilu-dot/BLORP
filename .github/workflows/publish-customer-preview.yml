@@ -16,7 +16,23 @@ jobs:
     if: ${{ github.event.workflow_run.conclusion == 'success' && github.event.workflow_run.head_branch == 'main' && github.event.workflow_run.head_repository.full_name == github.repository }}
     runs-on: ubuntu-latest
     steps:
+      - name: Only publish artifact from current main commit
+        id: fresh
+        env:
+          GH_TOKEN: ${{ github.token }}
+          REPOSITORY: ${{ github.repository }}
+          SOURCE_SHA: ${{ github.event.workflow_run.head_sha }}
+        run: |
+          CURRENT_SHA="$(gh api "repos/$REPOSITORY/git/ref/heads/main" --jq '.object.sha')"
+          if [ "$SOURCE_SHA" = "$CURRENT_SHA" ]; then
+            echo "current=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "current=false" >> "$GITHUB_OUTPUT"
+            echo "Skipping older build: $SOURCE_SHA"
+          fi
+
       - name: Download verified Windows executable artifact
+        if: steps.fresh.outputs.current == 'true'
         env:
           GH_TOKEN: ${{ github.token }}
           BUILD_RUN_ID: ${{ github.event.workflow_run.id }}
@@ -26,6 +42,7 @@ jobs:
           test -n "$(find ./download -type f -name '*.exe' -print -quit)"
 
       - name: Publish public preview release
+        if: steps.fresh.outputs.current == 'true'
         env:
           GH_TOKEN: ${{ github.token }}
           REPOSITORY: ${{ github.repository }}
@@ -36,5 +53,5 @@ jobs:
           if gh release view "$TAG" --repo "$REPOSITORY" >/dev/null 2>&1; then
             gh release upload "$TAG" "$EXE" --repo "$REPOSITORY" --clobber
           else
-            gh release create "$TAG" "$EXE" --repo "$REPOSITORY" --target "$SOURCE_SHA" --title "Blorp AI for Windows — Supabase cloud membership preview" --prerelease --notes "Supabase email sign-in and membership status are connected in this cloud preview. Google OAuth requires provider configuration in Supabase and the desktop loopback callback allowlist. AI builds and payments are not enabled. This is not a production SaaS service. Without a compatible running backend it opens the Blorp demo; sign-in, payments, cloud sync, AI responses and builds do not work offline. Do not expose the local development backend to the internet. The private Blorp Owner app is NOT included."
+            gh release create "$TAG" "$EXE" --repo "$REPOSITORY" --target "$SOURCE_SHA" --title "Blorp AI for Windows — Supabase cloud membership preview" --prerelease --notes "Blorp 0.5.6 customer Windows preview uses Supabase Auth email signup/signin and live plan verification. Google login requires enabling the Supabase Google provider and allowing the exact http://127.0.0.1:47856/blorp-auth/callback redirect. Chats and drafts remain on the user's PC; AI building and UPI payments are not yet connected. Do not expose the legacy localhost Python backend. Private Devo Engine Owner app is not included."
           fi
