@@ -48,10 +48,10 @@ jobs:
           REPOSITORY: ${{ github.repository }}
           SOURCE_SHA: ${{ github.event.workflow_run.head_sha }}
         run: |
-          TAG="desktop-v0.5.6-cloud-preview"
+          TAG="desktop-v0.5.7-local-studio-preview"
           EXE="$(find ./download -type f -name '*.exe' -print -quit)"
           if gh release view "$TAG" --repo "$REPOSITORY" >/dev/null 2>&1; then
             gh release upload "$TAG" "$EXE" --repo "$REPOSITORY" --clobber
           else
-            gh release create "$TAG" "$EXE" --repo "$REPOSITORY" --target "$SOURCE_SHA" --title "Blorp AI for Windows — Supabase cloud membership preview" --prerelease --notes "Blorp 0.5.6 customer Windows preview uses Supabase Auth email signup/signin and live plan verification. Google login requires enabling the Supabase Google provider and allowing the exact http://127.0.0.1:47856/blorp-auth/callback redirect. Chats and drafts remain on the user's PC; AI building and UPI payments are not yet connected. Do not expose the legacy localhost Python backend. Private Devo Engine Owner app is not included."
+            gh release create "$TAG" "$EXE" --repo "$REPOSITORY" --target "$SOURCE_SHA" --title "Blorp AI for Windows — Functional Local Studio preview" --prerelease --notes "Blorp 0.5.7 Local Studio adds real local Ollama chat, saved on-device conversations, editable HTML/CSS/JS projects and single-pass local website generation (requires installing Ollama and a compatible coding model). Supabase Auth remains for accounts/membership. Full multi-agent orchestration, payments and cloud AI are NOT yet supported. No command execution; generated code is untrusted and must be reviewed. Private Devo Engine is not included."
           fi

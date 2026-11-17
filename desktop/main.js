@@ -7,6 +7,7 @@
  */
 const {app, BrowserWindow, protocol, net, session, shell, ipcMain, safeStorage} = require("electron");
 const {BlorpCloudAuth} = require("./cloud-auth");
+const {LocalWorkspace} = require("./native-workspace");
 const {authorizeWithGoogle,isGoogleDesktopId} = require("./google-oauth");
 const {pathToFileURL} = require("node:url");
 const path = require("node:path");
@@ -104,7 +105,27 @@ app.whenReady().then(async () => {
   }
 
   const cloud = new BlorpCloudAuth({dir:app.getPath("userData"),safeStorage,shell});
+  const studio = new LocalWorkspace({dataDir:app.getPath("userData"),cloud,shell});
   let window;
+  ipcMain.handle("blorp:studio",async(event,action,payload)=>{
+    if(!window||event.sender!==window.webContents||
+       event.senderFrame!==window.webContents.mainFrame||
+       !allowedPage(window.webContents.getURL(),backend))
+       throw Error("Untrusted workspace operation");
+    switch(action){
+      case "models":return studio.models();
+      case "list":return studio.list();
+      case "newChat":return studio.newChat(payload?.title);
+      case "readChat":return studio.readChat(payload?.id);
+      case "chat":return studio.chat(payload||{});
+      case "createProject":return studio.createProject(payload||{});
+      case "readProject":return studio.readProject(payload?.id);
+      case "saveProject":return studio.saveProject(payload||{});
+      case "openProject":return studio.openProject(payload?.id);
+      case "build":return studio.build(payload||{});
+      default:throw Error("Unsupported local workspace operation");
+    }
+  });
   ipcMain.handle("blorp:cloud",async(event,operation,payload)=>{
     if(!window||event.sender!==window.webContents||
        event.senderFrame!==window.webContents.mainFrame||
