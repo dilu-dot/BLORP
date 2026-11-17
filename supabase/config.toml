@@ -1,0 +1,2 @@
+[functions.blorp-membership]
+verify_jwt = true
