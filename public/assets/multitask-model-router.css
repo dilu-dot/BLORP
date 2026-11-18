@@ -1,0 +1,16 @@
+/* Multi Task-only route configuration */
+.mt-router{margin:18px 0 24px}
+.mt-router .panelhead{display:flex;justify-content:space-between;align-items:start;gap:12px}
+.mt-router .panelhead h2{margin:0 0 5px}
+.mt-router-status{margin:12px 0;padding:10px 12px;border:1px solid rgba(132,209,178,.25);border-radius:10px;font-size:12px}
+.mt-router-status.mt-error{border-color:#d18d81;color:#ffd0c8}
+.mt-router-rows{display:grid;gap:9px}
+.mt-route-row{display:grid;grid-template-columns:minmax(130px,1fr) minmax(120px,155px) minmax(120px,170px) minmax(130px,1.2fr) auto;gap:8px;align-items:center;padding:11px 12px;border:1px solid rgba(160,205,180,.2);border-radius:12px;background:rgba(9,27,25,.25)}
+.mt-route-agent{display:grid;gap:3px;min-width:0}
+.mt-route-agent strong{overflow-wrap:anywhere}
+.mt-route-agent small{opacity:.7}
+.mt-route-row input,.mt-route-row select{min-width:0;width:100%;padding:9px;border-radius:9px;border:1px solid #567366;background:#172c28;color:#e9fff1;font:inherit}
+.mt-route-row select[hidden]{display:none}
+.mt-route-row .btn{white-space:nowrap}
+@media(max-width:850px){.mt-route-row{grid-template-columns:repeat(2,minmax(0,1fr))}.mt-route-agent{grid-column:1/-1}.mt-route-row input{grid-column:1/-1}.mt-route-row .btn{justify-self:start}}
+@media(max-width:480px){.mt-router .panelhead{flex-direction:column}.mt-route-row{grid-template-columns:1fr}.mt-route-agent,.mt-route-row input{grid-column:auto}}
