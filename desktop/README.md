@@ -1,38 +1,23 @@
-# Blorp AI 0.5.7 – Functional Local Studio Preview
+# Blorp AI 0.5.8 — Local Multi-Agent Studio + Manual UPI Cloud Preview
 
-Blorp has **real local functionality** in this release, but it is **not yet a complete AI SaaS or multi-agent website builder**.
+## What works
+- Supabase email/password and configured Google sign-in.
+- Actual native local chat via installed Ollama model; locally stored chat files.
+- Real HTML/CSS/JS project creation and file editor on the customer's PC.
+- **Three-stage sequential local website agents**: Architect writes plan, Builder generates source, QA reviewer critiques it using the same Ollama model. They do NOT execute or test the generated code.
+- Local isolated website preview (source must be reviewed before publishing).
+- Cloud membership and a manually verified UPI request form: owner-configured prices and UPI instructions, customer-entered payer name/UTR, pending status; **no automatic confirmation**.
 
-## Working features
-- Supabase email/password authentication and configured Google OAuth.
-- Server-checked membership status.
-- **Local AI Studio** with real Ollama chat responses (no fake canned answers).
-- Conversations stored on the user's computer as JSON files, per signed-in user.
-- Real static website projects with `index.html`, `styles.css`, `script.js` saved to local Windows app data.
-- Local coding model generates HTML/CSS/JS source, which can be edited, saved and previewed in an isolated iframe.
-- "Open folder" reveals the real local project files in File Explorer.
+## Setup
+1. Install Ollama from https://ollama.com/download/windows.
+2. Run `ollama pull qwen2.5-coder:3b` in PowerShell.
+3. Open the 0.5.8 portable EXE, sign in, select Local AI Studio, then Refresh models.
+4. Use AI Chat or Website Builder. Open projects in My Projects.
+5. For UPI, select Membership & UPI. Payment remains unavailable until the private Owner configures an actual UPI ID and four plan prices.
 
-## Setup on Windows
-1. Install [Ollama](https://ollama.com/download/windows).
-2. In PowerShell run `ollama pull qwen2.5-coder:3b`.
-3. Open `Blorp AI 0.5.7.exe`, sign in, open **Local AI Studio**, then click **Refresh models**.
-4. Use **AI Chat** to ask the model, **Website Builder** to generate source, and **My Projects** to edit files.
-
-Local data location: `%APPDATA%\blorp-ai-customer-desktop\BlorpWorkspace\<signed-in-user-id>\` (actual path displayed by native workspace; userData directory may vary with Electron app name). Chat prompts and generated websites are not uploaded to Supabase. Local AI uses your machine CPU/GPU and storage. Installing and downloading the model needs an internet connection initially; inference runs locally.
-
-## Limitations
-- The local generator is **single-pass** and can return invalid JSON; retry with a stronger coder model. No background terminals, arbitrary filesystem writes, external websites, tests or code execution.
-- **Multi-agent coordination**, cloud AI and actual payment checkout remain inactive and are not advertised as functioning.
-- The old static preview pages are hidden from the main navigation so users aren't misled about demo features.
-- Model-generated HTML/JS can be unsafe; inspect code before publishing or opening it outside Blorp's sandboxed preview.
-- Supabase sign-in still needs network access, even though project/chat data stays on the local drive.
-- This is an unsigned Windows preview. Run on a test computer before broader distribution.
-
-## Developer build
-```powershell
-npm install
-npm run desktop:check
-python desktop/generate_icon.py
-npm run desktop:build
-```
-
-Private Devo Engine owner app is separate and **not** connected to this local Studio.
+## Limits
+- This is **not** a finished cloud AI or payment gateway. UTR is a manual claim. Owner must confirm real funds in the bank statement before approval.
+- Multi-agent flow is sequential model calls, not autonomous terminal commands, isolated worktrees or integration tests.
+- Customer chats/projects are on the local PC, never in Supabase.
+- Generated HTML/JS is untrusted. No general shell or OS command execution is provided.
+- Private Devo Engine Owner source is never bundled in this public EXE.

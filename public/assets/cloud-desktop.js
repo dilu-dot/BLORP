@@ -41,7 +41,7 @@ function update(s){
    $("cloudPlan").textContent=s.membershipVerified?s.plan.toUpperCase():"UNVERIFIED";
    $("cloudPlanNotice").hidden=false;
    $("cloudPlanNotice").textContent=s.membershipVerified
-     ?"Cloud membership connected. AI building and payments are not connected in this preview; drafts remain local."
+     ?"Cloud membership connected. Local AI building is available in Local Studio. UPI payment requests can be submitted for manual Owner verification; premium cloud AI remains unavailable."
      :(s.message||"Cloud membership unavailable; premium features locked.");
  }else{
    $("cloudPlanNotice").hidden=true;
@@ -88,12 +88,12 @@ document.addEventListener("submit",e=>{
 document.addEventListener("click",e=>{
  if(e.target.closest("#submitUtrBtn,#ownerNav,[data-owner-open]")){
    e.preventDefault();e.stopImmediatePropagation();
-   if(typeof showToast==="function")showToast("Cloud payments and private Owner tools are not connected in this preview.");
+   if(typeof showToast==="function")showToast("Use Membership & UPI for verified manual payment requests. Private Owner tools are separate.");
  }
 },true);
 const note=document.createElement("p");
 note.className="cloud-local-hint";
-note.textContent="Cloud account active · AI builds and payments are not connected yet. Draft data stays on your PC.";
+note.textContent="Cloud account active · Local AI Studio builds real files; UPI payment requests require Owner verification.";
 if($("account"))$("account").prepend(note);
 cloud.invoke("status").then(update).catch(e=>say("Could not connect to Supabase: "+(e.message||"unknown error"),true));
 })();

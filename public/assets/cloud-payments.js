@@ -51,6 +51,12 @@ async function refresh(){
  if(!status.membershipVerified)throw Error("Membership service unavailable.");
  draw();
 }
+document.addEventListener("click",e=>{
+ const link=e.target.closest('[data-view="membership"],[data-open="membership"]');
+ if(!link)return;
+ e.preventDefault();e.stopImmediatePropagation();
+ button.click();
+},true);
 button.addEventListener("click",async()=>{
  box.hidden=false;say("Loading your cloud payment options…");
  try{await refresh()}catch(e){say(e.message,true);$("blorpPaySubmit").disabled=true}
@@ -72,7 +78,7 @@ $("blorpPayForm").addEventListener("submit",async e=>{
    await refresh();
    say("Request submitted and pending Owner bank verification. Access is NOT active yet.");
  }catch(err){say(err.message,true)}
- finally{busy=false;if(status)draw()}
+ finally{busy=false;if(status)$("blorpPaySubmit").disabled=!(Number.isInteger(price())&&status.payment_config?.upi_id)}
 });
 window.addEventListener("blorp:authchange",e=>{if(!e.detail){box.hidden=true;status=null}});
 })();

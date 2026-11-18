@@ -81,3 +81,8 @@ console.log("Native workspace source checks passed.");
 
 assert.ok(pkg.build.files.includes('desktop/local-agents.js'));
 assert.ok(fs.readFileSync('desktop/native-workspace.js','utf8').includes('runAgentBuild'));
+
+assert.ok(fs.readFileSync('desktop/main.js','utf8').includes('submitPayment'));
+assert.ok(fs.readFileSync('desktop/cloud-auth.js','utf8').includes('submitPayment'));
+assert.ok(fs.readFileSync('public/index.html','utf8').includes('cloud-payments.js'));
+console.log('Cloud payment request source checks passed');
