@@ -22,6 +22,39 @@
      if(qrUrl)URL.revokeObjectURL(qrUrl);qrUrl=URL.createObjectURL(await res.blob());setImage('memberQrImage',true);setImage('ownerQrImage',isOwner());}
    catch(err){console.warn('Could not load payment QR',err)}
  }
+ // Server-authoritative five-minute checkout. Never use a browser-only timer for entitlement.
+ let checkoutAttempt=null,checkoutOffsetMs=0,checkoutBusy=false,checkoutTicker=null;
+ function checkoutRemaining(){
+   if(!checkoutAttempt||checkoutAttempt.status!=='open')return 0;
+   return Math.max(0,Math.ceil((checkoutAttempt.expires_at*1000-(Date.now()+checkoutOffsetMs))/1000));
+ }
+ function updateCheckoutClock(){
+   const seconds=checkoutRemaining();
+   let label='Not started';
+   if(checkoutAttempt?.status==='submitted')label='Submitted';
+   else if(checkoutAttempt?.status==='open')label=String(Math.floor(seconds/60)).padStart(2,'0')+':'+String(seconds%60).padStart(2,'0');
+   $('paymentCountdown').textContent=label;
+   $('submitUtrBtn').disabled=checkoutBusy||!checkoutAttempt||checkoutAttempt.status!=='open'||seconds<=0;
+   if(checkoutAttempt?.status==='open'&&seconds<=0){
+     $('paymentInstructions').textContent='The five-minute UTR window expired. Do not pay twice; contact the owner if you already transferred money.';
+   }
+ }
+ async function startCheckout(){
+   if(!currentAccount||localPreview||checkoutBusy)return;
+   checkoutBusy=true;checkoutAttempt=null;updateCheckoutClock();
+   $('paymentStatus').textContent='Starting a five-minute checkout on the server…';
+   try{
+     const result=await api('/api/billing/attempt',{plan:currentPlan,interval});
+     if(result.status!=='open'||!result.attempt_id||result.plan!==currentPlan||result.interval!==interval)throw Error('Checkout could not be started for the selected plan');
+     checkoutAttempt=result;
+     checkoutOffsetMs=result.server_time*1000-Date.now();
+     $('paymentStatus').textContent='Checkout open for '+currentPlan+' ('+interval+'). Submit the UTR before the countdown ends; owner approval is still required.';
+     $('memberInrAmount').textContent=rupees(result.paid_inr_paise);
+     $('memberUpiId').textContent=result.upi_id;
+     if(!checkoutTicker)checkoutTicker=setInterval(updateCheckoutClock,1000);
+   }catch(err){$('paymentStatus').textContent=err.message;}
+   finally{checkoutBusy=false;updateCheckoutClock();}
+ }
  function displayPrice(){const entry=catalogEntry();const amount=paymentConfig.prices_inr_paise?.[paymentKey()];
    $('paymentTitle').textContent=`${currentPlan==='builder'?'Builder':'Studio'} · ${interval==='annual'?'Annual':'Monthly'} membership`;
    $('paymentSummary').textContent=`${entry?'$'+(entry.amount_cents/100).toFixed(0):'—'} USD list price · ${interval==='annual'?'12 months':'1 month'} · Your access activates after owner verification.`;
@@ -39,9 +72,9 @@
  window.blorpLoadPaymentSettings=loadPlans;
  window.addEventListener('blorp:selectplan',e=>{
    if(!currentAccount){toast('Sign in to purchase a membership');return;}
-   currentPlan=e.detail;$('paymentPanel').hidden=false;displayPrice();$('paymentPanel').scrollIntoView({behavior:'smooth',block:'start'});
+   currentPlan=e.detail;$('paymentPanel').hidden=false;displayPrice();$('paymentPanel').scrollIntoView({behavior:'smooth',block:'start'});startCheckout();
  });
- document.querySelectorAll('[data-billing]').forEach(button=>button.addEventListener('click',()=>{interval=button.dataset.billing;displayPrice();}));
+ document.querySelectorAll('[data-billing]').forEach(button=>button.addEventListener('click',()=>{interval=button.dataset.billing;displayPrice();if(!$('paymentPanel').hidden)startCheckout();}));
  async function renderMyRequests(){if(!currentAccount||localPreview)return;
    const target=$('myPaymentRequests');target.replaceChildren();
    const data=await api('/api/billing/requests');if(!data.requests.length){target.append(build('p','subtitle','No UTR submissions yet.'));return;}
@@ -54,13 +87,13 @@
  $('refreshPayments').addEventListener('click',()=>window.blorpRefreshPayments());
  $('paymentRequestForm').addEventListener('submit',async event=>{
    event.preventDefault();if(!currentAccount){toast('Sign in first');return;}
-   if($('submitUtrBtn').disabled)return;
-   const payload={plan:currentPlan,interval,method:'manual',payer_name:$('paymentPayerName').value.trim(),reference:$('paymentUtr').value.trim()};
+   if($('submitUtrBtn').disabled||checkoutRemaining()<=0||!checkoutAttempt){$('paymentStatus').textContent='Start a valid five-minute checkout first.';return;}
+   const payload={plan:currentPlan,interval,attempt_id:checkoutAttempt.attempt_id,method:'manual',payer_name:$('paymentPayerName').value.trim(),reference:$('paymentUtr').value.trim()};
    if(!confirm(`Did you pay ${$('memberInrAmount').textContent} to ${paymentConfig.upi_id}? Blorp will only record your UTR for owner review.`))return;
    const button=$('submitUtrBtn');button.disabled=true;
-   try{const res=await api('/api/billing/request',payload);$('paymentStatus').textContent=`UTR submitted (${res.reference}). Status: PENDING OWNER REVIEW. Build Fast remains locked until the owner verifies it.`;$('paymentUtr').value='';await renderMyRequests();}
+   try{const res=await api('/api/billing/request',payload);checkoutAttempt.status='submitted';$('paymentStatus').textContent=`UTR submitted (${res.reference}). Status: PENDING OWNER REVIEW. Build Fast remains locked until the owner verifies it.`;$('paymentUtr').value='';await renderMyRequests();}
    catch(err){$('paymentStatus').textContent=err.message;}
-   finally{displayPrice();}
+   finally{displayPrice();updateCheckoutClock();}
  });
  function selectOwnerTab(id){ownerTab=id;document.querySelectorAll('[data-owner-tab]').forEach(button=>button.classList.toggle('selected',button.dataset.ownerTab===id));document.querySelectorAll('[data-owner-screen]').forEach(el=>el.hidden=el.dataset.ownerScreen!==id);}
  document.querySelectorAll('[data-owner-tab],[data-owner-open]').forEach(b=>b.addEventListener('click',()=>selectOwnerTab(b.dataset.ownerTab||b.dataset.ownerOpen)));
@@ -149,7 +182,7 @@
    finally{button.disabled=false;}
  });
  window.addEventListener('blorp:authchange',event=>{currentAccount=event.detail;
-   if(!currentAccount){if(qrUrl){URL.revokeObjectURL(qrUrl);qrUrl=null;}return;}
+   if(!currentAccount){checkoutAttempt=null;checkoutOffsetMs=0;updateCheckoutClock();if(qrUrl){URL.revokeObjectURL(qrUrl);qrUrl=null;}return;}
    loadPlans().catch(err=>toast(err.message));renderMyRequests().catch(err=>toast(err.message));
    if(isOwner())loadOwner().catch(err=>toast(err.message));
  });

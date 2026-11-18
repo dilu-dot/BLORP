@@ -46,7 +46,8 @@ with tempfile.TemporaryDirectory() as temporary:
         assert api(customer,'/api/billing/qr')[0]==404
         # Without an owner-configured QR and price there can be no payment submission.
         payload={'plan':'builder','interval':'annual','method':'manual','payer_name':'Test Payer','reference':'123456789012'}
-        assert api(customer,'/api/billing/request',payload)[0]==503
+        assert api(customer,'/api/billing/attempt',{'plan':'builder','interval':'annual'})[0]==503
+        assert api(customer,'/api/billing/request',payload)[0]==422, 'UTR must have a server-issued checkout ID'
         assert api(customer,'/api/auth/google',{'credential':'fake'})[0]==503
         result=subprocess.run([sys.executable,str(ROOT/'manage_owner.py'),'owner@example.test'],env=env,capture_output=True,text=True,timeout=8)
         assert result.returncode==0,result.stderr
@@ -58,10 +59,25 @@ with tempfile.TemporaryDirectory() as temporary:
         assert api(customer,'/api/owner/payments/settings',config)[0]==403
         prices=api(customer,'/api/billing/plans')[1]['upi']
         assert prices['qr_configured'] and prices['prices_inr_paise']['builder:annual']==1800000
-        result_code,request=api(customer,'/api/billing/request',payload)
+        code, attempt=api(customer,'/api/billing/attempt',{'plan':'builder','interval':'annual'})
+        assert code==201 and attempt['status']=='open' and 0<attempt['seconds_remaining']<=300
+        assert attempt['paid_inr_paise']==1800000
+        assert api(customer,'/api/billing/attempt',{'plan':'builder','interval':'annual'})[1]['attempt_id']==attempt['attempt_id']
+        assert api(other,'/api/billing/attempt?id='+attempt['attempt_id'])[0]==404, 'Attempt is account-scoped'
+        # Another user's checkout cannot authorize this user's UTR.
+        code,other_attempt=api(other,'/api/billing/attempt',{'plan':'builder','interval':'annual'})
+        assert code==201
+        assert api(customer,'/api/billing/request',{**payload,'attempt_id':other_attempt['attempt_id']})[0]==404
+        # Expires at the server even if the client displays a modified countdown.
+        with sqlite3.connect(str(Path(temporary)/'blorp.sqlite3')) as db:
+            db.execute('UPDATE payment_attempts SET expires_at=? WHERE id=?',(int(time.time())-1,other_attempt['attempt_id']))
+        assert api(other,'/api/billing/request',{**payload,'attempt_id':other_attempt['attempt_id']})[0]==410
+        other_attempt=api(other,'/api/billing/attempt',{'plan':'builder','interval':'annual'})[1]
+        result_code,request=api(customer,'/api/billing/request',{**payload,'attempt_id':attempt['attempt_id']})
         assert result_code==201 and request['paid_inr_paise']==1800000 and request['status']=='pending',request
         payid=request['request_id']
-        assert api(other,'/api/billing/request',payload)[0]==409, 'Duplicate UTR must be blocked globally'
+        assert api(customer,'/api/billing/request',{**payload,'attempt_id':attempt['attempt_id'],'reference':'DIFFERENTREF123'})[0]==409, 'Attempt is one-time use'
+        assert api(other,'/api/billing/request',{**payload,'attempt_id':other_attempt['attempt_id']})[0]==409, 'Duplicate UTR must be blocked globally'
         assert api(customer,'/api/auth/me')[1]['user']['plan']=='free'
         assert api(customer,'/api/owner/payments/decision',{'request_id':payid,'decision':'approve','verified_payment':True})[0]==403
         assert api(owner,'/api/owner/payments/decision',{'request_id':payid,'decision':'approve','verified_payment':True,'note':'Verified independently'})[0]==422
@@ -85,6 +101,6 @@ with tempfile.TemporaryDirectory() as temporary:
         assert api(customer,'/api/auth/me')[1]['user']['plan']=='studio'
         assert api(owner,'/api/owner/memberships/set',{'user_id':c['id'],'plan':'free','days':1,'reason':'QA test finished'})[0]==200
         assert api(customer,'/api/auth/me')[1]['user']['plan']=='free'
-        print('PASS: private owner controls, QR setup, INR prices, UTR dedupe, verified approval, revenue, expiry, audit')
+        print('PASS: owner controls, server-issued 5m attempt, expiry, cross-user safety, duplicate UTR, verified approval, revenue, audit')
     finally:
         proc.terminate();proc.wait(timeout=5)

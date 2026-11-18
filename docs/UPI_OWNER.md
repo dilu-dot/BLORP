@@ -24,9 +24,11 @@ Blorp's subscription list prices remain **$20/month, $216/year, $50/month, $540/
 
 1. Customer signs in and opens **Membership**.
 2. Customer selects Builder or Studio, then Monthly or Annual.
-3. Customer sees your uploaded QR, UPI ID and exact INR amount. If the owner hasn't configured the QR + price, payment submission stays unavailable.
-4. Customer pays in their own UPI app and submits the **payer name** and **UTR / transaction reference** (8–35 uppercase letters/digits/hyphens). The request starts as `pending` and does not unlock Build Fast.
-5. Duplicate references are rejected by a SQLite unique index, including across different accounts. Customer can see their request's pending/approved/rejected status.
+3. Clicking **Subscribe / Request membership** creates an authenticated, server-issued checkout attempt (`POST /api/billing/attempt`). The server returns a 5-minute deadline, exact INR price, UPI ID, and its reference QR route. The timer remains authoritative on the Python server even if the page is reloaded, the clock is changed, or JavaScript is edited.
+4. Customer sees your uploaded QR, UPI ID and exact INR amount. If the owner hasn't configured a QR and price, the attempt cannot start. **Verify the QR's payee and amount independently before collecting real funds.**
+5. Customer pays using their own UPI app, then submits their **payer name** and **UTR / transaction reference** (8–35 uppercase letters/digits/hyphens) with the attempt ID to `POST /api/billing/request` **before the 5-minute deadline**. The request starts as `pending` and does not unlock Build Fast.
+6. Expired or previously submitted attempts cannot be reused. Reopening the same still-active plan returns the existing attempt instead of restarting the countdown. Other accounts cannot submit someone else's attempt. Duplicate UTR references remain rejected globally by a SQLite unique index.
+7. If the deadline expires **after money was sent**, the customer should not pay twice; contact the owner for review/support. The timer is a deadline to submit the UTR, not proof a transfer completed.
 
 ## Owner decision journey
 
@@ -39,6 +41,13 @@ Open **Owner Console → Payments** or the pending card in Overview. **Never rel
 Click **Approve**, then type the exact UTR and INR amount, tick the independent verification statement, and write a note of at least eight characters. Only then does the server activate the plan and record an audit entry. **Reject** leaves Build Fast locked. A repeated attempt to approve an already reviewed request is rejected.
 
 The Owner may also grant/revoke memberships under **Users** with an audited reason. Access automatically expires after the plan duration. Future cloud deployments will need proper idempotency, fraud review, refunds, tax invoices, renewal/cancellation handling, retention/deletion policies and support processes.
+
+## Server API integration
+
+- `POST /api/billing/attempt` with `{"plan":"builder","interval":"monthly"}` begins or resumes a timed checkout for an authenticated user, returning `attempt_id`, `expires_at`, `server_time`, `paid_inr_paise`, `upi_id`, and `qr_url`.
+- `GET /api/billing/attempt?id=<attempt_id>` returns the authenticated customer's attempt status and remaining seconds. Do not trust a browser timer as the source of truth.
+- `POST /api/billing/request` requires `attempt_id`, `plan`, `interval`, `method":"manual"`, `payer_name`, and `reference`; rejects late, reused, other-user, or changed-configuration attempts.
+- `GET /api/billing/requests` shows pending/approved/rejected records. Real membership activation remains solely through independently verified owner approval.
 
 ## What's real / not real
 

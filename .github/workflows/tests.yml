@@ -15,13 +15,15 @@ jobs:
         with:
           python-version: '3.12'
       - name: Syntax check
-        run: python -m compileall -q server.py local_runtime.py build_frontend.py patch_frontend.py manage_owner.py
+        run: python -m compileall -q server.py payment_checkout.py local_runtime.py build_frontend.py patch_frontend.py manage_owner.py
       - name: Local account and API tests
         run: python tests/test_api.py
       - name: Mock Ollama agent tests
         run: python tests/test_local_agents.py
       - name: Membership, owner and payment API tests
         run: python tests/test_memberships.py
+      - name: Timed checkout invariants
+        run: python tests/test_payment_checkout.py
       - name: Frontend JavaScript syntax
         run: |
           node --check public/assets/base.js
