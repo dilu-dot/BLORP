@@ -32,3 +32,13 @@ An authenticated OpenRouter cloud chat path is now available via the JWT-protect
 - The Owner app is private and separate: `dilu-dot/Devo-Engine` 0.6.1. Google Owner OAuth requires additional Supabase redirect `http://127.0.0.1:47857/devo-auth/callback`.
 - Real prices/UPI are initially unconfigured; the private Owner must enter values and verify a bank payment before granting membership.
 - Google login / the actual payment flow / cloud model calls must each be tested end-to-end on Windows before broader public launch.
+
+## Blorp Model Hub 0.6.0
+
+**Default Blorp local LLM:** Select **Model Hub → Install Blorp**, then Balanced (~3.4 GB Qwen3.5 4B, Apache 2.0) or Lite (~986 MB Qwen2.5-Coder 1.5B, Apache 2.0). Ollama must first be installed and running. Installation downloads the chosen model from Ollama into the **user's computer** and creates an Ollama model alias `blorp:latest` with a Blorp system prompt. No large model files or weights are committed to GitHub or bundled in the EXE.
+
+**Add multiple APIs:** Model Hub supports separate provider keys for OpenAI, OpenRouter, Groq, Mistral, NVIDIA NIM, Google Gemini and Anthropic. Fixed official HTTPS endpoints, no arbitrary custom URLs. API keys are encrypted with the OS credential service via Electron `safeStorage`. If OS encryption is unavailable, storing provider keys is refused.
+
+**Set model by job:** Configure Chat, Architect, Landing Page, Frontend, Three.js, Animations and QA independently. **BLORP Auto** in the model dropdown selects the configured route. The agent pipeline calls Architect, task-specific Builder and QA with their respective models, which can span different APIs. API costs are paid through the user's connected providers, not included in the subscription. Users must set provider spending limits.
+
+**Limitations:** Provider requests transmit user task prompts to the selected provider. Generated websites remain on the user's PC. The generator still produces only `index.html`, `styles.css` and `script.js`; no actual Three.js module is bundled, and models do not execute code. The app does not download third-party software silently. BYOK model names must be entered exactly as offered by the provider and a test call may incur provider charges.

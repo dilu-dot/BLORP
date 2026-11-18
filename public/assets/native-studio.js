@@ -61,8 +61,10 @@ async function models(){
  else if(state.models.includes(old))$("studioModel").value=old;
  else if(state.models.length){const coder=state.models.find(x=>/coder|qwen|code|llama/i.test(x));$("studioModel").value=coder||state.models[0];}
  else if(cloudReady)$("studioModel").value="cloud:openai/gpt-4o-mini";
- else $("studioModel").add(new Option("Install Ollama or activate a cloud plan",""));
- if(!local.connected&&!cloudReady)status("AI needs Ollama with an installed model or a configured premium cloud plan.",true);
+ else $("studioModel").add(new Option("Open Model Hub to install Blorp or connect an API",""));
+ $("studioModel").add(new Option("✦ BLORP Auto · task routing","auto"),0);
+ if(!old||old==="auto")$("studioModel").value="auto";
+ if(!local.connected&&!cloudReady)status("Open Model Hub to install Blorp or connect an API provider.",true);
  else if(cloudReady)status("Cloud AI is available for chat. Transcripts still save on your PC.");
 }
 
@@ -91,13 +93,13 @@ $("studioNewChat").addEventListener("click",async()=>{try{state.thread=await inv
 $("studioChatForm").addEventListener("submit",async e=>{
  e.preventDefault();if(state.working)return;
  const message=$("studioChatInput").value.trim(),model=$("studioModel").value;
- if(!message||!model){status("Install Ollama and select a local model first.",true);return}
+ if(!message||!model){status("Select Blorp Auto or an installed model first.",true);return}
  busy(true);status("Waiting for a real response from "+model+"…");
  try{
-   const cloud=model.startsWith("cloud:");
-   const data=cloud?await invoke("cloudChat",{id:state.thread?.id,message}):await invoke("chat",{id:state.thread?.id,model,message});
+   const cloud=model.startsWith("cloud:"),automatic=model==="auto";
+   const data=automatic?await invoke("routedChat",{id:state.thread?.id,message}):cloud?await invoke("cloudChat",{id:state.thread?.id,message}):await invoke("chat",{id:state.thread?.id,model,message});
    state.thread=data.thread;$("studioChatInput").value="";drawThread();await list();
-   status(cloud?"Cloud reply received. Conversation saved only on your PC.":"Response generated locally and conversation saved on this PC.");
+   status(automatic?"Blorp Auto routed chat to "+(data.model||"your chosen model")+". Conversation saved locally.":cloud?"Cloud reply received. Conversation saved only on your PC.":"Response generated locally and conversation saved on this PC.");
  }catch(err){status(err.message,true)}finally{busy(false)}
 });
 async function openProject(id){
@@ -140,10 +142,10 @@ $("studioCreateProject").addEventListener("click",async()=>{
 $("studioBuildForm").addEventListener("submit",async e=>{
  e.preventDefault();if(state.working)return;
  const title=$("studioBuildTitle").value.trim(),brief=$("studioBrief").value.trim(),model=$("studioModel").value;
- if(!model||model.startsWith("cloud:")){status("Website Builder currently requires an installed local Ollama coding model. Cloud AI supports chat only.",true);return}
+ if(!model||model.startsWith("cloud:")){status("Choose Blorp Auto or a local Ollama model. Hosted Blorp cloud supports chat only.",true);return}
  busy(true);status("Generating real source files using "+model+". Local models may take several minutes…");
  try{
-   const p=await invoke("build",{title,brief,model});
+   const p=model==="auto"?await invoke("routedBuild",{title,brief,focus:$("studioTaskFocus")?.value||"frontend"}):await invoke("build",{title,brief,model});
    await list();await openProject(p.info.id);preview();
    status("Generated "+Object.keys(p.files).length+" real project files in your local workspace. Review AI output before sharing.");
  }catch(err){status(err.message,true)}finally{busy(false)}

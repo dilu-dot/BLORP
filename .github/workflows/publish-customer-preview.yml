@@ -48,10 +48,10 @@ jobs:
           REPOSITORY: ${{ github.repository }}
           SOURCE_SHA: ${{ github.event.workflow_run.head_sha }}
         run: |
-          TAG="desktop-v0.5.9-cloud-ai-preview"
+          TAG="desktop-v0.6.0-model-hub-preview"
           EXE="$(find ./download -type f -name '*.exe' -print -quit)"
           if gh release view "$TAG" --repo "$REPOSITORY" >/dev/null 2>&1; then
             gh release upload "$TAG" "$EXE" --repo "$REPOSITORY" --clobber
           else
-            gh release create "$TAG" "$EXE" --repo "$REPOSITORY" --target "$SOURCE_SHA" --title "Blorp AI 0.5.9 — Local Agents, UPI and Cloud AI Gateway" --prerelease --notes "Blorp 0.5.8 customer app includes real Architect→Builder→QA local model pipeline, Supabase login, local drafts, and pending UPI verification requests. This is manual UPI only: Owners must configure prices and UPI, and independently verify every bank transaction. Premium cloud AI, gateway checkout and autonomous code execution are not available. Keep all private Devo Engine source out of the customer EXE."
+            gh release create "$TAG" "$EXE" --repo "$REPOSITORY" --target "$SOURCE_SHA" --title "Blorp AI 0.6.0 — Model Hub and Blorp Default AI" --prerelease --notes "Blorp AI 0.6.0 adds a one-click custom Blorp Ollama model installer (user-approved download), encrypted bring-your-own API provider keys, and per-task routing for chat, planning, landing pages, frontend, Three.js tasks, animations and QA. No model weights or API keys are included in the EXE or GitHub repository. Three.js libraries and autonomous code execution are not yet bundled. Also includes existing local project/chat storage, cloud membership and manual UPI request workflows. Test before public launch."
           fi

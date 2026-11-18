@@ -1,12 +1,12 @@
 {
   "name": "blorp-ai-customer-desktop",
   "private": true,
-  "version": "0.5.9",
-  "description": "Blorp AI 0.5.9: local agent builder, cloud AI gateway, manual UPI membership and secure Owner integration",
+  "version": "0.6.0",
+  "description": "Blorp AI Model Hub: default Blorp Ollama installer, user API providers and task-specific model routing",
   "main": "desktop/main.js",
   "scripts": {
     "desktop:start": "electron .",
-    "desktop:check": "node --check desktop/main.js && node --check desktop/cloud-auth.js && node --check desktop/native-workspace.js && node --check desktop/local-agents.js && node --check public/assets/cloud-desktop.js && node --check public/assets/native-studio.js && node desktop/check.js && node desktop/native-workspace.test.js",
+    "desktop:check": "node --check desktop/main.js && node --check desktop/cloud-auth.js && node --check desktop/native-workspace.js && node --check desktop/model-hub.js && node --check desktop/local-agents.js && node --check public/assets/cloud-desktop.js && node --check public/assets/native-studio.js && node --check public/assets/model-hub.js && node desktop/check.js && node desktop/native-workspace.test.js && node desktop/model-hub.test.js",
     "desktop:build": "electron-builder --win portable --publish never"
   },
   "devDependencies": {
@@ -23,6 +23,7 @@
       "desktop/main.js",
       "desktop/cloud-auth.js",
       "desktop/native-workspace.js",
+      "desktop/model-hub.js",
       "desktop/local-agents.js",
       "desktop/google-oauth.js",
       "desktop/preload.js",
