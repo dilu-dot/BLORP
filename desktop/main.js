@@ -8,6 +8,7 @@
 const {app, BrowserWindow, protocol, net, session, shell, ipcMain, safeStorage} = require("electron");
 const {BlorpCloudAuth} = require("./cloud-auth");
 const {LocalWorkspace} = require("./native-workspace");
+const {ModelHub} = require("./model-hub");
 const {authorizeWithGoogle,isGoogleDesktopId} = require("./google-oauth");
 const {pathToFileURL} = require("node:url");
 const path = require("node:path");
@@ -105,7 +106,8 @@ app.whenReady().then(async () => {
   }
 
   const cloud = new BlorpCloudAuth({dir:app.getPath("userData"),safeStorage,shell});
-  const studio = new LocalWorkspace({dataDir:app.getPath("userData"),cloud,shell});
+  const modelHub = new ModelHub({dataDir:app.getPath("userData"),cloud,safeStorage});
+  const studio = new LocalWorkspace({dataDir:app.getPath("userData"),cloud,shell,modelHub});
   let window;
   ipcMain.handle("blorp:studio",async(event,action,payload)=>{
     if(!window||event.sender!==window.webContents||
@@ -113,6 +115,14 @@ app.whenReady().then(async () => {
        !allowedPage(window.webContents.getURL(),backend))
        throw Error("Untrusted workspace operation");
     switch(action){
+      case "catalog":return modelHub.catalog();
+      case "installBlorp":return modelHub.installDefault(payload||{},progress=>event.sender.send("blorp:model-progress",progress));
+      case "connectProvider":return modelHub.connectProvider(payload||{});
+      case "disconnectProvider":return modelHub.disconnectProvider(payload||{});
+      case "setRoute":return modelHub.setRoute(payload||{});
+      case "testProvider":return modelHub.testProvider(payload||{});
+      case "routedChat":return studio.routedChat(payload||{});
+      case "routedBuild":return studio.routedBuild(payload||{});
       case "models":return studio.models();
       case "cloudStatus":return studio.cloudStatus();
       case "cloudChat":return studio.cloudChat(payload||{});

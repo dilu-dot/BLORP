@@ -40,7 +40,7 @@ function parseFiles(str){
  return files;
 }
 class LocalWorkspace{
- constructor({dataDir,cloud,shell}){this.dataDir=path.join(dataDir,"BlorpWorkspace");this.cloud=cloud;this.shell=shell;this.busy=false}
+ constructor({dataDir,cloud,shell,modelHub=null}){this.dataDir=path.join(dataDir,"BlorpWorkspace");this.cloud=cloud;this.shell=shell;this.modelHub=modelHub;this.busy=false}
  async root(){
    const {data,error}=await this.cloud.client.auth.getUser();
    if(error||!data.user||data.user.is_anonymous)throw Error("Please sign in to use your local workspace");
@@ -84,6 +84,42 @@ class LocalWorkspace{
      thread.messages=thread.messages.slice(-100);thread.updated_at=new Date().toISOString();
      save(path.join(r,"chats",thread.id+".json"),thread);
      return {thread,answer};
+   }finally{this.busy=false}
+ }
+ async routedChat({id:chatId,message}){
+   if(!this.modelHub)throw Error("Model Hub is unavailable");
+   if(this.busy)throw Error("A model is already responding");
+   this.busy=true;
+   try{
+     const input=text(message,6000),r=await this.root();
+     const thread=chatId?await this.readChat(chatId):await this.newChat(input.slice(0,60));
+     const history=(thread.messages||[]).slice(-14).map(m=>({role:m.role,content:m.content}));
+     const out=await this.modelHub.infer("chat",{messages:[
+       {role:"system",content:"You are Blorp AI, a practical software and design assistant. Do not claim to execute code or inspect files."},
+       ...history,{role:"user",content:input}],stream:false,options:{num_predict:1600,temperature:0.4}});
+     const answer=text(out?.message?.content,50000);
+     thread.messages.push({role:"user",content:input},{role:"assistant",content:answer});
+     thread.messages=thread.messages.slice(-100);thread.updated_at=new Date().toISOString();
+     save(path.join(r,"chats",thread.id+".json"),thread);
+     return {thread,answer,model:out.model,source:out.provider||"ollama"};
+   }finally{this.busy=false}
+ }
+ async routedBuild({title,brief,focus="frontend"}){
+   if(!this.modelHub)throw Error("Model Hub is unavailable");
+   if(this.busy)throw Error("A model is already responding");
+   this.busy=true;
+   try{
+     const name=text(title,90),req=text(brief,3500);
+     const output=await runAgentBuild({title:name,brief:req,focus,model:"blorp:latest",parseFiles,
+       infer:(body,task)=>this.modelHub.infer(task,body)});
+     const r=await this.root(),projectId=crypto.randomUUID(),dir=path.join(r,"projects",projectId);
+     fs.mkdirSync(dir,{recursive:true});
+     for(const [file,content] of Object.entries(output.files))fs.writeFileSync(path.join(dir,file),content,"utf8");
+     const info={id:projectId,title:name,updated_at:new Date().toISOString(),generated:true,focus,
+       routing:"model-hub",agents:output.agents,tested:false};
+     save(path.join(r,"project-info",projectId+".json"),info);
+     return {info,files:output.files,path:dir,agent_steps:output.agents,
+       warning:"Agent model replies have not been executed or independently tested. Three.js is not bundled by this static generator."};
    }finally{this.busy=false}
  }
  async cloudStatus(){
