@@ -53,8 +53,16 @@ with tempfile.TemporaryDirectory() as temp:
             try:
                 with client.open(req,timeout=3) as resp:return resp.status,json.load(resp)
             except urllib.error.HTTPError as exc:return exc.code,json.load(exc)
-        other=urllib.request.build_opener()
+        other=urllib.request.build_opener(urllib.request.HTTPCookieProcessor(http.cookiejar.CookieJar()))
         assert delete_project(pid,client=other)[0]==401
+        # A different authenticated user cannot read or delete somebody else's project.
+        other_signup=urllib.request.Request(url+'/api/auth/signup',
+            data=json.dumps({'email':f'other-{uuid.uuid4().hex}@example.test','name':'Other account','password':'AnotherPass123!!'}).encode(),
+            headers={'Content-Type':'application/json'})
+        with other.open(other_signup,timeout=3) as resp: assert resp.status==201
+        with other.open(url+'/api/projects',timeout=3) as resp:
+            assert json.load(resp)['projects']==[]
+        assert delete_project(pid,client=other)[0]==404
         assert delete_project(pid,origin='https://attacker.example')[0]==403
         assert delete_project('not-your-project')[0]==404
         assert delete_project(pid)[0]==200
