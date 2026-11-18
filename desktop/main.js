@@ -136,6 +136,7 @@ app.whenReady().then(async () => {
       case "signIn":return cloud.signIn(payload);
       case "signUp":return cloud.signUp(payload);
       case "signOut":return cloud.signOut();
+      case "submitPayment":return cloud.submitPayment(payload);
       case "google":return cloud.google();
       default:throw Error("Unsupported cloud operation");
     }

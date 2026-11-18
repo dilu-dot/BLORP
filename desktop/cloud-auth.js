@@ -48,7 +48,7 @@ class BlorpCloudAuth {
      if(membershipError||!data||data.error)throw Error("Backend unavailable");
      return {signedIn:true,user:profile,googleEnabled,membershipVerified:true,owner:false,
        plan:data.plan||"free",expires_at:data.expires_at||null,
-       prices:data.prices||[],payment_requests:data.payment_requests||[]};
+       prices:data.prices||[],payment_requests:data.payment_requests||[],payment_config:data.payment_config||null};
    }catch{
      return {signedIn:true,user:profile,googleEnabled,membershipVerified:false,owner:false,
        plan:"free",expires_at:null,prices:[],payment_requests:[],
@@ -71,6 +71,24 @@ class BlorpCloudAuth {
    if(!data.session)return {signedIn:false,confirmationNeeded:true,googleEnabled:await this.providerEnabled(),
      message:"Check your email and confirm your account, then return to Blorp to sign in."};
    return this.status();
+ }
+ async submitPayment(body){
+   const plan=String(body?.plan||""),term=String(body?.term||"");
+   const utr=String(body?.utr||"").trim().toUpperCase().replace(/\s/g,"");
+   const payer=String(body?.payer_name||"").trim();
+   if(!["builder","studio"].includes(plan)||!["monthly","annual"].includes(term)||
+      !/^[A-Z0-9-]{8,40}$/.test(utr)||payer.length>100)
+      throw Error("Choose a plan and provide an 8-40 character UTR and payer name.");
+   const {data,error}=await this.client.functions.invoke("blorp-membership",{
+      body:{action:"submit-payment",plan,term,utr,payer_name:payer}
+   });
+   if(error){
+     let message="Could not submit payment request.";
+     try{if(error.context?.json){const details=await error.context.json();message=details.error||message}}catch{}
+     throw Error(message);
+   }
+   if(data?.error)throw Error(data.error);
+   return {submitted:true,request:data.request,manual_approval:true};
  }
  async signOut(){
    const {error}=await this.client.auth.signOut();
