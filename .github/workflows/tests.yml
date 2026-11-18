@@ -23,7 +23,7 @@ jobs:
       - name: Membership, owner and payment API tests
         run: python tests/test_memberships.py
       - name: Timed checkout invariants
-        run: python -m unittest -v tests/test_payment_checkout.py
+        run: python tests/test_payment_checkout.py
       - name: Frontend JavaScript syntax
         run: |
           node --check public/assets/base.js
