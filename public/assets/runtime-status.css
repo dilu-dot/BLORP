@@ -1,0 +1,9 @@
+.blorp-runtime-panel{margin:20px 0 24px}
+.blorp-runtime-panel .panelhead{display:flex;align-items:start;justify-content:space-between;gap:12px}
+.blorp-runtime-panel .panelhead h2{margin:0 0 5px}
+.blorp-runtime-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;margin:16px 0}
+.blorp-runtime-item{display:flex;flex-direction:column;gap:7px;border:1px solid rgba(140,207,170,.22);border-radius:12px;padding:13px;background:rgba(16,41,34,.25)}
+.blorp-runtime-item strong{font-size:12px}
+.blorp-runtime-item span{font-size:12px;overflow-wrap:anywhere;opacity:.85}
+.blorp-runtime-panel code{font-size:12px;overflow-wrap:anywhere}
+@media(max-width:620px){.blorp-runtime-grid{grid-template-columns:1fr}.blorp-runtime-panel .panelhead{flex-direction:column}}
