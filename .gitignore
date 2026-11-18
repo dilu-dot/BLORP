@@ -37,3 +37,9 @@ Thumbs.db
 screenshots/
 *.log
 *.tmp
+
+# Downloaded model weights and Ollama storage must never enter the public repo
+*.gguf
+*.safetensors
+.ollama/
+models/**/weights/

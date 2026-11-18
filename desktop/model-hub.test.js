@@ -6,9 +6,10 @@ const root=fs.mkdtempSync(path.join(os.tmpdir(),"blorp-hub-test-"));
 const uid="14018fb1-401a-46ec-bce5-1d3479229522";
 const cloud={client:{auth:{getUser:async()=>({data:{user:{id:uid,is_anonymous:false}},error:null})}}};
 let secure=true,network=[],installed=["qwen3.5:4b"];
+const fakeSeal=s=>Buffer.from([...Buffer.from(s,"utf8")].map(b=>b^0x5a));
+const fakeUnseal=b=>Buffer.from([...b].map(x=>x^0x5a)).toString("utf8");
 const safeStorage={isEncryptionAvailable:()=>secure,
- encryptString:s=>Buffer.from("sealed|"+s,"utf8"),
- decryptString:b=>{const v=b.toString("utf8");if(!v.startsWith("sealed|"))throw Error("Vault invalid");return v.slice(7)}};
+ encryptString:s=>fakeSeal(s),decryptString:b=>fakeUnseal(b)};
 global.fetch=async(url,opts={})=>{
  const value=String(url);
  const data=opts.body?JSON.parse(opts.body):{};
