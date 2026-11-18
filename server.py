@@ -8,7 +8,7 @@ from __future__ import annotations
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from http.cookies import SimpleCookie
 from pathlib import Path
-from urllib.parse import urlsplit
+from urllib.parse import urlsplit, parse_qs
 import hashlib
 import base64
 import binascii
@@ -26,6 +26,7 @@ import uuid
 from urllib.parse import urlparse
 
 import local_runtime
+import payment_checkout
 
 BASE = Path(__file__).resolve().parent
 PUBLIC = BASE / 'public'
@@ -118,6 +119,7 @@ def init_db():
             if col not in payment_columns:
                 conn.execute(f'ALTER TABLE payment_requests ADD COLUMN {col} {definition}')
         conn.execute("CREATE UNIQUE INDEX IF NOT EXISTS payments_unique_submitted_utr ON payment_requests(UPPER(reference)) WHERE reference<>'' AND method='manual'")
+        payment_checkout.init_schema(conn)
 
 
 def hash_password(password, salt):
@@ -299,7 +301,7 @@ class Handler(BaseHTTPRequestHandler):
         path = urlsplit(self.path).path
         if path == '/api/health':
             return self.response(200, {'ok': True, 'version': 'v5.3-owner-payments', 'local_ollama_supported': True, 'billing_connected': False,
-                                       'manual_requests': True, 'google_configured': bool(GOOGLE_CLIENT_ID or GOOGLE_DESKTOP_CLIENT_ID)})
+                                       'manual_requests': True, 'timed_checkout_supported': True, 'google_configured': bool(GOOGLE_CLIENT_ID or GOOGLE_DESKTOP_CLIENT_ID)})
         if path == '/api/auth/config':
             return self.response(200, {'google_client_id': GOOGLE_CLIENT_ID, 'google_desktop_client_id': GOOGLE_DESKTOP_CLIENT_ID})
         if path == '/api/billing/qr':
@@ -321,6 +323,18 @@ class Handler(BaseHTTPRequestHandler):
             with database() as conn: payment_config=public_payment_settings(conn)
             return self.response(200, {'plans':prices,'payment_instructions':PAYMENT_INSTRUCTIONS,
                                        'upi':payment_config, 'manual_approval':True,'automatic_billing':False})
+        if path == '/api/billing/attempt':
+            user=self.find_user()
+            if not user:return self.response(401,{'error':'Sign in required'})
+            params=parse_qs(urlsplit(self.path).query)
+            attempt_id=params.get('id',[])
+            if len(attempt_id)!=1:return self.response(422,{'error':'Provide a checkout attempt ID'})
+            try:
+                with database() as conn:
+                    result=payment_checkout.get_attempt(conn,user['id'],attempt_id[0])
+                return self.response(200,result)
+            except payment_checkout.CheckoutError as exc:
+                return self.response(exc.status,{'error':str(exc)})
         if path == '/api/billing/requests':
             user=self.find_user()
             if not user:return self.response(401,{'error':'Sign in required'})
@@ -480,36 +494,24 @@ class Handler(BaseHTTPRequestHandler):
                 with database() as conn:
                     conn.execute('DELETE FROM sessions WHERE token_hash=?',(hashlib.sha256(token.encode()).hexdigest(),))
             return self.response(200, {'ok':True}, f'{COOKIE}=; HttpOnly; SameSite=Strict; Path=/; Max-Age=0')
+        if path == '/api/billing/attempt':
+            user=self.find_user()
+            if not user:return self.response(401,{'error':'Sign in required'})
+            try:
+                with database() as conn:
+                    result=payment_checkout.start_attempt(conn,user['id'],data.get('plan'),data.get('interval'),PLAN_PRICES)
+                return self.response(201 if result['seconds_remaining']==payment_checkout.WINDOW_SECONDS else 200,result)
+            except payment_checkout.CheckoutError as exc:
+                return self.response(exc.status,{'error':str(exc)})
         if path == '/api/billing/request':
             user=self.find_user()
             if not user:return self.response(401,{'error':'Sign in required'})
-            plan=data.get('plan'); interval=data.get('interval'); method=data.get('method','manual')
-            if (plan,interval) not in PLAN_PRICES or method!='manual':
-                return self.response(422,{'error':'Choose Builder or Studio and pay with the configured UPI QR'})
-            reference=str(data.get('reference','')).strip().upper()
-            payer_name=str(data.get('payer_name','')).strip()
-            if not re.fullmatch('[A-Z0-9-]{8,35}',reference):
-                return self.response(422,{'error':'Enter a valid 8–35 character UTR / transaction reference'})
-            if not (2<=len(payer_name)<=80):
-                return self.response(422,{'error':'Enter the name used for your UPI payment'})
-            now=int(time.time())
-            with database() as conn:
-                config=public_payment_settings(conn)
-                amount=config['prices_inr_paise'].get(f'{plan}:{interval}')
-                if not config['qr_configured'] or not config['upi_id'] or type(amount) is not int or amount<100:
-                    return self.response(503,{'error':'Owner has not enabled QR payments for this plan yet'})
-                conn.execute('BEGIN IMMEDIATE')
-                count=conn.execute("SELECT COUNT(*) FROM payment_requests WHERE user_id=? AND status='pending'",(user['id'],)).fetchone()[0]
-                if count>=3:return self.response(429,{'error':'Up to three pending payment requests are allowed'})
-                req_id=uuid.uuid4().hex
-                try:
-                    conn.execute('''INSERT INTO payment_requests(id,user_id,plan,interval,amount_cents,currency,method,status,reference,paid_inr_paise,payer_name,created_at)
-                        VALUES (?,?,?,?,?,?,?,?,?,?,?,?)''',(req_id,user['id'],plan,interval,PLAN_PRICES[(plan,interval)],'USD','manual','pending',reference,amount,payer_name,now))
-                except sqlite3.IntegrityError:
-                    return self.response(409,{'error':'This UTR has already been submitted. Contact the owner if it is your payment.'})
-            return self.response(201,{'request_id':req_id,'status':'pending','reference':reference,
-                 'paid_inr_paise':amount,'currency':'INR',
-                 'message':'Pending owner verification. Submitting a UTR does not prove or confirm payment.'})
+            try:
+                with database() as conn:
+                    result=payment_checkout.submit_utr(conn,user['id'],data,PLAN_PRICES)
+                return self.response(201,result)
+            except payment_checkout.CheckoutError as exc:
+                return self.response(exc.status,{'error':str(exc)})
         if path == '/api/owner/payments/settings':
             owner=self.find_user()
             if not owner:return self.response(401,{'error':'Sign in required'})
