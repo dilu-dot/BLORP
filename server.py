@@ -413,6 +413,25 @@ class Handler(BaseHTTPRequestHandler):
         self.end_headers()
         self.wfile.write(data)
 
+    def do_DELETE(self):
+        if not self.check_origin():
+            return
+        path=urlsplit(self.path).path
+        if not path.startswith('/api/projects/'):
+            return self.response(404, {'error':'Unknown API endpoint'})
+        user=self.find_user()
+        if not user:
+            return self.response(401, {'error':'Sign in required'})
+        project_id=path[len('/api/projects/'):]
+        if not re.fullmatch(r'[A-Za-z0-9_-]{1,90}',project_id):
+            return self.response(422, {'error':'Invalid project ID'})
+        with database() as conn:
+            deleted=conn.execute('DELETE FROM projects WHERE id=? AND user_id=?',
+                (project_id,user['id'])).rowcount
+        if not deleted:
+            return self.response(404, {'error':'Project not found in this account'})
+        return self.response(200, {'deleted':True,'id':project_id})
+
     def do_POST(self):
         if not self.check_origin():
             return

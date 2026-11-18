@@ -41,6 +41,33 @@ with tempfile.TemporaryDirectory() as temp:
         status,body=api('/api/local/agents/build',{'model':'unknown','brief':'Build a website'});assert status==402
         status,body=api('/api/projects',{'title':'My first site','payload':{'stack':'React'}});assert status==200;pid=body['id']
         status,body=api('/api/projects');assert status==200 and body['projects'][0]['id']==pid
+        # Project changes are persisted per account, not merely in browser storage.
+        status,body=api('/api/projects',{'id':pid,'title':'My first site updated','payload':{'type':'Website','chatHistory':[{'role':'user','text':'Hello project'}]}})
+        assert status==200 and body['id']==pid
+        status,body=api('/api/projects')
+        assert status==200 and len(body['projects'])==1 and body['projects'][0]['title']=='My first site updated'
+        assert body['projects'][0]['payload']['chatHistory'][0]['text']=='Hello project'
+        def delete_project(project_id, origin=None, client=op):
+            headers={'Origin':origin} if origin else {}
+            req=urllib.request.Request(url+'/api/projects/'+project_id,headers=headers,method='DELETE')
+            try:
+                with client.open(req,timeout=3) as resp:return resp.status,json.load(resp)
+            except urllib.error.HTTPError as exc:return exc.code,json.load(exc)
+        other=urllib.request.build_opener(urllib.request.HTTPCookieProcessor(http.cookiejar.CookieJar()))
+        assert delete_project(pid,client=other)[0]==401
+        # A different authenticated user cannot read or delete somebody else's project.
+        other_signup=urllib.request.Request(url+'/api/auth/signup',
+            data=json.dumps({'email':f'other-{uuid.uuid4().hex}@example.test','name':'Other account','password':'AnotherPass123!!'}).encode(),
+            headers={'Content-Type':'application/json'})
+        with other.open(other_signup,timeout=3) as resp: assert resp.status==201
+        with other.open(url+'/api/projects',timeout=3) as resp:
+            assert json.load(resp)['projects']==[]
+        assert delete_project(pid,client=other)[0]==404
+        assert delete_project(pid,origin='https://attacker.example')[0]==403
+        assert delete_project('not-your-project')[0]==404
+        assert delete_project(pid)[0]==200
+        assert delete_project(pid)[0]==404
+        assert api('/api/projects')[1]['projects']==[]
         status,body=api('/api/auth/signout',{});assert status==200
         status,body=api('/api/auth/me');assert body['user'] is None
         status,body=api('/api/auth/signup',{'email':'x@y.com','name':'Bad','password':'weak'});assert status==422
