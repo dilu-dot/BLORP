@@ -48,10 +48,10 @@ jobs:
           REPOSITORY: ${{ github.repository }}
           SOURCE_SHA: ${{ github.event.workflow_run.head_sha }}
         run: |
-          TAG="desktop-v0.5.8-agents-upi-preview"
+          TAG="desktop-v0.5.9-cloud-ai-preview"
           EXE="$(find ./download -type f -name '*.exe' -print -quit)"
           if gh release view "$TAG" --repo "$REPOSITORY" >/dev/null 2>&1; then
             gh release upload "$TAG" "$EXE" --repo "$REPOSITORY" --clobber
           else
-            gh release create "$TAG" "$EXE" --repo "$REPOSITORY" --target "$SOURCE_SHA" --title "Blorp AI 0.5.8 — Local Multi-Agent + Cloud UPI preview" --prerelease --notes "Blorp 0.5.8 customer app includes real Architect→Builder→QA local model pipeline, Supabase login, local drafts, and pending UPI verification requests. This is manual UPI only: Owners must configure prices and UPI, and independently verify every bank transaction. Premium cloud AI, gateway checkout and autonomous code execution are not available. Keep all private Devo Engine source out of the customer EXE."
+            gh release create "$TAG" "$EXE" --repo "$REPOSITORY" --target "$SOURCE_SHA" --title "Blorp AI 0.5.9 — Local Agents, UPI and Cloud AI Gateway" --prerelease --notes "Blorp 0.5.8 customer app includes real Architect→Builder→QA local model pipeline, Supabase login, local drafts, and pending UPI verification requests. This is manual UPI only: Owners must configure prices and UPI, and independently verify every bank transaction. Premium cloud AI, gateway checkout and autonomous code execution are not available. Keep all private Devo Engine source out of the customer EXE."
           fi

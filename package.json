@@ -1,8 +1,8 @@
 {
   "name": "blorp-ai-customer-desktop",
   "private": true,
-  "version": "0.5.8",
-  "description": "Blorp AI desktop: multi-stage local agent builder, cloud membership and local Studio",
+  "version": "0.5.9",
+  "description": "Blorp AI 0.5.9: local agent builder, cloud AI gateway, manual UPI membership and secure Owner integration",
   "main": "desktop/main.js",
   "scripts": {
     "desktop:start": "electron .",

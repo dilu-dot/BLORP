@@ -48,18 +48,24 @@ document.addEventListener("click",e=>{
  enter(link.dataset.view==="projects"?"projects":link.dataset.view==="builder"||link.dataset.open==="builder"?"build":"chat");
 },true);
 async function models(){
- const data=await invoke("models");
- state.models=data.models||[];
- $("studioDot").classList.toggle("connected",Boolean(data.connected));
- $("studioConnection").textContent=data.connected?data.models.length+" local model(s) ready":"Ollama not running";
+ const [local,cloud]=await Promise.all([invoke("models"),invoke("cloudStatus").catch(()=>({configured:false,eligible:false}))]);
+ state.models=local.models||[];
+ const cloudReady=Boolean(cloud.configured&&cloud.eligible);
+ $("studioDot").classList.toggle("connected",Boolean(local.connected||cloudReady));
+ $("studioConnection").textContent=(local.connected?state.models.length+" local model(s)":"Local Ollama offline")+" · "+(cloudReady?"Cloud AI ready":cloud.configured?"Cloud plan upgrade required":"Cloud AI not configured");
  const old=$("studioModel").value;$("studioModel").replaceChildren();
- if(!data.connected||!data.models.length)$("studioModel").add(new Option(data.connected?"Install a local model first":"Install & start Ollama",""));
- else for(const model of data.models)$("studioModel").add(new Option(model,model));
- if(data.models.includes(old))$("studioModel").value=old;
- else if(data.models.length){const coder=data.models.find(x=>/coder|qwen|code|llama/i.test(x));if(coder)$("studioModel").value=coder;}
- if(!data.connected)status(data.error||"Install Ollama from ollama.com and pull qwen2.5-coder:3b",true);
- else if(!data.models.length)status("Ollama is running but has no models. Run: ollama pull qwen2.5-coder:3b",true);
+ for(const model of state.models)$("studioModel").add(new Option("Local · "+model,model));
+ const cloudOpt=new Option("Cloud · GPT-4o mini"+(!cloudReady?" (unavailable)":""),"cloud:openai/gpt-4o-mini");
+ cloudOpt.disabled=!cloudReady;$("studioModel").add(cloudOpt);
+ if(old==="cloud:openai/gpt-4o-mini"&&cloudReady)$("studioModel").value=old;
+ else if(state.models.includes(old))$("studioModel").value=old;
+ else if(state.models.length){const coder=state.models.find(x=>/coder|qwen|code|llama/i.test(x));$("studioModel").value=coder||state.models[0];}
+ else if(cloudReady)$("studioModel").value="cloud:openai/gpt-4o-mini";
+ else $("studioModel").add(new Option("Install Ollama or activate a cloud plan",""));
+ if(!local.connected&&!cloudReady)status("AI needs Ollama with an installed model or a configured premium cloud plan.",true);
+ else if(cloudReady)status("Cloud AI is available for chat. Transcripts still save on your PC.");
 }
+
 async function list(){
  const data=await invoke("list");$("studioThreads").replaceChildren();$("studioProjects").replaceChildren();
  for(const chat of data.chats||[]){const b=document.createElement("button");b.type="button";b.className="studio-list-item";b.textContent=chat.title||"Conversation";b.addEventListener("click",()=>openThread(chat.id));$("studioThreads").append(b);}
@@ -88,9 +94,10 @@ $("studioChatForm").addEventListener("submit",async e=>{
  if(!message||!model){status("Install Ollama and select a local model first.",true);return}
  busy(true);status("Waiting for a real response from "+model+"…");
  try{
-   const data=await invoke("chat",{id:state.thread?.id,model,message});
+   const cloud=model.startsWith("cloud:");
+   const data=cloud?await invoke("cloudChat",{id:state.thread?.id,message}):await invoke("chat",{id:state.thread?.id,model,message});
    state.thread=data.thread;$("studioChatInput").value="";drawThread();await list();
-   status("Response generated locally and conversation saved on this PC.");
+   status(cloud?"Cloud reply received. Conversation saved only on your PC.":"Response generated locally and conversation saved on this PC.");
  }catch(err){status(err.message,true)}finally{busy(false)}
 });
 async function openProject(id){
@@ -133,7 +140,7 @@ $("studioCreateProject").addEventListener("click",async()=>{
 $("studioBuildForm").addEventListener("submit",async e=>{
  e.preventDefault();if(state.working)return;
  const title=$("studioBuildTitle").value.trim(),brief=$("studioBrief").value.trim(),model=$("studioModel").value;
- if(!model){status("Install Ollama and select a local coding model first.",true);return}
+ if(!model||model.startsWith("cloud:")){status("Website Builder currently requires an installed local Ollama coding model. Cloud AI supports chat only.",true);return}
  busy(true);status("Generating real source files using "+model+". Local models may take several minutes…");
  try{
    const p=await invoke("build",{title,brief,model});

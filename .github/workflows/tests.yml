@@ -45,4 +45,6 @@ jobs:
         with:
           deno-version: v2.x
       - name: Check Supabase Edge Function TypeScript
-        run: cd supabase/functions/blorp-membership && deno check index.ts
+        run: |
+          cd supabase/functions/blorp-membership && deno check index.ts
+          cd ../blorp-ai && deno check index.ts

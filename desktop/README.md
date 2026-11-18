@@ -21,3 +21,6 @@
 - Customer chats/projects are on the local PC, never in Supabase.
 - Generated HTML/JS is untrusted. No general shell or OS command execution is provided.
 - Private Devo Engine Owner source is never bundled in this public EXE.
+
+## Cloud AI status (0.5.9)
+An authenticated OpenRouter cloud chat path is now available via the JWT-protected `blorp-ai` Edge Function. The model is `openai/gpt-4o-mini`. It is restricted to active Builder/Studio plans, with a server-side request quota of 20/60 requests per UTC day. The OpenRouter API key MUST be configured as a **Supabase Edge Function secret** named `BLORP_OPENROUTER_API_KEY`; never bundle it in either desktop app or repo. Without a secret, Cloud AI is safely disabled. Generated websites still require a local Ollama model. User chat transcripts remain on the local Windows device; cloud requests temporarily transmit the prompt to OpenRouter for inference.

@@ -49,7 +49,7 @@ const http=require('node:http');
 const cloud=fs.readFileSync("desktop/cloud-auth.js","utf8");
 const ui=fs.readFileSync("public/assets/cloud-desktop.js","utf8");
 const pkg=JSON.parse(fs.readFileSync("package.json","utf8"));
-assert.equal(pkg.version,"0.5.8");
+assert.equal(pkg.version,"0.5.9");
 assert.equal(pkg.dependencies["@supabase/supabase-js"],"2.95.0");
 assert.ok(pkg.build.files.includes("desktop/cloud-auth.js"));
 assert.ok(main.includes('blorp:cloud'));
@@ -86,3 +86,7 @@ assert.ok(fs.readFileSync('desktop/main.js','utf8').includes('submitPayment'));
 assert.ok(fs.readFileSync('desktop/cloud-auth.js','utf8').includes('submitPayment'));
 assert.ok(fs.readFileSync('public/index.html','utf8').includes('cloud-payments.js'));
 console.log('Cloud payment request source checks passed');
+
+assert.ok(fs.readFileSync('desktop/native-workspace.js','utf8').includes('cloudChat'));
+assert.ok(fs.readFileSync('desktop/main.js','utf8').includes('cloudStatus'));
+assert.ok(fs.readFileSync('public/assets/native-studio.js','utf8').includes('cloud:openai/gpt-4o-mini'));

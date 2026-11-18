@@ -114,6 +114,8 @@ app.whenReady().then(async () => {
        throw Error("Untrusted workspace operation");
     switch(action){
       case "models":return studio.models();
+      case "cloudStatus":return studio.cloudStatus();
+      case "cloudChat":return studio.cloudChat(payload||{});
       case "list":return studio.list();
       case "newChat":return studio.newChat(payload?.title);
       case "readChat":return studio.readChat(payload?.id);

@@ -86,6 +86,37 @@ class LocalWorkspace{
      return {thread,answer};
    }finally{this.busy=false}
  }
+ async cloudStatus(){
+  const r=await this.cloud.client.functions.invoke("blorp-ai",{body:{action:"status"}});
+  if(r.error){
+    let detail="Cloud AI backend unavailable";
+    try{if(r.error.context?.json){const x=await r.error.context.json();detail=x.error||detail}}catch{}
+    return {configured:false,eligible:false,model:"openai/gpt-4o-mini",error:detail};
+  }
+  return r.data||{configured:false,eligible:false};
+ }
+ async cloudChat({id:chatId,message}){
+  if(this.busy)throw Error("A model is already responding");
+  this.busy=true;
+  try{
+   const input=text(message,3000),r=await this.root();
+   const thread=chatId?await this.readChat(chatId):await this.newChat(input.slice(0,60));
+   const history=(thread.messages||[]).slice(-4).map(m=>({role:m.role,content:String(m.content).slice(-1000)}));
+   const call=await this.cloud.client.functions.invoke("blorp-ai",{
+     body:{action:"chat",messages:[...history,{role:"user",content:input}]}
+   });
+   if(call.error||call.data?.error){
+     let details=call.data?.error||"Could not reach Cloud AI.";
+     try{if(call.error?.context?.json){const j=await call.error.context.json();details=j.error||details}}catch{}
+     throw Error(details);
+   }
+   const answer=text(call.data?.answer,14000);
+   thread.messages.push({role:"user",content:input},{role:"assistant",content:answer});
+   thread.messages=thread.messages.slice(-100);thread.updated_at=new Date().toISOString();
+   save(path.join(r,"chats",thread.id+".json"),thread);
+   return {thread,answer,source:"cloud",model:call.data?.model,remaining:call.data?.remaining};
+  }finally{this.busy=false}
+ }
  async createProject({title}){
    const name=text(title,90),r=await this.root(),projectId=crypto.randomUUID(),dir=path.join(r,"projects",projectId);
    fs.mkdirSync(dir,{recursive:true});
