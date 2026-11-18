@@ -190,6 +190,7 @@
  <div class="panel under v53-payment-card" id="paymentPanel" hidden>
   <div class="panelhead"><div><h2 id="paymentTitle">Pay for your membership</h2><p class="subtle" style="margin:7px 0 0">Manual UPI payment · Owner verification required</p></div><span class="tag">Pending until approved</span></div>
   <p id="paymentSummary" class="subtitle">Select Builder or Studio above.</p>
+  <div class="v53-checkout-clock" role="status" aria-live="off"><span>⏱ UTR submission deadline · server enforced</span><strong id="paymentCountdown" aria-label="Time remaining for UTR submission">Not started</strong></div>
   <div class="v53-payment-grid">
     <div class="v53-qr-wrap"><img id="memberQrImage" alt="Owner-configured UPI payment QR" hidden/><div id="memberQrEmpty" class="v53-qr-placeholder">⌗<small>Owner has not uploaded a QR yet</small></div><p class="v53-upi-label">UPI ID: <strong id="memberUpiId">Not configured</strong></p></div>
     <div><div class="v53-pay-total"><small>Pay exactly</small><strong id="memberInrAmount">Not configured</strong><span>USD plan prices are informational. Pay the displayed INR total.</span></div>
