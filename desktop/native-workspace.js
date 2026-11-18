@@ -1,6 +1,7 @@
 "use strict";
 // Blorp Local Workspace: stored under app.getPath("userData")/BlorpWorkspace/<auth user id>
 const fs=require("node:fs"),path=require("node:path"),crypto=require("node:crypto");
+const {runAgentBuild}=require("./local-agents");
 const OLLAMA="http://127.0.0.1:11434", ALLOWED=["index.html","styles.css","script.js"];
 function id(v){if(typeof v!=="string"||!/^[0-9a-f]{8}-[0-9a-f-]{27,40}$/i.test(v))throw Error("Invalid ID");return v}
 function text(v,max){if(typeof v!=="string"||!v.trim()||v.length>max)throw Error("Invalid text (max "+max+" characters)");return v.trim()}
@@ -117,16 +118,15 @@ class LocalWorkspace{
    this.busy=true;
    try{
      const name=text(title,90),req=text(brief,3500),m=await this.requireModel(model);
-     const result=await api("/api/chat",{model:m,stream:false,format:"json",options:{temperature:0.2,num_predict:7500},
-       messages:[{role:"system",content:'You are Blorp Local Builder. Generate a complete responsive functional standalone static website. Return ONLY JSON {"files":{"index.html":"...","styles.css":"...","script.js":"..."}}. No CDNs, external resources, network requests, frameworks or secrets. Use relative CSS/JS file names. Do not run code or claim it was tested.'},
-       {role:"user",content:"Website: "+name+"\nBrief: "+req}]});
-     const files=parseFiles(result?.message?.content);
+     const multi=await runAgentBuild({title:name,brief:req,model:m,parseFiles,
+       infer:body=>api("/api/chat",body)});
+     const files=multi.files;
      const r=await this.root(),projectId=crypto.randomUUID(),dir=path.join(r,"projects",projectId);
      fs.mkdirSync(dir,{recursive:true});
      for(const [file,content] of Object.entries(files))fs.writeFileSync(path.join(dir,file),content,"utf8");
-     const info={id:projectId,title:name,updated_at:new Date().toISOString(),generated:true,model:m};
+     const info={id:projectId,title:name,updated_at:new Date().toISOString(),generated:true,model:m,agents:multi.agents,tested:false};
      save(path.join(r,"project-info",projectId+".json"),info);
-     return {info,files,path:dir,warning:"AI-generated code is untrusted and was not executed or security tested."};
+     return {info,files,path:dir,agent_steps:multi.agents,warning:"Three local agent steps completed. Code was not executed or security tested."};
    }finally{this.busy=false}
  }
 }
