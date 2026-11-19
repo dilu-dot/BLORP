@@ -180,6 +180,19 @@ class ProviderVault:
             for provider, row in sorted(entries.items()) if provider in PROVIDERS
         ]
 
+    def get_secret(self, user_id: str, provider: str) -> str:
+        """Server-only secret access for fixed-endpoint model verification.
+
+        Never expose the returned value through HTTP, tracing or logs.
+        """
+        if not isinstance(provider, str) or provider not in PROVIDERS:
+            raise VaultError(422, "Unsupported API provider")
+        with _LOCK:
+            row = self._read(user_id).get(provider)
+            if not row:
+                raise VaultError(404, "No encrypted API key saved for this provider")
+            return row["key"]
+
     def list(self, user_id: str) -> dict:
         with _LOCK:
             if not self.available():
