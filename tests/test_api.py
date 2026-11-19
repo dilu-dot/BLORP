@@ -25,6 +25,16 @@ with tempfile.TemporaryDirectory() as temp:
             try:op.open(url+'/api/health',timeout=1);break
             except Exception:time.sleep(.1)
         else:raise RuntimeError('Server not started')
+        # Root must now serve the approved premium Studio; legacy stays explicitly accessible.
+        with op.open(url+'/',timeout=6) as response:
+            html=response.read().decode('utf-8')
+            assert response.status==200 and 'BLORP Studio — Final Frontend V4.3' in html
+            assert '/assets/studio-backend-bridge.js' in html
+            assert '/assets/studio-provider-keys.js' in html
+        with op.open(url+'/index.html',timeout=6) as response:
+            assert 'BLORP Studio — Final Frontend V4.3' in response.read().decode('utf-8')
+        with op.open(url+'/legacy-v53.html',timeout=6) as response:
+            assert 'Blorp AI — Local Studio' in response.read().decode('utf-8')
         def api(path, data=None, origin=None):
             h={'Content-Type':'application/json'} if data is not None else {}
             if origin: h['Origin']=origin
