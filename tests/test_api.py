@@ -36,6 +36,16 @@ with tempfile.TemporaryDirectory() as temp:
         status,body=api('/api/auth/signup',{'email':f'v5-{uuid.uuid4().hex}@example.com','name':'Blorp Test','password':'TestPassw0rd!234'})
         print('signup',status,body['user']['credits_remaining']);assert status==201 and body['user']['credits_remaining']==4_000_000 and body['user']['plan']=='free'
         status,body=api('/api/auth/me');assert status==200 and body['user']['name']=='Blorp Test'
+        # A key cannot be saved from a cross-origin or Origin-less browser request.
+        assert api('/api/provider-keys',{'provider':'openai','key':'fake-development-key-123'},origin='https://attacker.example')[0]==403
+        assert api('/api/provider-keys',{'provider':'openai','key':'fake-development-key-123'})[0]==403
+        status,metadata=api('/api/provider-keys')
+        assert status==200 and metadata['providers']==[] and metadata['live_verification'] is False
+        assert 'fake-development-key-123' not in json.dumps(metadata)
+        if os.name!='nt':
+            assert metadata['storage_available'] is False
+            assert api('/api/provider-keys',{'provider':'openai','key':'fake-development-key-123'},origin=url)[0]==503
+        assert api('/api/provider-keys',{'provider':'not-supported','key':'fake-development-key-123'},origin=url)[0]==422
         status,body=api('/api/agents/run',{});assert status==402 and 'membership' in body['error']
         status,body=api('/api/billing/checkout',{});assert status==503
         status,body=api('/api/local/agents/build',{'model':'unknown','brief':'Build a website'});assert status==402
