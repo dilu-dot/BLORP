@@ -966,6 +966,7 @@ html[data-glass-opaque="true"] *::after,html[data-glass-opaque="true"] dialog::b
   const LEGACY = "blorp-frontend-unlocked-v1";
   const serverPage = location.protocol === 'http:' &&
     (location.hostname === 'localhost' || location.hostname === '127.0.0.1');
+  const storageKey = serverPage ? KEY + "-localhost" : KEY;
   const $ = id => document.getElementById(id);
   const esc = s => String(s ?? "").replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
   const uid = () => "b-" + (typeof crypto !== "undefined" && crypto.randomUUID ? crypto.randomUUID() : Date.now().toString(36) + Math.random().toString(36).slice(2));
@@ -994,7 +995,7 @@ html[data-glass-opaque="true"] *::after,html[data-glass-opaque="true"] dialog::b
   });
   let state=fresh();
   try {
-    const current=JSON.parse(localStorage.getItem(KEY)||"null");
+    const current=JSON.parse(localStorage.getItem(storageKey) ?? (serverPage ? localStorage.getItem(KEY) : null) ?? "null");
     if(current && typeof current==="object" && Array.isArray(current.agents) && Array.isArray(current.groups)) {
       state={...fresh(),...current};
     } else {
@@ -1025,7 +1026,7 @@ html[data-glass-opaque="true"] *::after,html[data-glass-opaque="true"] dialog::b
   function persist(){try {
     // Account data is owned by the backend. Never copy private chats into browser localStorage.
     const safe = serverPage ? {...state,projects:[],projectChats:{},activeProjectId:null,chatHistory:[],credentials:[]} : state;
-    localStorage.setItem(KEY,JSON.stringify(safe));
+    localStorage.setItem(storageKey,JSON.stringify(safe));
     document.dispatchEvent(new CustomEvent('blorp:state'));return true;
   }catch(_) {toast("Local storage unavailable. Please export your drafts.");return false;}}
 
