@@ -46,6 +46,13 @@ with tempfile.TemporaryDirectory() as temp:
             assert metadata['storage_available'] is False
             assert api('/api/provider-keys',{'provider':'openai','key':'fake-development-key-123'},origin=url)[0]==503
         assert api('/api/provider-keys',{'provider':'not-supported','key':'fake-development-key-123'},origin=url)[0]==422
+        # Provider discovery never accepts arbitrary endpoints or keys from the client.
+        assert api('/api/provider-models/discover',{'provider':'openai'},origin='https://attacker.example')[0]==403
+        assert api('/api/provider-models/discover',{'provider':'openai'})[0]==403
+        assert api('/api/provider-models/discover',{'provider':'https://bad.invalid'},origin=url)[0]==422
+        status,discovery=api('/api/provider-models')
+        assert status==200 and discovery['checks']==[] and discovery['models_are_not_inference_verified'] is True
+        assert api('/api/provider-models/discover',{'provider':'openai'},origin=url)[0] in (404,503)
         status,body=api('/api/agents/run',{});assert status==402 and 'membership' in body['error']
         status,body=api('/api/billing/checkout',{});assert status==503
         status,body=api('/api/local/agents/build',{'model':'unknown','brief':'Build a website'});assert status==402
