@@ -13,7 +13,7 @@ const PROVIDER_MAP=Object.freeze({
 });
 const LABELS=Object.fromEntries(Object.entries(PROVIDER_MAP).map(([name,id])=>[id,name]));
 let accountId=null,storageAvailable=false,backendProviders=[],loading=false;
-let updateGeneration=0,busy=false;
+let updateGeneration=0,busy=false,modelChecks={},checking=new Set();
 const notice=$("keyDialog").querySelector("#keyModalDescription");
 const keyField=$("keyPreviewSecret");
 
@@ -58,8 +58,8 @@ function setStatus(message){
 }
 function refreshProfileMetadata(){
   const count=backendProviders.length;
-  $("profileKeyHealth").textContent=count?count+" securely saved · not tested":"No provider keys saved";
-  $("profileProviderCount").textContent=count+" saved provider"+(count===1?"":"s")+" · unverified";
+  $("profileKeyHealth").textContent=count?Object.values(modelChecks).filter(x=>x.status==="catalog_checked").length+" authenticated catalogs · "+count+" saved keys":"No provider keys saved";
+  $("profileProviderCount").textContent=count+" saved provider"+(count===1?"":"s")+" · inference untested";
 }
 function renderConnected(){
   const user=currentUser();
@@ -69,20 +69,60 @@ function renderConnected(){
     id:"secured-"+item.provider,
     provider: LABELS[item.provider]||item.name||item.provider,
     alias:item.label||item.name||item.provider,
-    enabled:true, models:[], backendStored:true, providerId:item.provider,
+    enabled:true, models:(modelChecks[item.provider]?.models||[]).map(m=>({id:m.id,enabled:modelChecks[item.provider]?.status==="catalog_checked"})),catalogStatus:modelChecks[item.provider]?.status||'not_checked', backendStored:true, providerId:item.provider,
     createdAt:new Date((item.stored_at||0)*1000).toISOString()
   }));
   app.commit();app.rerender();
   const count=backendProviders.length;
   $("keyConfiguredCount").textContent=count+" provider key"+(count===1?"":"s")+" securely saved · not verified";
-  $("keyStats").textContent=count+" saved · 0 live provider health checks";
+  $("keyStats").textContent=count+" saved · "+Object.values(modelChecks).filter(x=>x.status==="catalog_checked").length+" authenticated catalogs";
   refreshProfileMetadata();
   const warning=document.querySelector("#keys .key-warning");
   if(warning)warning.textContent=storageAvailable
-    ?"🔒 Windows DPAPI stores each provider key securely for your local BLORP account. Saved does not mean connected or healthy. Live checks and model discovery come next."
+    ?"🔒 Keys are protected with Windows DPAPI. Verify & Discover retrieves real catalogs but listing does not prove model inference access or billing."
     :"🔒 Secure credential storage is unavailable here. Real API keys cannot be saved; use a Windows localhost installation.";
-  refreshKeyDialog();
+  annotateDiscovery();refreshKeyDialog();
 }
+
+function annotateDiscovery(){
+  const statuses={catalog_checked:"Authenticated catalog · inference untested",catalog_only:"Public catalog · key unverified",invalid:"Key rejected",restricted:"Access restricted",rate_limited:"Rate limited",unavailable:"Provider unavailable"};
+  document.querySelectorAll("#keys [data-remove-key]").forEach(remove=>{
+    const item=backendProviders.find(p=>"secured-"+p.provider===remove.dataset.removeKey);
+    if(!item)return;
+    const row=remove.closest(".keys-provider-card"),actions=remove.closest(".row-actions");
+    if(!row||!actions)return;
+    let btn=actions.querySelector("[data-discover-provider]");
+    if(!btn){
+      btn=document.createElement("button");
+      btn.className="btn small";btn.type="button";btn.dataset.discoverProvider=item.provider;
+      actions.prepend(btn);
+    }
+    btn.disabled=checking.has(item.provider);
+    btn.textContent=checking.has(item.provider)?"Checking…":"↻ Verify & Discover";
+    let status=row.querySelector(".blorp-discovery-status");
+    if(!status){
+      status=document.createElement("div");status.className="small-help blorp-discovery-status";
+      status.style.cssText="padding:8px 14px;border-top:1px solid rgba(127,179,184,.16)";
+      row.append(status);
+    }
+    const check=modelChecks[item.provider];
+    status.textContent=check?(statuses[check.status]||"Not verified")+
+      (["catalog_checked","catalog_only"].includes(check.status)?" · "+check.model_count+" models":"")+
+      (check.truncated?" · catalog capped":""):"Not checked · saved key";
+  });
+}
+async function discoverProvider(provider){
+  if(!currentUser()||checking.has(provider)||!(provider in LABELS))return;
+  const id=currentUser().id;
+  checking.add(provider);annotateDiscovery();
+  try{
+    await call("/api/provider-models/discover",{provider});
+    if(currentUser()?.id===id){await loadProviders();setStatus(LABELS[provider]+": catalog checked; inference not tested");}
+  }catch(error){
+    if(currentUser()?.id===id){await loadProviders();setStatus(LABELS[provider]+": "+error.message);}
+  }finally{checking.delete(provider);if(currentUser()?.id===id)annotateDiscovery();}
+}
+
 async function loadProviders(){
   const user=currentUser();
   if(!user){accountId=null;backendProviders=[];storageAvailable=false;return;}
@@ -94,6 +134,12 @@ async function loadProviders(){
     if(cycle!==updateGeneration||currentUser()?.id!==requestedUser)return;
     storageAvailable=!!result.storage_available;
     backendProviders=Array.isArray(result.providers)?result.providers.filter(p=>p?.provider in LABELS):[];
+    try{
+      const checks=await call("/api/provider-models");
+      if(currentUser()?.id===requestedUser)modelChecks=Object.fromEntries(
+        (checks.checks||[]).filter(x=>x&&x.provider in LABELS&&Array.isArray(x.models))
+          .map(x=>[x.provider,x]));
+    }catch(_){modelChecks={};}
     renderConnected();
   }catch(e){
     if(currentUser()?.id!==requestedUser)return;
@@ -104,7 +150,7 @@ function accountChanged(){
   const user=currentUser(),id=user?.id||null;
   if(id===accountId)return;
   accountId=id;
-  backendProviders=[];storageAvailable=false;updateGeneration++;
+  backendProviders=[];storageAvailable=false;modelChecks={};checking.clear();updateGeneration++;
   const s=app.getState();
   if(s.credentials.length){s.credentials=[];app.commit();app.rerender();}
   refreshKeyDialog();
@@ -129,9 +175,21 @@ document.addEventListener("click",event=>{
     nextFrame(refreshKeyDialog);
   }else if(button.id==="profileTrigger"){
     nextFrame(refreshProfileMetadata);
+  }else if(button.hasAttribute("data-discover-provider")){
+    event.preventDefault();event.stopPropagation();discoverProvider(button.dataset.discoverProvider);
   }else if(button.id==="checkKeysBtn"){
     event.preventDefault();event.stopPropagation();
-    setStatus(backendProviders.length+" keys securely stored · no provider health checks yet.");
+    const control=$("checkKeysBtn");
+    if(control.disabled)return;
+    control.disabled=true;control.textContent="Checking providers…";
+    (async()=>{
+      try{
+        const providers=backendProviders.map(p=>p.provider);
+        if(!providers.length){setStatus("Add an API key first");return}
+        for(const provider of providers)await discoverProvider(provider);
+        setStatus("Catalog checks finished · inference remains untested");
+      }finally{control.disabled=false;control.textContent="✓ Check all";}
+    })();
   }else if(button.hasAttribute("data-remove-key")){
     const item=backendProviders.find(p=>"secured-"+p.provider===button.dataset.removeKey);
     if(!item)return;
@@ -140,7 +198,7 @@ document.addEventListener("click",event=>{
     (async()=>{
       try{
         await call("/api/provider-keys/remove",{provider:item.provider});
-        await loadProviders();setStatus(item.name+" encrypted key removed");
+        delete modelChecks[item.provider];await loadProviders();setStatus(item.name+" encrypted key removed");
       }catch(e){setStatus(e.message)}
     })();
   }
@@ -164,8 +222,8 @@ document.addEventListener("submit",event=>{
     try{
       await call("/api/provider-keys",{provider,key:secret,label});
       $("keyDialog").close();
-      await loadProviders();
-      setStatus((LABELS[provider]||provider)+" key encrypted and saved · connection not yet verified");
+      delete modelChecks[provider];await loadProviders();
+      setStatus((LABELS[provider]||provider)+" key encrypted and saved · click Verify & Discover");
     }catch(e){setStatus(e.message)}
     finally{secret="";busy=false;resetSecret();refreshKeyDialog()}
   })();
@@ -182,6 +240,8 @@ for(const tab of document.querySelectorAll('#keyDialog [data-key-modal-tab]')){
 resetSecret();refreshKeyDialog();accountChanged();
 window.BlorpProviderKeys=Object.freeze({
   refresh:loadProviders,
-  status:()=>({saved:backendProviders.length,storageAvailable,liveVerification:false})
+  status:()=>({saved:backendProviders.length,storageAvailable,checks:Object.keys(modelChecks).length}),
+  discover:discoverProvider,
+  catalogs:()=>JSON.parse(JSON.stringify(modelChecks))
 });
 })();
