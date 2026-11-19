@@ -1,5 +1,6 @@
 """Owner-only QR setup, INR prices, UTR duplicate defense, payment approvals, membership expiry."""
 from pathlib import Path
+from contextlib import closing
 import base64, http.cookiejar, json, os, socket, sqlite3, struct, subprocess, sys, tempfile, time, urllib.request, urllib.error, zlib
 
 ROOT=Path(__file__).resolve().parents[1]
@@ -69,7 +70,7 @@ with tempfile.TemporaryDirectory() as temporary:
         assert code==201
         assert api(customer,'/api/billing/request',{**payload,'attempt_id':other_attempt['attempt_id']})[0]==404
         # Expires at the server even if the client displays a modified countdown.
-        with sqlite3.connect(str(Path(temporary)/'blorp.sqlite3')) as db:
+        with closing(sqlite3.connect(str(Path(temporary)/'blorp.sqlite3'))) as db, db:
             db.execute('UPDATE payment_attempts SET expires_at=? WHERE id=?',(int(time.time())-1,other_attempt['attempt_id']))
         assert api(other,'/api/billing/request',{**payload,'attempt_id':other_attempt['attempt_id']})[0]==410
         other_attempt=api(other,'/api/billing/attempt',{'plan':'builder','interval':'annual'})[1]
@@ -93,7 +94,7 @@ with tempfile.TemporaryDirectory() as temporary:
         assert overview['verified_revenue_inr_paise']==1800000
         assert overview['payments'][0]['reference']=='123456789012'
         assert len(overview['revenue_7d'])==7
-        with sqlite3.connect(str(Path(temporary)/'blorp.sqlite3')) as db:
+        with closing(sqlite3.connect(str(Path(temporary)/'blorp.sqlite3'))) as db, db:
             db.execute('UPDATE users SET plan_expires_at=? WHERE id=?',(int(time.time())-1,c['id']))
         assert api(customer,'/api/auth/me')[1]['user']['plan']=='free'
         assert api(customer,'/api/agents/run',{})[0]==402
