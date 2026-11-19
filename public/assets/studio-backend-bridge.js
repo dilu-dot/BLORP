@@ -52,7 +52,7 @@
     $('authName').required = authMode === 'signup';
     $('authPassword').autocomplete = authMode === 'signup' ? 'new-password' : 'current-password';
     $('blorpAuthTitle').textContent = authMode === 'signup' ? 'Create your BLORP account.' : 'Welcome back.';
-    $('blorpAuthExplainer').textContent = 'Local BLORP account · encrypted session cookie · localhost development.';
+    $('blorpAuthExplainer').textContent = 'Local BLORP account · HttpOnly session cookie · localhost development.';
     $('authSubmit').textContent = authMode === 'signup' ? 'Create account →' : 'Sign in →';
     $('authPasswordHelp').hidden = authMode === 'signup';
     clearAuth();
@@ -111,7 +111,8 @@
     s.projects = entries.map(e => e.project);
     s.projectChats = Object.fromEntries(entries.map(e => [e.project.id, e.messages]));
     const prefKey = 'blorp-selected-project:' + user.id;
-    const last = sessionStorage.getItem(prefKey);
+    let last = null;
+    try { last = sessionStorage.getItem(prefKey); } catch (_) { /* Optional tab preference. */ }
     s.activeProjectId = s.projects.some(p=>p.id===last) ? last : null;
     app.commit();
     app.rerender();
@@ -121,19 +122,6 @@
     const s = state();
     s.projects = []; s.projectChats = {}; s.activeProjectId = null;
     app.commit(); app.rerender(); renderAccount();
-  }
-  function backupOfflineDrafts() {
-    const key = 'blorp-local-projects-pre-backend-backup-v1';
-    if (localStorage.getItem(key)) return;
-    try {
-      const raw = localStorage.getItem('blorp-frontend-unlocked-v2');
-      const old = raw && JSON.parse(raw);
-      if (old && Array.isArray(old.projects) && old.projects.length)
-        localStorage.setItem(key, JSON.stringify({
-          projects:old.projects, projectChats:old.projectChats || {},
-          note:'Old offline drafts; not imported automatically into a signed-in account'
-        }));
-    } catch (_) {}
   }
   async function setAccount(next) {
     user = next || null;
@@ -459,13 +447,14 @@
       e.preventDefault();e.stopPropagation();sendChat();
     }
   },true);
+  function rememberSelection(value) {
+    try { sessionStorage.setItem('blorp-selected-project:'+user.id,value); } catch (_) { /* Optional tab preference. */ }
+  }
   document.addEventListener('change',e=>{
-    if(e.target.id==='workspaceProjectPicker'&&user)
-      sessionStorage.setItem('blorp-selected-project:'+user.id,e.target.value||'');
+    if(e.target.id==='workspaceProjectPicker'&&user) rememberSelection(e.target.value||'');
   });
   document.addEventListener('blorp:state',()=> {
-    if(user && state().activeProjectId)
-      sessionStorage.setItem('blorp-selected-project:'+user.id,state().activeProjectId);
+    if(user && state().activeProjectId) rememberSelection(state().activeProjectId);
     renderAccount();
   });
   $('profileTrigger').addEventListener('click',()=>setTimeout(renderAccount,0));
@@ -478,7 +467,6 @@
     saveProject, sendChat, openAuth, openPayment
   };
 
-  backupOfflineDrafts();
   clearWorkspace();
   $('profileIdentityDetail').textContent='Connecting to local BLORP…';
   request('/api/auth/me')

@@ -3,7 +3,7 @@ setlocal
 cd /d "%~dp0"
 echo.
 echo ======================================
-echo    BLORP V5.1 - LOCAL AI AGENTS
+echo    BLORP Studio V4.3 - LOCAL BACKEND
  echo ======================================
 echo.
 echo This runs a local Blorp server on your PC only.

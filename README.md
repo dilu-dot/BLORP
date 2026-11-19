@@ -9,7 +9,7 @@ cd D:\BLORP-NEW
 python server.py
 ```
 
-Open **http://127.0.0.1:8765/** (or the port printed by the backend).
+Open the exact URL printed by this process. Check its `/api/health` response for `"studio": "blorp-v4.3"`. Stop the server with Ctrl+C. See the [integration audit and smoke tests](docs/CODEX_BLORP_AUDIT.md).
 
 - New Studio: `/`, `/index.html`, or `/blorp-studio-subscriptions-preview.html`.
 - Original V5.3 legacy UI: `/legacy-v53.html`.
