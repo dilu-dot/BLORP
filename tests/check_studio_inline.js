@@ -2,7 +2,11 @@
 const fs=require("node:fs");
 const vm=require("node:vm");
 const assert=require("node:assert/strict");
-const html=fs.readFileSync("public/blorp-studio-subscriptions-preview.html","utf8");
+const html=fs.readFileSync("public/index.html","utf8");
+const preview=fs.readFileSync("public/blorp-studio-subscriptions-preview.html","utf8");
+const legacy=fs.readFileSync("public/legacy-v53.html","utf8");
+assert.equal(html,preview,"Default Studio must match the approved standalone preview");
+assert(!legacy.includes("BLORP Studio — Final Frontend V4.3"),"Legacy V5.3 must remain separate");
 let scripts=0, external=0;
 const tags=/<script\b([^>]*)>([\s\S]*?)<\/script\s*>/gi;
 for(const [,attrs,source] of html.matchAll(tags)){
