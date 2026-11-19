@@ -81,8 +81,48 @@ function renderConnected(){
   if(warning)warning.textContent=storageAvailable
     ?"🔒 Keys are protected with Windows DPAPI. Verify & Discover retrieves real catalogs but listing does not prove model inference access or billing."
     :"🔒 Secure credential storage is unavailable here. Real API keys cannot be saved; use a Windows localhost installation.";
-  refreshKeyDialog();
+  annotateDiscovery();refreshKeyDialog();
 }
+
+function annotateDiscovery(){
+  const statuses={catalog_checked:"Authenticated catalog · inference untested",catalog_only:"Public catalog · key unverified",invalid:"Key rejected",restricted:"Access restricted",rate_limited:"Rate limited",unavailable:"Provider unavailable"};
+  document.querySelectorAll("#keys [data-remove-key]").forEach(remove=>{
+    const item=backendProviders.find(p=>"secured-"+p.provider===remove.dataset.removeKey);
+    if(!item)return;
+    const row=remove.closest(".keys-provider-card"),actions=remove.closest(".row-actions");
+    if(!row||!actions)return;
+    let btn=actions.querySelector("[data-discover-provider]");
+    if(!btn){
+      btn=document.createElement("button");
+      btn.className="btn small";btn.type="button";btn.dataset.discoverProvider=item.provider;
+      actions.prepend(btn);
+    }
+    btn.disabled=checking.has(item.provider);
+    btn.textContent=checking.has(item.provider)?"Checking…":"↻ Verify & Discover";
+    let status=row.querySelector(".blorp-discovery-status");
+    if(!status){
+      status=document.createElement("div");status.className="small-help blorp-discovery-status";
+      status.style.cssText="padding:8px 14px;border-top:1px solid rgba(127,179,184,.16)";
+      row.append(status);
+    }
+    const check=modelChecks[item.provider];
+    status.textContent=check?(statuses[check.status]||"Not verified")+
+      (["catalog_checked","catalog_only"].includes(check.status)?" · "+check.model_count+" models":"")+
+      (check.truncated?" · catalog capped":""):"Not checked · saved key";
+  });
+}
+async function discoverProvider(provider){
+  if(!currentUser()||checking.has(provider)||!(provider in LABELS))return;
+  const id=currentUser().id;
+  checking.add(provider);annotateDiscovery();
+  try{
+    await call("/api/provider-models/discover",{provider});
+    if(currentUser()?.id===id){await loadProviders();setStatus(LABELS[provider]+": catalog checked; inference not tested");}
+  }catch(error){
+    if(currentUser()?.id===id){await loadProviders();setStatus(LABELS[provider]+": "+error.message);}
+  }finally{checking.delete(provider);if(currentUser()?.id===id)annotateDiscovery();}
+}
+
 async function loadProviders(){
   const user=currentUser();
   if(!user){accountId=null;backendProviders=[];storageAvailable=false;return;}
@@ -135,9 +175,11 @@ document.addEventListener("click",event=>{
     nextFrame(refreshKeyDialog);
   }else if(button.id==="profileTrigger"){
     nextFrame(refreshProfileMetadata);
+  }else if(button.hasAttribute("data-discover-provider")){
+    event.preventDefault();event.stopPropagation();discoverProvider(button.dataset.discoverProvider);
   }else if(button.id==="checkKeysBtn"){
     event.preventDefault();event.stopPropagation();
-    setStatus(backendProviders.length+" keys securely stored · no provider health checks yet.");
+    setStatus(backendProviders.length+" saved keys · "+Object.keys(modelChecks).length+" cached catalog checks");
   }else if(button.hasAttribute("data-remove-key")){
     const item=backendProviders.find(p=>"secured-"+p.provider===button.dataset.removeKey);
     if(!item)return;
@@ -146,7 +188,7 @@ document.addEventListener("click",event=>{
     (async()=>{
       try{
         await call("/api/provider-keys/remove",{provider:item.provider});
-        await loadProviders();setStatus(item.name+" encrypted key removed");
+        delete modelChecks[item.provider];await loadProviders();setStatus(item.name+" encrypted key removed");
       }catch(e){setStatus(e.message)}
     })();
   }
@@ -170,8 +212,8 @@ document.addEventListener("submit",event=>{
     try{
       await call("/api/provider-keys",{provider,key:secret,label});
       $("keyDialog").close();
-      await loadProviders();
-      setStatus((LABELS[provider]||provider)+" key encrypted and saved · connection not yet verified");
+      delete modelChecks[provider];await loadProviders();
+      setStatus((LABELS[provider]||provider)+" key encrypted and saved · click Verify & Discover");
     }catch(e){setStatus(e.message)}
     finally{secret="";busy=false;resetSecret();refreshKeyDialog()}
   })();
@@ -188,6 +230,8 @@ for(const tab of document.querySelectorAll('#keyDialog [data-key-modal-tab]')){
 resetSecret();refreshKeyDialog();accountChanged();
 window.BlorpProviderKeys=Object.freeze({
   refresh:loadProviders,
-  status:()=>({saved:backendProviders.length,storageAvailable,liveVerification:false})
+  status:()=>({saved:backendProviders.length,storageAvailable,checks:Object.keys(modelChecks).length}),
+  discover:discoverProvider,
+  catalogs:()=>JSON.parse(JSON.stringify(modelChecks))
 });
 })();
