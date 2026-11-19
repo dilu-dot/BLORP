@@ -19,10 +19,16 @@
   let attempt = null, clockOffset = 0, checkoutBusy = false, qrURL = null;
   let googleClient = '', googleButtonRendered = false;
 
+  const accountChannel = new BroadcastChannel('blorp-local-session');
+  accountChannel.onmessage = () => location.reload();
+
   async function request(path, payload, method) {
     const response = await fetch(path, {
       method: method || (payload === undefined ? 'GET' : 'POST'),
-      headers: payload === undefined ? {} : {'Content-Type':'application/json'},
+      headers: {
+        ...(payload === undefined ? {} : {'Content-Type':'application/json'}),
+        ...(user ? {'X-Blorp-Account':user.id} : {})
+      },
       body: payload === undefined ? undefined : JSON.stringify(payload),
       credentials: 'same-origin', cache: 'no-store'
     });
@@ -164,6 +170,7 @@
       const body = {email, password};
       if (authMode === 'signup') body.name = name;
       const result = await request('/api/auth/' + (authMode === 'signup' ? 'signup' : 'signin'), body);
+      accountChannel.postMessage('signed-in');
       $('authPassword').value = '';
       await setAccount(result.user);
       closeAuth();
@@ -183,6 +190,7 @@
         }
       }
       await request('/api/auth/signout',{});
+      accountChannel.postMessage('signed-out');
       // Discard pending callbacks, previews and form contents before another account signs in.
       location.reload();
     } catch (err) { document.body.inert = false; notify(err.message); }
@@ -220,6 +228,7 @@
             if (!credential) return;
             try {
               const result = await request('/api/auth/google',{credential});
+              accountChannel.postMessage('signed-in');
               await setAccount(result.user);
               closeAuth(); notify('Google account verified by BLORP backend');
             } catch (err) { showAuth(err.message); }

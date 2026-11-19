@@ -68,3 +68,13 @@ The last command reproduces the outstanding renderer check. Alternatively set BL
 2. Verify Model Hub defaults and catalog/inference boundaries with vendor mocks. Design vault migration separately.
 3. Wire single-model Build Fast to scoped artifacts, editor/reopen and backend entitlements.
 4. Implement specialist orchestration only in Multi Task. Gate release, payments and deployment on separate verification and owner approval.
+
+## Session isolation follow-up (stacked on PR #10)
+
+The localhost editor stores its three source files in a nullable editor_files column on the existing account/project row. Normal chat and project metadata updates leave that column intact. The additive migration preserves pre-existing rows. Old unowned browser drafts remain in their original storage; the signed-in editor does not guess which account owns them. Back up the original browser profile before attempting any historical draft recovery. The offline preview keeps its existing browser save path.
+
+The server serializes each snapshot in one SQLite update; the editor queues writes in their original order. Across concurrent editor tabs the last completed save wins. A successful signout opens a fresh document; other open Studio tabs refresh on an account change. Authenticated bridge requests carry the expected account ID so a stale tab cannot use a different account's cookie to save a project. The server still authenticates with its session cookie.
+
+The browser suites start the absolute checkout/server.py path on an OS-assigned loopback port, validate the banner and health marker, and stop that PID. StudioServer rejects competing binds. On the Windows audit host two older processes reported port 8765 from D:/BLORP-main and E:/BLORP-main. Both were left alone.
+
+Run the four browser scripts test_studio_browser.py, test_editor_isolation.py, test_browser.py and test_local_ui.py under tests/ with the Playwright setup above. The new isolation case uses one browser context, two accounts, two tabs, a held project-list response, a real editor save, and a rejected stale write. Electron's source checks distinguish the promoted renderer from the preserved legacy page; running the packaged binary remains separate QA.

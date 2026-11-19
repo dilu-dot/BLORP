@@ -311,9 +311,13 @@ class Handler(BaseHTTPRequestHandler):
             return None
         token_hash = hashlib.sha256(token.encode()).hexdigest()
         with database() as conn:
-            return conn.execute('''SELECT users.* FROM sessions
+            user = conn.execute('''SELECT users.* FROM sessions
                  JOIN users ON sessions.user_id=users.id
                  WHERE sessions.token_hash=? AND sessions.expires_at>?''', (token_hash, int(time.time()))).fetchone()
+        expected = self.headers.get('X-Blorp-Account')
+        if expected and (not user or user['id'] != expected):
+            return None
+        return user
 
     def create_session(self, user):
         token = secrets.token_urlsafe(32)

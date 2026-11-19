@@ -23,7 +23,8 @@ def logout(page):
 
 with studio_server() as url, sync_playwright() as driver:
     browser = driver.chromium.launch(executable_path=os.getenv("BLORP_TEST_CHROME"))
-    page = browser.new_page(viewport={"width": 1440, "height": 900})
+    context = browser.new_context(viewport={"width": 1440, "height": 900})
+    page = context.new_page()
     page.route("**/api/local/models", lambda route: route.fulfill(json={"connected": False, "models": []}))
     page.goto(url)
     login(page, "WriterA", True)
@@ -38,6 +39,13 @@ with studio_server() as url, sync_playwright() as driver:
     page.locator("#editorSave").click()
     expect(page.locator("#editorSaveState")).to_have_text("Saved to account")
 
+    original_account = page.request.get(url + "/api/auth/me").json()["user"]["id"]
+    sibling = page.context.new_page()
+    sibling.goto(url)
+    sibling.locator('[data-view="editor"]').click()
+    sibling.locator("#editorProject").select_option(value=project_id)
+    expect(sibling.locator("#codeEditor")).to_have_value(marker)
+
     held = []
     def delay_response(route):
         held.append((route, route.fetch()))
@@ -46,6 +54,7 @@ with studio_server() as url, sync_playwright() as driver:
     page.wait_for_function("document.readyState === 'complete'")
     assert held and marker in held[0][1].text()
     logout(page)
+    expect(sibling.locator("#profileIdentityDetail")).to_have_text("Guest · sign in required")
     page.unroute("**/api/projects", delay_response)
     login(page, "WriterB", True)
     # A's held request belongs to the discarded document. Even a successful late reply
@@ -60,7 +69,11 @@ with studio_server() as url, sync_playwright() as driver:
     account = page.request.get(url + "/api/auth/me").json()["user"]["id"]
     files = {"index.html": "overwrite", "styles.css": "", "script.js": ""}
     assert page.request.post(url + "/api/projects/files", data={"account":account, "id":project_id, "files":files}).status == 404
+    assert page.request.post(url + "/api/projects", headers={"X-Blorp-Account": original_account},
+                             data={"id": project_id, "title":"stale A save"}).status == 401
     assert page.request.get(url+"/api/projects").json()["projects"] == []
+    expect(sibling.locator("#profileIdentityDetail")).to_contain_text("writerb@example.test")
+    expect(sibling.locator("#codeEditor")).to_have_value("")
     assert marker not in page.evaluate("JSON.stringify(localStorage) + JSON.stringify(sessionStorage)")
     logout(page)
     login(page, "WriterA", False)
