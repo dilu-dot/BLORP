@@ -28,6 +28,7 @@ from urllib.parse import urlparse
 import local_runtime
 import payment_checkout
 from provider_vault import ProviderVault, VaultError
+import provider_discovery
 
 BASE = Path(__file__).resolve().parent
 PUBLIC = BASE / 'public'
@@ -50,6 +51,25 @@ ITERATIONS = 310_000
 _attempts: dict[str, list[float]] = {}
 _attempt_lock = threading.Lock()
 _model_lock = threading.BoundedSemaphore(value=1)
+_provider_checks_lock = threading.Lock()
+_provider_checks_semaphore = threading.BoundedSemaphore(value=3)
+_provider_checks: dict[tuple[str,str], dict] = {}
+_PROVIDER_CHECK_TTL = 600
+
+
+def cached_provider_checks(user_id):
+    now=int(time.time())
+    with _provider_checks_lock:
+        expired=[k for k,v in _provider_checks.items() if now-v['checked_at']>_PROVIDER_CHECK_TTL]
+        for k in expired:
+            del _provider_checks[k]
+        return [v.copy() for k,v in _provider_checks.items() if k[0]==user_id]
+
+
+def clear_provider_check(user_id, provider):
+    with _provider_checks_lock:
+        _provider_checks.pop((user_id,provider),None)
+
 
 
 def database():
@@ -391,6 +411,17 @@ class Handler(BaseHTTPRequestHandler):
             self.send_header('Content-Length',str(len(payload)))
             self.end_headers()
             return self.wfile.write(payload)
+        if path == '/api/provider-models':
+            user=self.find_user()
+            if not user:return self.response(401, {'error':'Sign in required'})
+            try:
+                saved=PROVIDER_VAULT.list(user['id'])
+            except VaultError as exc:
+                return self.response(exc.status, {'error':str(exc)})
+            allowed={entry['provider'] for entry in saved['providers']}
+            checks=[entry for entry in cached_provider_checks(user['id']) if entry['provider'] in allowed]
+            return self.response(200, {'checks':checks,'cache_seconds':_PROVIDER_CHECK_TTL,
+                 'live_provider_access_required':True,'models_are_not_inference_verified':True})
         if path == '/api/provider-keys':
             user=self.find_user()
             if not user:return self.response(401, {'error':'Sign in required'})
@@ -449,6 +480,40 @@ class Handler(BaseHTTPRequestHandler):
         data = self.read_json()
         if data is None:
             return self.response(400, {'error': 'Expected a small JSON object'})
+        if path == '/api/provider-models/discover':
+            user=self.find_user()
+            if not user:return self.response(401, {'error':'Sign in required'})
+            if self.headers.get('Origin') not in {f'http://127.0.0.1:{PORT}',f'http://localhost:{PORT}'}:
+                return self.response(403, {'error':'Same-origin access required for provider discovery'})
+            if self.headers.get('Host') not in {f'127.0.0.1:{PORT}',f'localhost:{PORT}'}:
+                return self.response(403, {'error':'Untrusted host'})
+            provider=data.get('provider')
+            if not isinstance(provider,str) or provider not in provider_discovery.ENDPOINTS:
+                return self.response(422, {'error':'Unsupported model provider'})
+            if not allow_attempt('provider-discover:'+user['id']):
+                return self.response(429, {'error':'Too many discovery requests; retry in a minute'})
+            if not _provider_checks_semaphore.acquire(blocking=False):
+                return self.response(429, {'error':'Other provider checks are running; retry shortly'})
+            try:
+                secret=PROVIDER_VAULT.get_secret(user['id'],provider)
+                try:
+                    result=provider_discovery.discover(provider,secret)
+                    result['checked_at']=int(time.time())
+                    with _provider_checks_lock:
+                        _provider_checks[(user['id'],provider)]=result
+                    return self.response(200,result)
+                except provider_discovery.DiscoveryError as exc:
+                    result={'provider':provider,'status':exc.status,
+                            'authentication_confirmed':False,'model_access_unverified':True,
+                            'models':[],'model_count':0,'truncated':False,
+                            'checked_at':int(time.time()),'error':str(exc)}
+                    with _provider_checks_lock:
+                        _provider_checks[(user['id'],provider)]=result
+                    return self.response(exc.code,result)
+            except VaultError as exc:
+                return self.response(exc.status, {'error':str(exc)})
+            finally:
+                _provider_checks_semaphore.release()
         if path in ('/api/provider-keys','/api/provider-keys/remove'):
             user=self.find_user()
             if not user:return self.response(401, {'error':'Sign in required'})
@@ -467,6 +532,7 @@ class Handler(BaseHTTPRequestHandler):
                     result=PROVIDER_VAULT.connect(
                         user['id'], data.get('provider'),data.get('key'),
                         data.get('label',''))
+                clear_provider_check(user['id'],data.get('provider') if isinstance(data.get('provider'),str) else '')
                 return self.response(200,result)
             except VaultError as exc:
                 return self.response(exc.status, {'error':str(exc)})
