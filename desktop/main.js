@@ -203,5 +203,8 @@ app.whenReady().then(async () => {
     // Cloud auth is active via Supabase; no legacy "cloud not connected" banner.
     await window.loadURL(OFFLINE);
   }
+}).catch(error => {
+  dialog.showErrorBox("BLORP Studio could not start", error.message);
+  app.quit();
 });
 app.on("window-all-closed", () => { if (process.platform !== "darwin") app.quit(); });
