@@ -28,6 +28,11 @@ jobs:
         run: python tests/test_provider_vault.py
       - name: Mock provider model discovery and authentication tests
         run: python tests/test_provider_discovery.py
+      - name: Studio browser authentication and responsive profile
+        run: |
+          python -m pip install playwright
+          python -m playwright install --with-deps chromium
+          python tests/test_studio_browser.py
       - name: Premium Studio inline JavaScript syntax
         run: node tests/check_studio_inline.js
       - name: Frontend JavaScript syntax
