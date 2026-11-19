@@ -781,9 +781,9 @@ html[data-glass-opaque="true"] *::after,html[data-glass-opaque="true"] dialog::b
 </div><div class="panel project-library-panel"><div class="panelhead"><div><h2>Project library <span class="count-highlight" id="projectCount">0</span></h2><p class="panel-sub">Click Select to activate a project. Each project keeps its own Playground conversation.</p></div><div class="search-wrap"><input aria-label="Search projects" id="projectSearch" placeholder="⌕  Find a project..."/></div></div><div class="project-list" id="projectList"></div></div>
 </section>
 <section class="tab" id="editor">
-<div class="page-top"><div><p class="kicker">WORKSPACE / SOURCE EDITOR</p><h1 class="page-title">Studio Editor</h1><p class="subtitle">A local HTML/CSS/JS editor linked to your selected Workspace project. Files stay in this browser; the preview intentionally blocks JavaScript execution.</p></div><span class="eyebrow-pill">LOCAL FILES · NO BACKEND</span></div>
+<div class="page-top"><div><p class="kicker">WORKSPACE / SOURCE EDITOR</p><h1 class="page-title">Studio Editor</h1><p class="subtitle">A local HTML/CSS/JS editor linked to your selected Workspace project. Files save to your local account on localhost or to this browser in offline preview; the preview intentionally blocks JavaScript execution.</p></div><span class="eyebrow-pill">LOCAL PROJECT FILES</span></div>
 <div class="editor-toolbar glass-row"><div class="field"><label for="editorProject">Project</label><select id="editorProject"><option value="">Select a project...</option></select></div><div class="editor-toolbar-actions"><button class="btn" data-go="projects" type="button">Project library</button><button class="btn" id="editorMakeStarter">Create starter files</button><button class="btn primary" id="editorSave">Save changes</button><button class="btn" id="editorDownload">Download current file ↓</button></div></div>
-<div class="studio-editor-shell"><aside class="studio-filetree glass-panel"><div class="editor-tree-title">EXPLORER <span class="tree-meta">3 FILES</span></div><div class="tree-project" id="editorProjectName">No project selected</div><div class="tree-file-list" id="editorFiles"><div class="editor-tree-empty">Select a project to begin</div></div><div class="tree-foot">Autosave is local only. Use Ctrl+S to save.</div></aside><section class="studio-code glass-panel"><div class="code-tab-row"><strong id="editorFileTitle">No file open</strong><span id="editorSaveState">Not saved</span></div><label class="sr-only" for="codeEditor">Source code</label><textarea id="codeEditor" placeholder="Select a project and create starter files..." spellcheck="false"></textarea><div class="code-foot"><span>UTF-8 · Project source</span><span id="editorCodeLines">0 lines</span></div></section><section class="studio-live glass-panel"><div class="code-tab-row"><strong>Preview</strong><button class="btn small" id="editorRefreshPreview">Refresh</button></div><div class="editor-preview-box"><iframe id="editorPreview" sandbox="" title="Sandboxed local project preview"></iframe></div><div class="editor-preview-note">Sandboxed HTML + CSS. Scripts are blocked for your safety.</div></section></div>
+<div class="studio-editor-shell"><aside class="studio-filetree glass-panel"><div class="editor-tree-title">EXPLORER <span class="tree-meta">3 FILES</span></div><div class="tree-project" id="editorProjectName">No project selected</div><div class="tree-file-list" id="editorFiles"><div class="editor-tree-empty">Select a project to begin</div></div><div class="tree-foot">Autosave uses the current workspace. Use Ctrl+S to save.</div></aside><section class="studio-code glass-panel"><div class="code-tab-row"><strong id="editorFileTitle">No file open</strong><span id="editorSaveState">Not saved</span></div><label class="sr-only" for="codeEditor">Source code</label><textarea id="codeEditor" placeholder="Select a project and create starter files..." spellcheck="false"></textarea><div class="code-foot"><span>UTF-8 · Project source</span><span id="editorCodeLines">0 lines</span></div></section><section class="studio-live glass-panel"><div class="code-tab-row"><strong>Preview</strong><button class="btn small" id="editorRefreshPreview">Refresh</button></div><div class="editor-preview-box"><iframe id="editorPreview" sandbox="" title="Sandboxed local project preview"></iframe></div><div class="editor-preview-note">Sandboxed HTML + CSS. Scripts are blocked for your safety.</div></section></div>
 <div class="hint-card" style="margin-top:16px">These local files are editable project drafts, not AI-generated output. The desktop runtime can later handle real files, build tools and controlled execution.</div>
 </section><section class="tab" id="models">
   <div class="page-top page-top-feature llm-page-top">
@@ -906,7 +906,7 @@ html[data-glass-opaque="true"] *::after,html[data-glass-opaque="true"] dialog::b
 <div class="settings-row"><div><strong>Workspace density</strong><small>Compact is ideal for dense code and task views.</small></div><select class="setting-select" id="densitySetting"><option value="comfortable">Comfortable</option><option value="compact">Compact</option></select></div>
 </section>
 <section class="panel settings-block"><div class="settings-block-head"><span class="settings-icon">▤</span><div><h2>Editor &amp; projects</h2><p>Options for your local workspace.</p></div></div>
-<div class="settings-row"><div><strong>Save edited files automatically</strong><small>Local browser storage only. No cloud sync.</small></div><label class="new-switch"><input checked="" id="editorAutosave" type="checkbox"/><span></span></label></div>
+<div class="settings-row"><div><strong>Save edited files automatically</strong><small>Save to this local workspace.</small></div><label class="new-switch"><input checked="" id="editorAutosave" type="checkbox"/><span></span></label></div>
 <div class="settings-row"><div><strong>Show line numbers</strong><small>Estimated count in the editor footer.</small></div><label class="new-switch"><input checked="" id="showLineCount" type="checkbox"/><span></span></label></div>
 <div class="settings-row"><div><strong>Open last visited page</strong><small>Resume from the same BLORP section next time.</small></div><label class="new-switch"><input id="restoreLastView" type="checkbox"/><span></span></label></div>
 </section>
@@ -994,11 +994,11 @@ html[data-glass-opaque="true"] *::after,html[data-glass-opaque="true"] dialog::b
   });
   let state=fresh();
   try {
-    const current=JSON.parse(localStorage.getItem(KEY)||"null");
+    const current=!serverPage && JSON.parse(localStorage.getItem(KEY)||"null");
     if(current && typeof current==="object" && Array.isArray(current.agents) && Array.isArray(current.groups)) {
       state={...fresh(),...current};
     } else {
-      const legacy=JSON.parse(localStorage.getItem(LEGACY)||"null");
+      const legacy=!serverPage && JSON.parse(localStorage.getItem(LEGACY)||"null");
       if(legacy && typeof legacy==="object") {
         if(Array.isArray(legacy.projects))state.projects=legacy.projects;
         if(Array.isArray(legacy.chatHistory))state.chatHistory=legacy.chatHistory;
@@ -1009,6 +1009,15 @@ html[data-glass-opaque="true"] *::after,html[data-glass-opaque="true"] dialog::b
       }
     }
   } catch(_) {}
+  const deviceKey='blorp-studio-device-models-v1';
+  if(serverPage){
+    try{
+      const saved=JSON.parse(localStorage.getItem(deviceKey)||localStorage.getItem(KEY)||'{}');
+      for(const key of ['localModels','defaultLocalModelId','defaultModel','chatProvider','chatModel']){
+        if(saved && key in saved)state[key]=saved[key];
+      }
+    }catch(_){}
+  }
   const safeArray=v=>Array.isArray(v)?v:[];
   for(const field of ["agents","groups","runs","credentials","mcps","projects","chatHistory","localModels"])state[field]=safeArray(state[field]);
   if(serverPage){state.projects=[];state.projectChats={};state.activeProjectId=null;state.chatHistory=[];state.credentials=[];}
@@ -1024,8 +1033,10 @@ html[data-glass-opaque="true"] *::after,html[data-glass-opaque="true"] dialog::b
   function toast(message){const el=$("toast");el.textContent=message;el.classList.add("on");clearTimeout(toastTimer);toastTimer=setTimeout(()=>el.classList.remove("on"),3200)}
   function persist(){try {
     // Account data is owned by the backend. Never copy private chats into browser localStorage.
-    const safe = serverPage ? {...state,projects:[],projectChats:{},activeProjectId:null,chatHistory:[],credentials:[]} : state;
-    localStorage.setItem(KEY,JSON.stringify(safe));
+    if(serverPage){
+      const {localModels,defaultLocalModelId,defaultModel,chatProvider,chatModel}=state;
+      localStorage.setItem(deviceKey,JSON.stringify({localModels,defaultLocalModelId,defaultModel,chatProvider,chatModel}));
+    }else localStorage.setItem(KEY,JSON.stringify(state));
     document.dispatchEvent(new CustomEvent('blorp:state'));return true;
   }catch(_) {toast("Local storage unavailable. Please export your drafts.");return false;}}
 
@@ -1670,11 +1681,14 @@ html[data-glass-opaque="true"] *::after,html[data-glass-opaque="true"] dialog::b
     if($('profileActiveProject'))$('profileActiveProject').textContent=p?p.name:'None';
     if($('profileGroupsCount'))$('profileGroupsCount').textContent=String(s.groups.length);
   };
+  const sessionActivity=[];
   function activity(text){
+    if(window.BlorpBackend){sessionActivity.unshift({text,time:Date.now()});sessionActivity.splice(8);return;}
     try{const items=JSON.parse(sessionStorage.getItem('blorp-v4-activity')||'[]');items.unshift({text,time:Date.now()});sessionStorage.setItem('blorp-v4-activity',JSON.stringify(items.slice(0,8)));}catch(_){}
   }
   function drawActivity(){
     let logs=[];try{logs=JSON.parse(sessionStorage.getItem('blorp-v4-activity')||'[]');}catch(_){}
+    if(window.BlorpBackend)logs=sessionActivity;
     $('activityList').replaceChildren();
     if(!logs.length){const d=document.createElement('div');d.className='activity-entry';d.textContent='No local activity yet. Create a project or prepare a workflow preview.';$('activityList').append(d);}
     for(const log of logs){const d=document.createElement('div');d.className='activity-entry';d.textContent=log.text+' · '+new Date(log.time).toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'});$('activityList').append(d);}
@@ -1744,7 +1758,7 @@ html[data-glass-opaque="true"] *::after,html[data-glass-opaque="true"] dialog::b
   function renderEditor(){
     const s=state(),p=s.projects.find(p=>p.id===editorProject),files=p&&filesFor(p.id);
     $('editorProjectName').textContent=p?p.name:'No project selected';
-    $('editorFiles').replaceChildren();$('editorSaveState').textContent='Local browser only';
+    $('editorFiles').replaceChildren();$('editorSaveState').textContent=window.BlorpBackend?'Local account':'Local browser only';
     if(!p){$('codeEditor').value='';$('codeEditor').disabled=true;$('editorFileTitle').textContent='No project';$('editorPreview').srcdoc='';updateLines();return;}
     if(!files){$('codeEditor').value='';$('codeEditor').disabled=true;$('editorFileTitle').textContent='No files yet';
       const d=document.createElement('div');d.className='editor-tree-empty';d.textContent='Create starter files to begin';$('editorFiles').append(d);$('editorPreview').srcdoc='';updateLines();return;}
@@ -1754,11 +1768,33 @@ html[data-glass-opaque="true"] *::after,html[data-glass-opaque="true"] dialog::b
     $('editorFileTitle').textContent=editorFile;
     $('codeEditor').disabled=false;$('codeEditor').value=files[editorFile]||'';dirty=false;updateLines();refreshEditorPreview();
   }
+  let pendingSave = Promise.resolve();
+  function storeEditorFiles(){
+    const backend=window.BlorpBackend;
+    if(!backend)return api.commit();
+    const id=editorProject, files={...filesFor(id)};
+    const saving=pendingSave.catch(()=>{}).then(()=>backend.saveEditorFiles(id,files));
+    pendingSave=saving;
+    $('editorSaveState').textContent='Saving…';
+    saving.then(()=>{
+      if(saving===pendingSave && editorProject===id && !dirty)$('editorSaveState').textContent='Saved to account';
+    },err=>{
+      if(editorProject===id)$('editorSaveState').textContent='Save failed';
+      notice(err.message);
+    });
+    return true;
+  }
+  api.flushEditor=()=>{
+    clearTimeout(autoTimer);
+    if(dirty && prefs.autosave)saveEditor(true);
+    return pendingSave;
+  };
   function saveEditor(quiet=false){
+    clearTimeout(autoTimer);
     if(!editorProject||!filesFor(editorProject)){if(!quiet)notice('Select a project and create starter files');return false;}
     filesFor(editorProject)[editorFile]=$('codeEditor').value;
-    const okay=api.commit();dirty=false;$('editorSaveState').textContent='Saved locally';
-    if(!quiet && prefs.notifyProject)notice('Saved '+editorFile+' in this browser');
+    dirty=false;const okay=storeEditorFiles();if(!window.BlorpBackend)$('editorSaveState').textContent='Saved locally';
+    if(!quiet && prefs.notifyProject && !window.BlorpBackend)notice('Saved '+editorFile+' in this browser');
     if(okay)refreshEditorPreview();return okay;
   }
   function refreshEditorPreview(){
@@ -1776,7 +1812,7 @@ html[data-glass-opaque="true"] *::after,html[data-glass-opaque="true"] dialog::b
   $('editorMakeStarter').addEventListener('click',()=>{
     const p=state().projects.find(p=>p.id===editorProject);if(!p){notice('Select a project first');return;}
     if(filesFor(p.id) && !confirm('Replace existing local project files with starter files?'))return;
-    ensureFileMap()[p.id]=seedFiles(p.name);api.commit();editorFile='index.html';renderEditor();activity('Created starter files for '+p.name);notice('Starter HTML/CSS/JS files created locally');
+    ensureFileMap()[p.id]=seedFiles(p.name);editorFile='index.html';renderEditor();storeEditorFiles();activity('Created starter files for '+p.name);notice('Starter HTML/CSS/JS files created');
   });
   $('codeEditor').addEventListener('input',()=>{
     dirty=true;$('editorSaveState').textContent='Unsaved changes';updateLines();

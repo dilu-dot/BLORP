@@ -18,6 +18,7 @@ import mimetypes
 import os
 import re
 import secrets
+import socket
 import sqlite3
 import sys
 import threading
@@ -136,6 +137,8 @@ def init_db():
             if col not in columns:
                 conn.execute(f'ALTER TABLE users ADD COLUMN {col} {definition}')
         conn.execute('CREATE UNIQUE INDEX IF NOT EXISTS users_google_sub_unique ON users(google_sub) WHERE google_sub IS NOT NULL')
+        if 'editor_files' not in {r['name'] for r in conn.execute('PRAGMA table_info(projects)')}:
+            conn.execute("ALTER TABLE projects ADD COLUMN editor_files TEXT")
         payment_columns={r['name'] for r in conn.execute('PRAGMA table_info(payment_requests)')}
         for col,definition in {'paid_inr_paise':'INTEGER','payer_name':"TEXT NOT NULL DEFAULT ''"}.items():
             if col not in payment_columns:
@@ -276,7 +279,7 @@ class Handler(BaseHTTPRequestHandler):
             length = int(self.headers.get('Content-Length', '0'))
         except ValueError:
             return None
-        max_bytes = 500_000 if urlsplit(self.path).path=='/api/owner/payments/settings' else MAX_JSON
+        max_bytes = 500_000 if urlsplit(self.path).path in ('/api/owner/payments/settings', '/api/projects/files') else MAX_JSON
         if length < 1 or length > max_bytes:
             return None
         if self.headers.get('Content-Type', '').split(';')[0].lower() != 'application/json':
@@ -437,8 +440,8 @@ class Handler(BaseHTTPRequestHandler):
             if not user:
                 return self.response(401, {'error': 'Sign in required'})
             with database() as conn:
-                records = conn.execute('SELECT id,title,payload,updated_at FROM projects WHERE user_id=? ORDER BY updated_at DESC LIMIT 50', (user['id'],)).fetchall()
-            return self.response(200, {'projects': [{'id': r['id'], 'title': r['title'], 'payload': json.loads(r['payload']), 'updated_at':r['updated_at']} for r in records]})
+                records = conn.execute('SELECT id,title,payload,updated_at,editor_files FROM projects WHERE user_id=? ORDER BY updated_at DESC LIMIT 50', (user['id'],)).fetchall()
+            return self.response(200, {'projects': [{'id': r['id'], 'title': r['title'], 'payload': json.loads(r['payload']), 'files': json.loads(r['editor_files']) if r['editor_files'] else None, 'updated_at':r['updated_at']} for r in records]})
         if path.startswith('/api/'):
             return self.response(404, {'error': 'Unknown API endpoint'})
         file_path = (PUBLIC / (path.lstrip('/') or 'index.html')).resolve()
@@ -718,6 +721,19 @@ class Handler(BaseHTTPRequestHandler):
                 conn.execute('INSERT INTO membership_audit VALUES(?,?,?,?,?,?,?,?)',
                              (uuid.uuid4().hex,owner['id'],member_id,old,plan,expires,reason,now))
             return self.response(200,{'ok':True,'plan':plan,'plan_expires_at':expires})
+        if path == '/api/projects/files':
+            user = self.find_user()
+            if not user or data.get('account') != user['id']:
+                return self.response(403, {'error': 'Account changed. Reopen your project.'})
+            files = data.get('files')
+            if (not isinstance(data.get('id'), str) or not isinstance(files, dict)
+                    or set(files) != {'index.html', 'styles.css', 'script.js'}
+                    or not all(isinstance(value, str) for value in files.values())):
+                return self.response(422, {'error': 'Invalid editor files'})
+            with database() as conn:
+                updated = conn.execute('UPDATE projects SET editor_files=? WHERE id=? AND user_id=?',
+                                       (json.dumps(files), data['id'], user['id'])).rowcount
+            return self.response(200, {'saved': True}) if updated else self.response(404, {'error': 'Unknown project'})
         if path == '/api/projects':
             user = self.find_user()
             if not user:
@@ -799,13 +815,23 @@ class Handler(BaseHTTPRequestHandler):
         return self.response(404, {'error': 'Unknown API endpoint'})
 
 
+class StudioServer(ThreadingHTTPServer):
+    allow_reuse_port = False
+    allow_reuse_address = os.name != 'nt'
+
+    def server_bind(self):
+        if os.name == 'nt':
+            self.socket.setsockopt(socket.SOL_SOCKET, socket.SO_EXCLUSIVEADDRUSE, 1)
+        super().server_bind()
+
+
 def main():
     init_db()
     global PORT
     requested = PORT
     for candidate in ([requested] if os.environ.get('BLORP_PORT') else [requested, requested + 1, requested + 2, 0]):
         try:
-            server = ThreadingHTTPServer((HOST, candidate), Handler)
+            server = StudioServer((HOST, candidate), Handler)
             PORT = server.server_address[1]
             break
         except OSError:
@@ -813,7 +839,7 @@ def main():
                 raise
     else:
         raise RuntimeError('No available localhost port')
-    print(f'BLORP Studio V4.3 ({BASE}): http://{HOST}:{PORT}', flush=True)
+    print(f'BLORP Studio V4.3 ({Path(__file__).resolve()}): http://{HOST}:{PORT}', flush=True)
     if requested and requested != PORT:
         print(f'Port {requested} was unavailable. Use the URL above for this checkout.', flush=True)
     print('Local development only. Not for public internet or production use.', flush=True)

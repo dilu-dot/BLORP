@@ -110,6 +110,7 @@
     if (user !== account) return;
     const entries = (result.projects || []).map(parseProject);
     const s = state();
+    s.projectFiles = Object.fromEntries(result.projects.filter(p=>p.files).map(p=>[p.id,p.files]));
     s.projects = entries.map(e => e.project);
     s.projectChats = Object.fromEntries(entries.map(e => [e.project.id, e.messages]));
     const prefKey = 'blorp-selected-project:' + user.id;
@@ -121,7 +122,7 @@
   }
   function clearWorkspace() {
     const s = state();
-    s.projects = []; s.projectChats = {}; s.activeProjectId = null;
+    s.projectFiles = {}; s.projects = []; s.projectChats = {}; s.activeProjectId = null;
     app.commit(); app.rerender(); renderAccount();
   }
   function backupOfflineDrafts() {
@@ -173,10 +174,18 @@
 
   async function signOut() {
     try {
+      document.body.inert = true;
+      try { await app.flushEditor(); }
+      catch (err) {
+        if (!confirm('Editor save failed: '+err.message+'. Sign out and discard unsaved edits?')) {
+          document.body.inert = false;
+          return;
+        }
+      }
       await request('/api/auth/signout',{});
-      await setAccount(null);
-      notify('Signed out of this local BLORP session');
-    } catch (err) { notify(err.message); }
+      // Discard pending callbacks, previews and form contents before another account signs in.
+      location.reload();
+    } catch (err) { document.body.inert = false; notify(err.message); }
   }
 
   async function signInGoogle() {
@@ -483,6 +492,7 @@
   setInterval(renderPaymentClock,1000);
   window.BlorpBackend={
     enabled:true, getUser:()=>user, refreshAccount, discoverModels, loadProjects,
+    saveEditorFiles:(id,files)=>request('/api/projects/files',{account:user?.id,id,files}),
     saveProject, sendChat, openAuth, openPayment
   };
 

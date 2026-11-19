@@ -33,6 +33,10 @@ jobs:
           python -m pip install playwright
           python -m playwright install --with-deps chromium
           python tests/test_studio_browser.py
+          python tests/test_editor_isolation.py
+          python tests/test_browser.py
+          python tests/test_local_ui.py
+          npm run desktop:check
       - name: Premium Studio inline JavaScript syntax
         run: node tests/check_studio_inline.js
       - name: Frontend JavaScript syntax
