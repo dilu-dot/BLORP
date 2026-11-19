@@ -13,7 +13,7 @@ const PROVIDER_MAP=Object.freeze({
 });
 const LABELS=Object.fromEntries(Object.entries(PROVIDER_MAP).map(([name,id])=>[id,name]));
 let accountId=null,storageAvailable=false,backendProviders=[],loading=false;
-let updateGeneration=0,busy=false;
+let updateGeneration=0,busy=false,modelChecks={},checking=new Set();
 const notice=$("keyDialog").querySelector("#keyModalDescription");
 const keyField=$("keyPreviewSecret");
 
@@ -58,8 +58,8 @@ function setStatus(message){
 }
 function refreshProfileMetadata(){
   const count=backendProviders.length;
-  $("profileKeyHealth").textContent=count?count+" securely saved · not tested":"No provider keys saved";
-  $("profileProviderCount").textContent=count+" saved provider"+(count===1?"":"s")+" · unverified";
+  $("profileKeyHealth").textContent=count?Object.values(modelChecks).filter(x=>x.status==="catalog_checked").length+" authenticated catalogs · "+count+" saved keys":"No provider keys saved";
+  $("profileProviderCount").textContent=count+" saved provider"+(count===1?"":"s")+" · inference untested";
 }
 function renderConnected(){
   const user=currentUser();
@@ -69,17 +69,17 @@ function renderConnected(){
     id:"secured-"+item.provider,
     provider: LABELS[item.provider]||item.name||item.provider,
     alias:item.label||item.name||item.provider,
-    enabled:true, models:[], backendStored:true, providerId:item.provider,
+    enabled:true, models:(modelChecks[item.provider]?.models||[]).map(m=>({id:m.id,enabled:true})),catalogStatus:modelChecks[item.provider]?.status||'not_checked', backendStored:true, providerId:item.provider,
     createdAt:new Date((item.stored_at||0)*1000).toISOString()
   }));
   app.commit();app.rerender();
   const count=backendProviders.length;
   $("keyConfiguredCount").textContent=count+" provider key"+(count===1?"":"s")+" securely saved · not verified";
-  $("keyStats").textContent=count+" saved · 0 live provider health checks";
+  $("keyStats").textContent=count+" saved · "+Object.values(modelChecks).filter(x=>x.status==="catalog_checked").length+" authenticated catalogs";
   refreshProfileMetadata();
   const warning=document.querySelector("#keys .key-warning");
   if(warning)warning.textContent=storageAvailable
-    ?"🔒 Windows DPAPI stores each provider key securely for your local BLORP account. Saved does not mean connected or healthy. Live checks and model discovery come next."
+    ?"🔒 Keys are protected with Windows DPAPI. Verify & Discover retrieves real catalogs but listing does not prove model inference access or billing."
     :"🔒 Secure credential storage is unavailable here. Real API keys cannot be saved; use a Windows localhost installation.";
   refreshKeyDialog();
 }
@@ -94,6 +94,12 @@ async function loadProviders(){
     if(cycle!==updateGeneration||currentUser()?.id!==requestedUser)return;
     storageAvailable=!!result.storage_available;
     backendProviders=Array.isArray(result.providers)?result.providers.filter(p=>p?.provider in LABELS):[];
+    try{
+      const checks=await call("/api/provider-models");
+      if(currentUser()?.id===requestedUser)modelChecks=Object.fromEntries(
+        (checks.checks||[]).filter(x=>x&&x.provider in LABELS&&Array.isArray(x.models))
+          .map(x=>[x.provider,x]));
+    }catch(_){modelChecks={};}
     renderConnected();
   }catch(e){
     if(currentUser()?.id!==requestedUser)return;
@@ -104,7 +110,7 @@ function accountChanged(){
   const user=currentUser(),id=user?.id||null;
   if(id===accountId)return;
   accountId=id;
-  backendProviders=[];storageAvailable=false;updateGeneration++;
+  backendProviders=[];storageAvailable=false;modelChecks={};checking.clear();updateGeneration++;
   const s=app.getState();
   if(s.credentials.length){s.credentials=[];app.commit();app.rerender();}
   refreshKeyDialog();
