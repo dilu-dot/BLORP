@@ -56,6 +56,11 @@ function refreshKeyDialog(){
 function setStatus(message){
   app.notify(message);
 }
+function refreshProfileMetadata(){
+  const count=backendProviders.length;
+  $("profileKeyHealth").textContent=count?count+" securely saved · not tested":"No provider keys saved";
+  $("profileProviderCount").textContent=count+" saved provider"+(count===1?"":"s")+" · unverified";
+}
 function renderConnected(){
   const user=currentUser();
   if(!user||user.id!==accountId)return;
@@ -71,8 +76,7 @@ function renderConnected(){
   const count=backendProviders.length;
   $("keyConfiguredCount").textContent=count+" provider key"+(count===1?"":"s")+" securely saved · not verified";
   $("keyStats").textContent=count+" saved · 0 live provider health checks";
-  $("profileKeyHealth").textContent=count?count+" securely saved · not tested":"No provider keys saved";
-  $("profileProviderCount").textContent=count+" saved provider"+(count===1?"":"s")+" · unverified";
+  refreshProfileMetadata();
   const warning=document.querySelector("#keys .key-warning");
   if(warning)warning.textContent=storageAvailable
     ?"🔒 Windows DPAPI stores each provider key securely for your local BLORP account. Saved does not mean connected or healthy. Live checks and model discovery come next."
@@ -123,6 +127,8 @@ document.addEventListener("click",event=>{
     nextFrame(()=>{resetSecret();refreshKeyDialog()});
   }else if(button.hasAttribute("data-key-modal-tab")){
     nextFrame(refreshKeyDialog);
+  }else if(button.id==="profileTrigger"){
+    nextFrame(refreshProfileMetadata);
   }else if(button.id==="checkKeysBtn"){
     event.preventDefault();event.stopPropagation();
     setStatus(backendProviders.length+" keys securely stored · no provider health checks yet.");
