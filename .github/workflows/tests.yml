@@ -15,7 +15,7 @@ jobs:
         with:
           python-version: '3.12'
       - name: Syntax check
-        run: python -m compileall -q server.py provider_vault.py payment_checkout.py local_runtime.py build_frontend.py patch_frontend.py manage_owner.py
+        run: python -m compileall -q server.py provider_discovery.py provider_vault.py payment_checkout.py local_runtime.py build_frontend.py patch_frontend.py manage_owner.py
       - name: Local account and API tests
         run: python tests/test_api.py
       - name: Mock Ollama agent tests
@@ -26,6 +26,8 @@ jobs:
         run: python tests/test_payment_checkout.py
       - name: Provider key vault tests
         run: python tests/test_provider_vault.py
+      - name: Mock provider model discovery and authentication tests
+        run: python tests/test_provider_discovery.py
       - name: Premium Studio inline JavaScript syntax
         run: node tests/check_studio_inline.js
       - name: Frontend JavaScript syntax
