@@ -511,6 +511,15 @@ class Handler(BaseHTTPRequestHandler):
                         _provider_checks[(user['id'],provider)]=result
                     return self.response(200,result)
                 except provider_discovery.DiscoveryError as exc:
+                    # Failed checks must also be discarded when the key was changed
+                    # while the provider request was still in flight.
+                    try:
+                        current_secret=PROVIDER_VAULT.get_secret(user['id'],provider)
+                    except VaultError:
+                        return self.response(409,{'error':'Key changed during discovery; run the check again'})
+                    if not hmac.compare_digest(hashlib.sha256(secret.encode()).digest(),
+                                               hashlib.sha256(current_secret.encode()).digest()):
+                        return self.response(409,{'error':'Key changed during discovery; run the check again'})
                     result={'provider':provider,'status':exc.status,
                             'authentication_confirmed':False,'model_access_unverified':True,
                             'models':[],'model_count':0,'truncated':False,
