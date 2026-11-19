@@ -19,7 +19,8 @@ const keyField=$("keyPreviewSecret");
 
 async function call(path,payload){
   const response=await fetch(path,{method:payload===undefined?"GET":"POST",
-    headers:payload===undefined?{}:{"Content-Type":"application/json"},
+    headers:{...(payload===undefined?{}:{"Content-Type":"application/json"}),
+             ...(currentUser()?{"X-Blorp-Account":currentUser().id}:{})},
     credentials:"same-origin",cache:"no-store",
     body:payload===undefined?undefined:JSON.stringify(payload)});
   let data;

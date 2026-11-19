@@ -19,10 +19,16 @@
   let attempt = null, clockOffset = 0, checkoutBusy = false, qrURL = null;
   let googleClient = '', googleButtonRendered = false;
 
+  const accountChannel = new BroadcastChannel('blorp-local-session');
+  accountChannel.onmessage = () => location.reload();
+
   async function request(path, payload, method) {
     const response = await fetch(path, {
       method: method || (payload === undefined ? 'GET' : 'POST'),
-      headers: payload === undefined ? {} : {'Content-Type':'application/json'},
+      headers: {
+        ...(payload === undefined ? {} : {'Content-Type':'application/json'}),
+        ...(user ? {'X-Blorp-Account':user.id} : {})
+      },
       body: payload === undefined ? undefined : JSON.stringify(payload),
       credentials: 'same-origin', cache: 'no-store'
     });
@@ -110,6 +116,7 @@
     if (user !== account) return;
     const entries = (result.projects || []).map(parseProject);
     const s = state();
+    s.projectFiles = Object.fromEntries(result.projects.filter(p=>p.files).map(p=>[p.id,p.files]));
     s.projects = entries.map(e => e.project);
     s.projectChats = Object.fromEntries(entries.map(e => [e.project.id, e.messages]));
     const prefKey = 'blorp-selected-project:' + user.id;
@@ -121,7 +128,7 @@
   }
   function clearWorkspace() {
     const s = state();
-    s.projects = []; s.projectChats = {}; s.activeProjectId = null;
+    s.projectFiles = {}; s.projects = []; s.projectChats = {}; s.activeProjectId = null;
     app.commit(); app.rerender(); renderAccount();
   }
   function backupOfflineDrafts() {
@@ -163,6 +170,7 @@
       const body = {email, password};
       if (authMode === 'signup') body.name = name;
       const result = await request('/api/auth/' + (authMode === 'signup' ? 'signup' : 'signin'), body);
+      accountChannel.postMessage('signed-in');
       $('authPassword').value = '';
       await setAccount(result.user);
       closeAuth();
@@ -173,10 +181,19 @@
 
   async function signOut() {
     try {
+      document.body.inert = true;
+      try { await app.flushEditor(); }
+      catch (err) {
+        if (!confirm('Editor save failed: '+err.message+'. Sign out and discard unsaved edits?')) {
+          document.body.inert = false;
+          return;
+        }
+      }
       await request('/api/auth/signout',{});
-      await setAccount(null);
-      notify('Signed out of this local BLORP session');
-    } catch (err) { notify(err.message); }
+      accountChannel.postMessage('signed-out');
+      // Discard pending callbacks, previews and form contents before another account signs in.
+      location.reload();
+    } catch (err) { document.body.inert = false; notify(err.message); }
   }
 
   async function signInGoogle() {
@@ -211,6 +228,7 @@
             if (!credential) return;
             try {
               const result = await request('/api/auth/google',{credential});
+              accountChannel.postMessage('signed-in');
               await setAccount(result.user);
               closeAuth(); notify('Google account verified by BLORP backend');
             } catch (err) { showAuth(err.message); }
@@ -483,6 +501,7 @@
   setInterval(renderPaymentClock,1000);
   window.BlorpBackend={
     enabled:true, getUser:()=>user, refreshAccount, discoverModels, loadProjects,
+    saveEditorFiles:(id,files)=>request('/api/projects/files',{account:user?.id,id,files}),
     saveProject, sendChat, openAuth, openPayment
   };
 

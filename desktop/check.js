@@ -46,6 +46,12 @@ const http=require('node:http');
   console.log('Google desktop OAuth browser/PKCE simulation passed.');
 })().catch(e=>{console.error(e);process.exitCode=1});
 
+const studioHtml=fs.readFileSync("public/index.html","utf8");
+const legacyHtml=fs.readFileSync("public/legacy-v53.html","utf8");
+for(const script of ["studio-backend-bridge.js","studio-provider-keys.js"]){
+  assert.ok(studioHtml.includes('src="/assets/'+script+'"'));
+  assert.ok(fs.existsSync("public/assets/"+script));
+}
 const cloud=fs.readFileSync("desktop/cloud-auth.js","utf8");
 const ui=fs.readFileSync("public/assets/cloud-desktop.js","utf8");
 const pkg=JSON.parse(fs.readFileSync("package.json","utf8"));
@@ -55,7 +61,7 @@ assert.ok(pkg.build.files.includes("desktop/cloud-auth.js"));
 assert.ok(main.includes('blorp:cloud'));
 assert.ok(main.includes('BLORP_USE_LEGACY_BACKEND'));
 assert.ok(fs.readFileSync("desktop/preload.js","utf8").includes("blorpCloud"));
-assert.ok(fs.readFileSync("public/index.html","utf8").includes("cloud-desktop.js"));
+assert.ok(legacyHtml.includes("cloud-desktop.js"));
 assert.ok(ui.includes("membershipVerified"));
 assert.ok(cloud.includes("safeStorage.encryptString"));
 assert.ok(cloud.includes("exchangeCodeForSession"));
@@ -74,7 +80,7 @@ assert.ok(native.includes('async build('));
 assert.ok(native.includes("saveProject"));
 assert.ok(main.includes('blorp:studio'));
 assert.ok(fs.readFileSync("desktop/preload.js","utf8").includes("blorpStudio"));
-assert.ok(fs.readFileSync("public/index.html","utf8").includes("native-studio.js"));
+assert.ok(legacyHtml.includes("native-studio.js"));
 assert.ok(fs.readFileSync("public/assets/native-studio.js","utf8").includes("studioChatForm"));
 assert.ok(pkg.build.files.includes("desktop/native-workspace.js"));
 console.log("Native workspace source checks passed.");
@@ -84,7 +90,7 @@ assert.ok(fs.readFileSync('desktop/native-workspace.js','utf8').includes('runAge
 
 assert.ok(fs.readFileSync('desktop/main.js','utf8').includes('submitPayment'));
 assert.ok(fs.readFileSync('desktop/cloud-auth.js','utf8').includes('submitPayment'));
-assert.ok(fs.readFileSync('public/index.html','utf8').includes('cloud-payments.js'));
+assert.ok(legacyHtml.includes('cloud-payments.js'));
 console.log('Cloud payment request source checks passed');
 
 assert.ok(fs.readFileSync('desktop/native-workspace.js','utf8').includes('cloudChat'));
@@ -94,5 +100,5 @@ assert.ok(fs.readFileSync('public/assets/native-studio.js','utf8').includes('clo
 assert.ok(pkg.build.files.includes("desktop/model-hub.js"));
 assert.ok(fs.readFileSync("desktop/main.js","utf8").includes('case "installBlorp"'));
 assert.ok(fs.readFileSync("desktop/main.js","utf8").includes('case "routedBuild"'));
-assert.ok(fs.readFileSync("public/index.html","utf8").includes("model-hub.js"));
+assert.ok(legacyHtml.includes("model-hub.js"));
 assert.ok(fs.readFileSync("public/assets/native-studio.js","utf8").includes('"routedChat"'));

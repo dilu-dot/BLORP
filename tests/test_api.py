@@ -26,6 +26,11 @@ with tempfile.TemporaryDirectory() as temp:
             except Exception:time.sleep(.1)
         else:raise RuntimeError('Server not started')
         assert json.load(op.open(url+'/api/health'))['studio_ui'] == 'v4.3'
+        with tempfile.TemporaryDirectory() as second_data:
+            duplicate = subprocess.run([sys._base_executable, str(root/'server.py')],
+                                       env=dict(env, BLORP_DATA_DIR=second_data),
+                                       capture_output=True, timeout=10)
+            assert duplicate.returncode != 0 and b'OSError' in duplicate.stderr
         # Root must now serve the approved premium Studio; legacy stays explicitly accessible.
         with op.open(url+'/',timeout=6) as response:
             html=response.read().decode('utf-8')

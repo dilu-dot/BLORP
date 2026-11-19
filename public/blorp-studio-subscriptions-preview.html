@@ -39,6 +39,7 @@ html{background:#041216}body{background:radial-gradient(46rem 34rem at 86% 3%,rg
 .app{grid-template-columns:228px minmax(0,1fr)}.sidebar{background:linear-gradient(180deg,#06191d,#031214);padding:16px 14px 19px;border-right:1px solid rgba(99,245,200,.17)}
 .brand{padding:2px 10px 25px}.brand-logo{width:40px;height:40px;background:linear-gradient(145deg,#155947,#0a363b);border:1px solid rgba(103,255,206,.25);box-shadow:0 0 26px rgba(53,220,161,.18);font-size:25px}.brand-title{font-size:23px;text-transform:uppercase;letter-spacing:-.045em}.brand-sub{letter-spacing:.10em;color:#8daea6}
 .sidebar-label{font-size:10px;color:#739a92;padding:20px 13px 9px;letter-spacing:.095em}.nav{gap:4px}.nav button{font-size:13px;color:#c0d6d2;min-height:42px;border-radius:11px;padding:10px 13px;font-weight:560}.nav button.active{background:linear-gradient(90deg,rgba(25,118,91,.58),rgba(14,67,62,.43));border-color:rgba(90,255,196,.37);color:#f3fff8;box-shadow:0 0 0 1px rgba(91,255,201,.09),0 0 28px rgba(49,210,149,.11)}.nav button:hover{background:rgba(46,176,131,.15)}.nav-icon{color:#bdfce3}.nav-tag-workspace{color:#8ce8bf;font-size:8px;letter-spacing:.045em;padding:4px 6px}.sidebar-bottom{background:rgba(20,58,53,.26);border:1px solid rgba(99,245,200,.14);border-radius:14px;padding:11px}.sidebar-bottom small{color:#88b8aa}
+.topbar>.actions{min-width:0}.topbar .header-nav{min-width:0}.topbar>.top-actions{flex-shrink:0}
 .topbar{height:72px;padding:0 25px;background:rgba(3,18,21,.88);border-bottom:1px solid rgba(107,255,212,.15);gap:18px}.header-nav{display:flex;align-items:center;gap:10px;overflow:auto;scrollbar-width:none}.header-nav::-webkit-scrollbar{display:none}.header-nav-btn{flex:none;background:transparent;color:#d2e8e4;padding:11px 14px;font-size:13px;border-radius:13px;border:1px solid transparent;font-weight:600;cursor:pointer;transition:.18s}.header-nav-btn:hover,.header-nav-btn.active{background:linear-gradient(180deg,rgba(27,126,96,.32),rgba(11,61,55,.38));border-color:rgba(97,250,191,.31);box-shadow:0 0 23px rgba(53,244,171,.10);color:#f3fff9}.top-actions .pill{border-color:rgba(99,245,200,.20);color:#a5e8cd}.top-actions .btn.primary{background:#79f5ca;color:#063025}.content{padding:30px clamp(22px,3.3vw,48px);max-width:1570px}
 .panel{background:linear-gradient(151deg,rgba(13,48,50,.83),rgba(5,28,32,.95));border-color:rgba(105,228,201,.18);box-shadow:0 12px 35px rgba(0,0,0,.18),inset 0 1px 0 rgba(232,255,248,.025)}.panel:hover{border-color:rgba(105,228,201,.22)}.page-top-feature{align-items:center;margin-bottom:25px}.page-top-feature .page-title{font-size:clamp(36px,3.2vw,49px);line-height:1.05;margin:0 0 11px}.page-title em{color:#86fbd1;font-style:normal}.subtitle{font-size:13px;color:#a5c9c1;max-width:770px}.kicker{color:#6ee6ba;font-size:10px;letter-spacing:.2em}.btn{font-size:12px;min-height:42px;border-radius:12px;background:rgba(17,59,59,.68);border:1px solid rgba(95,220,182,.28);color:#e6fff4}.btn.primary{background:linear-gradient(135deg,#a0ffdb,#5ae7b8);color:#04271e;border-color:rgba(133,255,207,.5);box-shadow:0 0 22px rgba(57,242,178,.13)}.btn.ghost{background:transparent}.btn.small{min-height:34px}.chip{background:rgba(20,82,68,.37);border-color:rgba(96,221,171,.26);color:#9cfcd3}.chip.muted{background:rgba(17,47,47,.68);color:#b3d2ca}.chip.warn{color:#e8bd96;border-color:rgba(220,163,110,.28)}.section-heading{margin:28px 0 15px}.section-heading h2{font-size:23px}.section-heading p{font-size:12px;color:#9ab8b0}.field{color:#bcd9d1}.field label{font-size:11px;font-weight:750}.field input,.field textarea,.field select,input,textarea,select{background:rgba(8,31,35,.85);border-color:rgba(135,210,186,.21)}input:focus,textarea:focus,select:focus{border-color:#75efbd;box-shadow:0 0 0 3px rgba(81,236,179,.12)}.hint-card{background:rgba(21,65,57,.38);border-color:rgba(108,239,195,.2)}
 /* Projects / Workspace: only this route owns the active project */
@@ -781,9 +782,9 @@ html[data-glass-opaque="true"] *::after,html[data-glass-opaque="true"] dialog::b
 </div><div class="panel project-library-panel"><div class="panelhead"><div><h2>Project library <span class="count-highlight" id="projectCount">0</span></h2><p class="panel-sub">Click Select to activate a project. Each project keeps its own Playground conversation.</p></div><div class="search-wrap"><input aria-label="Search projects" id="projectSearch" placeholder="⌕  Find a project..."/></div></div><div class="project-list" id="projectList"></div></div>
 </section>
 <section class="tab" id="editor">
-<div class="page-top"><div><p class="kicker">WORKSPACE / SOURCE EDITOR</p><h1 class="page-title">Studio Editor</h1><p class="subtitle">A local HTML/CSS/JS editor linked to your selected Workspace project. Files stay in this browser; the preview intentionally blocks JavaScript execution.</p></div><span class="eyebrow-pill">LOCAL FILES · NO BACKEND</span></div>
+<div class="page-top"><div><p class="kicker">WORKSPACE / SOURCE EDITOR</p><h1 class="page-title">Studio Editor</h1><p class="subtitle">A local HTML/CSS/JS editor linked to your selected Workspace project. Files save to your local account on localhost or to this browser in offline preview; the preview intentionally blocks JavaScript execution.</p></div><span class="eyebrow-pill">LOCAL PROJECT FILES</span></div>
 <div class="editor-toolbar glass-row"><div class="field"><label for="editorProject">Project</label><select id="editorProject"><option value="">Select a project...</option></select></div><div class="editor-toolbar-actions"><button class="btn" data-go="projects" type="button">Project library</button><button class="btn" id="editorMakeStarter">Create starter files</button><button class="btn primary" id="editorSave">Save changes</button><button class="btn" id="editorDownload">Download current file ↓</button></div></div>
-<div class="studio-editor-shell"><aside class="studio-filetree glass-panel"><div class="editor-tree-title">EXPLORER <span class="tree-meta">3 FILES</span></div><div class="tree-project" id="editorProjectName">No project selected</div><div class="tree-file-list" id="editorFiles"><div class="editor-tree-empty">Select a project to begin</div></div><div class="tree-foot">Autosave is local only. Use Ctrl+S to save.</div></aside><section class="studio-code glass-panel"><div class="code-tab-row"><strong id="editorFileTitle">No file open</strong><span id="editorSaveState">Not saved</span></div><label class="sr-only" for="codeEditor">Source code</label><textarea id="codeEditor" placeholder="Select a project and create starter files..." spellcheck="false"></textarea><div class="code-foot"><span>UTF-8 · Project source</span><span id="editorCodeLines">0 lines</span></div></section><section class="studio-live glass-panel"><div class="code-tab-row"><strong>Preview</strong><button class="btn small" id="editorRefreshPreview">Refresh</button></div><div class="editor-preview-box"><iframe id="editorPreview" sandbox="" title="Sandboxed local project preview"></iframe></div><div class="editor-preview-note">Sandboxed HTML + CSS. Scripts are blocked for your safety.</div></section></div>
+<div class="studio-editor-shell"><aside class="studio-filetree glass-panel"><div class="editor-tree-title">EXPLORER <span class="tree-meta">3 FILES</span></div><div class="tree-project" id="editorProjectName">No project selected</div><div class="tree-file-list" id="editorFiles"><div class="editor-tree-empty">Select a project to begin</div></div><div class="tree-foot">Autosave uses the current workspace. Use Ctrl+S to save.</div></aside><section class="studio-code glass-panel"><div class="code-tab-row"><strong id="editorFileTitle">No file open</strong><span id="editorSaveState">Not saved</span></div><label class="sr-only" for="codeEditor">Source code</label><textarea id="codeEditor" placeholder="Select a project and create starter files..." spellcheck="false"></textarea><div class="code-foot"><span>UTF-8 · Project source</span><span id="editorCodeLines">0 lines</span></div></section><section class="studio-live glass-panel"><div class="code-tab-row"><strong>Preview</strong><button class="btn small" id="editorRefreshPreview">Refresh</button></div><div class="editor-preview-box"><iframe id="editorPreview" sandbox="" title="Sandboxed local project preview"></iframe></div><div class="editor-preview-note">Sandboxed HTML + CSS. Scripts are blocked for your safety.</div></section></div>
 <div class="hint-card" style="margin-top:16px">These local files are editable project drafts, not AI-generated output. The desktop runtime can later handle real files, build tools and controlled execution.</div>
 </section><section class="tab" id="models">
   <div class="page-top page-top-feature llm-page-top">
@@ -906,7 +907,7 @@ html[data-glass-opaque="true"] *::after,html[data-glass-opaque="true"] dialog::b
 <div class="settings-row"><div><strong>Workspace density</strong><small>Compact is ideal for dense code and task views.</small></div><select class="setting-select" id="densitySetting"><option value="comfortable">Comfortable</option><option value="compact">Compact</option></select></div>
 </section>
 <section class="panel settings-block"><div class="settings-block-head"><span class="settings-icon">▤</span><div><h2>Editor &amp; projects</h2><p>Options for your local workspace.</p></div></div>
-<div class="settings-row"><div><strong>Save edited files automatically</strong><small>Local browser storage only. No cloud sync.</small></div><label class="new-switch"><input checked="" id="editorAutosave" type="checkbox"/><span></span></label></div>
+<div class="settings-row"><div><strong>Save edited files automatically</strong><small>Save to this local workspace.</small></div><label class="new-switch"><input checked="" id="editorAutosave" type="checkbox"/><span></span></label></div>
 <div class="settings-row"><div><strong>Show line numbers</strong><small>Estimated count in the editor footer.</small></div><label class="new-switch"><input checked="" id="showLineCount" type="checkbox"/><span></span></label></div>
 <div class="settings-row"><div><strong>Open last visited page</strong><small>Resume from the same BLORP section next time.</small></div><label class="new-switch"><input id="restoreLastView" type="checkbox"/><span></span></label></div>
 </section>
@@ -994,11 +995,11 @@ html[data-glass-opaque="true"] *::after,html[data-glass-opaque="true"] dialog::b
   });
   let state=fresh();
   try {
-    const current=JSON.parse(localStorage.getItem(KEY)||"null");
+    const current=!serverPage && JSON.parse(localStorage.getItem(KEY)||"null");
     if(current && typeof current==="object" && Array.isArray(current.agents) && Array.isArray(current.groups)) {
       state={...fresh(),...current};
     } else {
-      const legacy=JSON.parse(localStorage.getItem(LEGACY)||"null");
+      const legacy=!serverPage && JSON.parse(localStorage.getItem(LEGACY)||"null");
       if(legacy && typeof legacy==="object") {
         if(Array.isArray(legacy.projects))state.projects=legacy.projects;
         if(Array.isArray(legacy.chatHistory))state.chatHistory=legacy.chatHistory;
@@ -1009,6 +1010,15 @@ html[data-glass-opaque="true"] *::after,html[data-glass-opaque="true"] dialog::b
       }
     }
   } catch(_) {}
+  const deviceKey='blorp-studio-device-models-v1';
+  if(serverPage){
+    try{
+      const saved=JSON.parse(localStorage.getItem(deviceKey)||localStorage.getItem(KEY)||'{}');
+      for(const key of ['localModels','defaultLocalModelId','defaultModel','chatProvider','chatModel']){
+        if(saved && key in saved)state[key]=saved[key];
+      }
+    }catch(_){}
+  }
   const safeArray=v=>Array.isArray(v)?v:[];
   for(const field of ["agents","groups","runs","credentials","mcps","projects","chatHistory","localModels"])state[field]=safeArray(state[field]);
   if(serverPage){state.projects=[];state.projectChats={};state.activeProjectId=null;state.chatHistory=[];state.credentials=[];}
@@ -1024,8 +1034,10 @@ html[data-glass-opaque="true"] *::after,html[data-glass-opaque="true"] dialog::b
   function toast(message){const el=$("toast");el.textContent=message;el.classList.add("on");clearTimeout(toastTimer);toastTimer=setTimeout(()=>el.classList.remove("on"),3200)}
   function persist(){try {
     // Account data is owned by the backend. Never copy private chats into browser localStorage.
-    const safe = serverPage ? {...state,projects:[],projectChats:{},activeProjectId:null,chatHistory:[],credentials:[]} : state;
-    localStorage.setItem(KEY,JSON.stringify(safe));
+    if(serverPage){
+      const {localModels,defaultLocalModelId,defaultModel,chatProvider,chatModel}=state;
+      localStorage.setItem(deviceKey,JSON.stringify({localModels,defaultLocalModelId,defaultModel,chatProvider,chatModel}));
+    }else localStorage.setItem(KEY,JSON.stringify(state));
     document.dispatchEvent(new CustomEvent('blorp:state'));return true;
   }catch(_) {toast("Local storage unavailable. Please export your drafts.");return false;}}
 
@@ -1670,11 +1682,14 @@ html[data-glass-opaque="true"] *::after,html[data-glass-opaque="true"] dialog::b
     if($('profileActiveProject'))$('profileActiveProject').textContent=p?p.name:'None';
     if($('profileGroupsCount'))$('profileGroupsCount').textContent=String(s.groups.length);
   };
+  const sessionActivity=[];
   function activity(text){
+    if(window.BlorpBackend){sessionActivity.unshift({text,time:Date.now()});sessionActivity.splice(8);return;}
     try{const items=JSON.parse(sessionStorage.getItem('blorp-v4-activity')||'[]');items.unshift({text,time:Date.now()});sessionStorage.setItem('blorp-v4-activity',JSON.stringify(items.slice(0,8)));}catch(_){}
   }
   function drawActivity(){
     let logs=[];try{logs=JSON.parse(sessionStorage.getItem('blorp-v4-activity')||'[]');}catch(_){}
+    if(window.BlorpBackend)logs=sessionActivity;
     $('activityList').replaceChildren();
     if(!logs.length){const d=document.createElement('div');d.className='activity-entry';d.textContent='No local activity yet. Create a project or prepare a workflow preview.';$('activityList').append(d);}
     for(const log of logs){const d=document.createElement('div');d.className='activity-entry';d.textContent=log.text+' · '+new Date(log.time).toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'});$('activityList').append(d);}
@@ -1744,7 +1759,7 @@ html[data-glass-opaque="true"] *::after,html[data-glass-opaque="true"] dialog::b
   function renderEditor(){
     const s=state(),p=s.projects.find(p=>p.id===editorProject),files=p&&filesFor(p.id);
     $('editorProjectName').textContent=p?p.name:'No project selected';
-    $('editorFiles').replaceChildren();$('editorSaveState').textContent='Local browser only';
+    $('editorFiles').replaceChildren();$('editorSaveState').textContent=window.BlorpBackend?'Local account':'Local browser only';
     if(!p){$('codeEditor').value='';$('codeEditor').disabled=true;$('editorFileTitle').textContent='No project';$('editorPreview').srcdoc='';updateLines();return;}
     if(!files){$('codeEditor').value='';$('codeEditor').disabled=true;$('editorFileTitle').textContent='No files yet';
       const d=document.createElement('div');d.className='editor-tree-empty';d.textContent='Create starter files to begin';$('editorFiles').append(d);$('editorPreview').srcdoc='';updateLines();return;}
@@ -1754,11 +1769,33 @@ html[data-glass-opaque="true"] *::after,html[data-glass-opaque="true"] dialog::b
     $('editorFileTitle').textContent=editorFile;
     $('codeEditor').disabled=false;$('codeEditor').value=files[editorFile]||'';dirty=false;updateLines();refreshEditorPreview();
   }
+  let pendingSave = Promise.resolve();
+  function storeEditorFiles(){
+    const backend=window.BlorpBackend;
+    if(!backend)return api.commit();
+    const id=editorProject, files={...filesFor(id)};
+    const saving=pendingSave.catch(()=>{}).then(()=>backend.saveEditorFiles(id,files));
+    pendingSave=saving;
+    $('editorSaveState').textContent='Saving…';
+    saving.then(()=>{
+      if(saving===pendingSave && editorProject===id && !dirty)$('editorSaveState').textContent='Saved to account';
+    },err=>{
+      if(editorProject===id)$('editorSaveState').textContent='Save failed';
+      notice(err.message);
+    });
+    return true;
+  }
+  api.flushEditor=()=>{
+    clearTimeout(autoTimer);
+    if(dirty && prefs.autosave)saveEditor(true);
+    return pendingSave;
+  };
   function saveEditor(quiet=false){
+    clearTimeout(autoTimer);
     if(!editorProject||!filesFor(editorProject)){if(!quiet)notice('Select a project and create starter files');return false;}
     filesFor(editorProject)[editorFile]=$('codeEditor').value;
-    const okay=api.commit();dirty=false;$('editorSaveState').textContent='Saved locally';
-    if(!quiet && prefs.notifyProject)notice('Saved '+editorFile+' in this browser');
+    dirty=false;const okay=storeEditorFiles();if(!window.BlorpBackend)$('editorSaveState').textContent='Saved locally';
+    if(!quiet && prefs.notifyProject && !window.BlorpBackend)notice('Saved '+editorFile+' in this browser');
     if(okay)refreshEditorPreview();return okay;
   }
   function refreshEditorPreview(){
@@ -1776,7 +1813,7 @@ html[data-glass-opaque="true"] *::after,html[data-glass-opaque="true"] dialog::b
   $('editorMakeStarter').addEventListener('click',()=>{
     const p=state().projects.find(p=>p.id===editorProject);if(!p){notice('Select a project first');return;}
     if(filesFor(p.id) && !confirm('Replace existing local project files with starter files?'))return;
-    ensureFileMap()[p.id]=seedFiles(p.name);api.commit();editorFile='index.html';renderEditor();activity('Created starter files for '+p.name);notice('Starter HTML/CSS/JS files created locally');
+    ensureFileMap()[p.id]=seedFiles(p.name);editorFile='index.html';renderEditor();storeEditorFiles();activity('Created starter files for '+p.name);notice('Starter HTML/CSS/JS files created');
   });
   $('codeEditor').addEventListener('input',()=>{
     dirty=true;$('editorSaveState').textContent='Unsaved changes';updateLines();
