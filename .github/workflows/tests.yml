@@ -15,7 +15,7 @@ jobs:
         with:
           python-version: '3.12'
       - name: Syntax check
-        run: python -m compileall -q server.py payment_checkout.py local_runtime.py build_frontend.py patch_frontend.py manage_owner.py
+        run: python -m compileall -q server.py provider_vault.py payment_checkout.py local_runtime.py build_frontend.py patch_frontend.py manage_owner.py
       - name: Local account and API tests
         run: python tests/test_api.py
       - name: Mock Ollama agent tests
@@ -24,6 +24,10 @@ jobs:
         run: python tests/test_memberships.py
       - name: Timed checkout invariants
         run: python tests/test_payment_checkout.py
+      - name: Provider key vault tests
+        run: python tests/test_provider_vault.py
+      - name: Premium Studio inline JavaScript syntax
+        run: node tests/check_studio_inline.js
       - name: Frontend JavaScript syntax
         run: |
           node --check public/assets/base.js
@@ -32,6 +36,7 @@ jobs:
           node --check public/assets/v52.js
           node --check public/assets/v53.js
           node --check public/assets/studio-backend-bridge.js
+          node --check public/assets/studio-provider-keys.js
 
   supabase-cloud-source:
     runs-on: ubuntu-latest

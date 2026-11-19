@@ -27,11 +27,13 @@ from urllib.parse import urlparse
 
 import local_runtime
 import payment_checkout
+from provider_vault import ProviderVault, VaultError
 
 BASE = Path(__file__).resolve().parent
 PUBLIC = BASE / 'public'
 DATA_DIR = Path(os.environ.get('BLORP_DATA_DIR', str(BASE / 'data'))).resolve()
 DB = DATA_DIR / 'blorp.sqlite3'
+PROVIDER_VAULT = ProviderVault(DATA_DIR)
 HOST = '127.0.0.1'
 PORT = int(os.environ.get('BLORP_PORT', '8765'))
 COOKIE = 'blorp_session'
@@ -389,6 +391,14 @@ class Handler(BaseHTTPRequestHandler):
             self.send_header('Content-Length',str(len(payload)))
             self.end_headers()
             return self.wfile.write(payload)
+        if path == '/api/provider-keys':
+            user=self.find_user()
+            if not user:return self.response(401, {'error':'Sign in required'})
+            try:
+                result=PROVIDER_VAULT.list(user['id'])
+                return self.response(200,result)
+            except VaultError as exc:
+                return self.response(exc.status, {'error':str(exc)})
         if path == '/api/auth/me':
             return self.response(200, {'user': safe_user(self.find_user())})
         if path == '/api/projects':
@@ -439,6 +449,27 @@ class Handler(BaseHTTPRequestHandler):
         data = self.read_json()
         if data is None:
             return self.response(400, {'error': 'Expected a small JSON object'})
+        if path in ('/api/provider-keys','/api/provider-keys/remove'):
+            user=self.find_user()
+            if not user:return self.response(401, {'error':'Sign in required'})
+            # Secret-bearing writes require an explicit same-origin request.
+            # Do not accept cross-origin or Origin-less mutations.
+            if self.headers.get('Origin') not in {f'http://127.0.0.1:{PORT}',f'http://localhost:{PORT}'}:
+                return self.response(403, {'error':'Same-origin access required for provider credentials'})
+            if self.headers.get('Host') not in {f'127.0.0.1:{PORT}',f'localhost:{PORT}'}:
+                return self.response(403, {'error':'Untrusted host'})
+            if not allow_attempt('provider-keys:'+user['id']):
+                return self.response(429, {'error':'Too many credential changes; try again later'})
+            try:
+                if path.endswith('/remove'):
+                    result=PROVIDER_VAULT.disconnect(user['id'],data.get('provider'))
+                else:
+                    result=PROVIDER_VAULT.connect(
+                        user['id'], data.get('provider'),data.get('key'),
+                        data.get('label',''))
+                return self.response(200,result)
+            except VaultError as exc:
+                return self.response(exc.status, {'error':str(exc)})
         if path == '/api/auth/signup':
             email = str(data.get('email', '')).strip().lower()
             name = str(data.get('name', '')).strip()
