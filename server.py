@@ -322,7 +322,7 @@ class Handler(BaseHTTPRequestHandler):
     def do_GET(self):
         path = urlsplit(self.path).path
         if path == '/api/health':
-            return self.response(200, {'ok': True, 'version': 'v5.3-owner-payments', 'local_ollama_supported': True, 'billing_connected': False,
+            return self.response(200, {'ok': True, 'studio_ui': 'v4.3', 'version': 'v5.3-owner-payments', 'local_ollama_supported': True, 'billing_connected': False,
                                        'manual_requests': True, 'timed_checkout_supported': True, 'google_configured': bool(GOOGLE_CLIENT_ID or GOOGLE_DESKTOP_CLIENT_ID)})
         if path == '/api/auth/config':
             return self.response(200, {'google_client_id': GOOGLE_CLIENT_ID, 'google_desktop_client_id': GOOGLE_DESKTOP_CLIENT_ID})
@@ -813,7 +813,9 @@ def main():
                 raise
     else:
         raise RuntimeError('No available localhost port')
-    print(f'Blorp V5.1 local server: http://{HOST}:{PORT}', flush=True)
+    print(f'BLORP Studio V4.3 ({BASE}): http://{HOST}:{PORT}', flush=True)
+    if requested and requested != PORT:
+        print(f'Port {requested} was unavailable. Use the URL above for this checkout.', flush=True)
     print('Local development only. Not for public internet or production use.', flush=True)
     try:
         server.serve_forever()

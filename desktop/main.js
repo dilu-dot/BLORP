@@ -40,7 +40,7 @@ async function health(origin) {
     });
     if (!response.ok) return false;
     const data = await response.json();
-    return data && data.ok === true;
+    return data && data.ok === true && data.studio_ui === "v4.3";
   } catch { return false; }
   finally { clearTimeout(timer); }
 }
