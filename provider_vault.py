@@ -182,15 +182,18 @@ class ProviderVault:
 
     def list(self, user_id: str) -> dict:
         with _LOCK:
+            if not self.available():
+                return {"storage_available": False, "storage": "unavailable",
+                        "providers": [], "live_verification": False}
             return {
-                "storage_available": self.available(),
-                "storage": "Windows DPAPI (current OS user)" if self.available() else "unavailable",
+                "storage_available": True,
+                "storage": "Windows DPAPI (current OS user)",
                 "providers": self._metadata(self._read(user_id)),
                 "live_verification": False,
             }
 
     def connect(self, user_id: str, provider: str, key: str, label: str = "") -> dict:
-        if provider not in PROVIDERS:
+        if not isinstance(provider, str) or provider not in PROVIDERS:
             raise VaultError(422, "Unsupported API provider")
         if not isinstance(key, str) or not _KEY.fullmatch(key):
             raise VaultError(422, "API key must contain 8–450 non-whitespace characters")
@@ -210,7 +213,7 @@ class ProviderVault:
             }
 
     def disconnect(self, user_id: str, provider: str) -> dict:
-        if provider not in PROVIDERS:
+        if not isinstance(provider, str) or provider not in PROVIDERS:
             raise VaultError(422, "Unsupported API provider")
         with _LOCK:
             entries = self._read(user_id)
