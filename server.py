@@ -498,6 +498,14 @@ class Handler(BaseHTTPRequestHandler):
                 secret=PROVIDER_VAULT.get_secret(user['id'],provider)
                 try:
                     result=provider_discovery.discover(provider,secret)
+                    # A rotated/removed key must never inherit an in-flight old check.
+                    try:
+                        current_secret=PROVIDER_VAULT.get_secret(user['id'],provider)
+                    except VaultError:
+                        return self.response(409,{'error':'Key changed during discovery; run the check again'})
+                    if not hmac.compare_digest(hashlib.sha256(secret.encode()).digest(),
+                                               hashlib.sha256(current_secret.encode()).digest()):
+                        return self.response(409,{'error':'Key changed during discovery; run the check again'})
                     result['checked_at']=int(time.time())
                     with _provider_checks_lock:
                         _provider_checks[(user['id'],provider)]=result
