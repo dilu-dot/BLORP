@@ -1,0 +1,322 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>Blorp AI — Local Studio</title>
+<link rel="stylesheet" href="/assets/base.css"/>
+<link rel="stylesheet" href="/assets/v5.css"/>
+<link rel="stylesheet" href="/assets/v51.css"/>
+<link rel="stylesheet" href="/assets/v52.css"/>
+<link rel="stylesheet" href="/assets/v53.css"/>
+<link rel="stylesheet" href="/assets/cloud-desktop.css"/>
+<link rel="stylesheet" href="/assets/cloud-payments.css"/>
+<link rel="stylesheet" href="/assets/native-studio.css"/>
+<link rel="stylesheet" href="/assets/model-hub.css"/>
+</head>
+<body>
+<div class="app">
+<div class="sidebar-overlay" id="overlay"></div>
+<aside class="sidebar" id="sidebar">
+<div class="brand"><div class="brand-symbol">b<span style="color:#d9cdff">.</span></div><div><b>blorp</b><small>AI CONTROL CENTER</small></div></div>
+<div class="label">Workspace</div><nav class="nav" id="mainnav">
+<button data-view="account" class="active"><span class="v5-navsymbol">◫</span> Dashboard</button>
+<button data-view="projects"><span class="v5-navsymbol">▣</span> Projects</button>
+<button data-view="overview"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg> Overview</button>
+<button data-view="models"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><rect x="3" y="3" width="18" height="18" rx="4"/><path d="M9 3v18M3 9h18"/></svg> Model Explorer</button>
+<button data-view="playground"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M5 4h14v13H8l-3 3V4z"/><path d="M9 9h6M9 13h4"/></svg> Playground</button>
+<button data-view="providers"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="12" cy="12" r="3"/><path d="M12 2v7M12 15v7M2 12h7M15 12h7M5 5l5 5M14 14l5 5M5 19l5-5M14 10l5-5"/></svg> Providers</button>
+<div class="label buildfast-section"><span>Build Fast</span><span class="newflag">BETA</span></div>
+<button data-view="multitask"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.65"><path d="M12 3v4M4 12h4M16 12h4M12 17v4"/><rect x="8" y="7" width="8" height="10" rx="2"/><path d="m4 6 3 2M20 6l-3 2M4 18l3-2M20 18l-3-2"/></svg> Multi Task <span class="nav-end">↗</span></button>
+<button data-view="builder"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.65"><path d="M8 8 4 12l4 4M16 8l4 4-4 4M14 4l-4 16"/></svg> Build Playground</button>
+<button type="button" id="localAiNav" data-local-view="localai" class="local-ai-nav">◈ &nbsp; Local AI Lab <span class="local-free">MEMBER</span></button>
+<button data-view="workflows"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.65"><rect x="2.5" y="3" width="7" height="6" rx="1.4"/><rect x="14.5" y="15" width="7" height="6" rx="1.4"/><rect x="14.5" y="3" width="7" height="6" rx="1.4"/><path d="M9.5 6h5M6 9v9h8.5"/></svg> Workflows</button>
+<div class="label">Manage</div>
+<button data-view="addons"><span class="v5-navsymbol">✣</span> Add-ons</button>
+<button data-view="membership"><span class="v5-navsymbol">◈</span> Membership</button>
+<button data-view="keys"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="8" cy="15" r="5"/><path d="M11.5 11.5L20 3l2 2-3 3 2 2-3 3-2-2"/></svg> API Keys</button>
+<button data-view="analytics"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M3 20h18M6 17V9M12 17V4M18 17v-6"/></svg> Analytics</button>
+<button data-view="owner" id="ownerNav" hidden><span class="v5-navsymbol">♛</span> Owner Console</button>
+<button data-view="settings"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="12" cy="12" r="3"/><path d="M12 2v2M12 20v2M2 12h2M20 12h2M5 5l1.5 1.5M17.5 17.5L19 19M5 19l1.5-1.5M17.5 6.5L19 5"/></svg> Settings</button>
+</nav>
+<div class="sb-bottom"><div class="profile"><div class="avatar">B</div><div><strong>Blorp workspace</strong><small>Local environment · Preview</small></div></div></div>
+</aside>
+<main class="main">
+<div class="ambient-scene" aria-hidden="true">
+  <div class="morph-orb morph-one"></div>
+  <div class="morph-orb morph-two"></div>
+  <div class="morph-orb morph-three"></div>
+</div>
+<header class="top"><div style="display:flex;align-items:center;gap:12px"><button id="hamburger" class="iconbtn mobiletop">☰</button><div class="crumb">Workspace <span> / </span> <span id="crumb">Dashboard</span></div></div><div class="top-right"><span class="visual-chip" id="visualChip" title="Current visual effects profile">◈ <span id="visualLabel">Adaptive</span></span><span class="pill"><span class="dot"></span> Design preview</span><button class="iconbtn" title="About this preview" id="notice">ⓘ</button><div class="account-actions" id="guestAuth"><button class="auth-link" id="signInBtn" type="button">Sign in</button><button class="btn primary auth-signup" id="signUpBtn" type="button">Sign up</button></div><div class="account-actions" id="demoAuth" hidden><span class="account-email" id="accountEmail">Preview account</span><button class="auth-link" id="signOutBtn" type="button">Sign out</button><div class="avatar" style="height:33px;width:33px" id="accountAvatar">B</div></div></div></header>
+<div class="content">
+<section class="tab" id="overview"><p class="kicker">YOUR COMMAND CENTER</p><div class="heading"><div><h1>Welcome to <em>Blorp.</em></h1><p class="subtitle">All your AI models, one beautifully connected workspace.</p><div class="concept-notes"><span class="note-pill">✦ Glassmorphism V2</span><span class="note-pill">◇ Adaptive effects</span><span class="note-pill">⌁ Offline preview</span></div></div><div class="heading-actions"><button class="btn" id="endpointBtn">⎘ Copy API endpoint</button><button class="btn primary" data-open="playground">✧ Open playground</button></div></div>
+<div class="grid4"><div class="stat"><div class="stathead">Requests today <span class="glyph">↗</span></div><div class="statnumber">12,846</div><div class="statfoot"><span class="positive">↗ 12.8%</span> vs. previous day</div></div><div class="stat"><div class="stathead">Tokens routed <span class="glyph">◇</span></div><div class="statnumber">2.4<span style="font-size:20px">M</span></div><div class="statfoot"><span class="positive">↗ 8.2%</span> vs. previous day</div></div><div class="stat"><div class="stathead">Average latency <span class="glyph">ϟ</span></div><div class="statnumber">842<span style="font-size:17px">ms</span></div><div class="statfoot"><span class="positive">↘ 6.5%</span> from previous day</div></div><div class="stat"><div class="stathead">Connected providers <span class="glyph">◈</span></div><div class="statnumber">06<span style="font-size:17px;color:#797b90"> / 08</span></div><div class="statfoot"><span class="purple">●</span> Demo connections</div></div></div>
+<div class="lower"><div class="panel"><div class="panelhead"><div><h2>Request activity</h2><p class="subtle" style="margin:7px 0 0">Illustrative activity over the past week</p></div><span class="chooser">Last 7 days⌄</span></div><svg class="plot" viewBox="0 0 700 250" preserveAspectRatio="none" aria-label="Demonstration request activity line chart"><defs><linearGradient id="chartFill" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#9d83ff" stop-opacity=".23"/><stop offset="100%" stop-color="#9d83ff" stop-opacity="0"/></linearGradient></defs><g stroke="#2d2b3e" stroke-width="1" stroke-dasharray="3 6"><path d="M35 25H680M35 73H680M35 121H680M35 169H680M35 217H680"/></g><g><text x="2" y="29">24k</text><text x="2" y="77">18k</text><text x="2" y="125">12k</text><text x="2" y="173">6k</text><text x="8" y="221">0</text></g><path d="M35 174 C76 169 103 149 139 154 S205 98 246 118 S310 164 351 116 S421 80 455 101 S523 34 563 67 S632 41 680 23 V217H35Z" fill="url(#chartFill)"/><path d="M35 174 C76 169 103 149 139 154 S205 98 246 118 S310 164 351 116 S421 80 455 101 S523 34 563 67 S632 41 680 23" fill="none" stroke="#a28bff" stroke-width="3" stroke-linecap="round"/><g><circle cx="680" cy="23" r="5" fill="#b7a6ff" stroke="#5a4b90" stroke-width="5"/></g><g><text x="35" y="245">MON</text><text x="137" y="245">TUE</text><text x="238" y="245">WED</text><text x="339" y="245">THU</text><text x="439" y="245">FRI</text><text x="545" y="245">SAT</text><text x="652" y="245">SUN</text></g></svg><div class="legend"><span><i style="background:#a28bff"></i> Successful requests</span><span><i style="background:#676878"></i> Demo activity</span></div></div>
+<div class="panel"><div class="panelhead"><div><h2>Provider health</h2><p class="subtle" style="margin:7px 0 0">Example provider connections</p></div><button class="chooser" data-open="providers">View all ↗</button></div><div id="overviewProviders"></div></div></div>
+<div class="panel under"><div class="panelhead"><div><h2>Featured models</h2><p class="subtle" style="margin:7px 0 0">Explore supported models and their capabilities</p></div><button class="chooser" data-open="models">Explore models ↗</button></div><div class="table-wrapper"><table class="table"><thead><tr><th>Model</th><th>Provider</th><th>Best for</th><th>Sample latency</th><th>Availability</th></tr></thead><tbody id="overviewModels"></tbody></table></div></div>
+<div class="mutedbox">✦ This is a frontend-only design prototype. All numbers, provider health indicators, chat replies, and model entries are sample content—not live data. No real keys or API requests are used.</div></section>
+<section class="tab" id="models"><p class="kicker">DISCOVER AI</p><div class="heading"><div><h1>Model <em>Explorer.</em></h1><p class="subtitle">Search and compare models in one place.</p></div></div><div class="panel"><div class="select-row"><input class="search" placeholder="Search models, providers, capabilities..." id="modelSearch" aria-label="Search models"/><span class="tag">Demo catalog</span></div><div class="table-wrapper"><table class="table"><thead><tr><th>Model</th><th>Provider</th><th>Capability</th><th>Sample latency</th><th>Status</th></tr></thead><tbody id="allModels"></tbody></table></div></div></section>
+<section class="tab" id="playground">
+<div class="ai-stage">
+ <div class="ai-heading"><div><p class="kicker">BLORP / AI CHAT</p><h1>Ask <em>anything.</em></h1><p class="subtitle">One calm workspace for thinking, writing, and exploring models.</p></div><button type="button" class="btn" id="clearChat">↺ New conversation</button></div>
+ <div class="ai-switchrow"><div class="ai-modes" role="group" aria-label="Blorp working mode"><button class="ai-mode on" data-ai-mode="chat">☷ Chat</button><button class="ai-mode" data-ai-mode="build">⌘ Build</button><button class="ai-mode" data-ai-mode="autopilot">✦ Autopilot</button></div><div class="ai-toolbar"><label class="sr-only" for="aiModel">Chat model</label><select id="aiModel" class="ai-model-select"><option>Blorp V1</option><option>Blorp V2</option><option selected>Blorp V3</option><option>Blorp V4</option><option>Blorp V5</option></select><button type="button" class="btn" id="aiToolsBtn">✣ Tools</button></div></div>
+ <div class="ai-conversation"><div class="ai-trust"><span class="ai-dot"></span> Interface preview · No model requests are sent</div><div class="message-area" id="messages"><div class="bubble">Hey there! 👋 I'm Blorp's preview assistant. This chat is a local interface demo—not a connected AI model.</div></div></div>
+ <div class="ai-composer"><div class="chatbox"><textarea id="prompt" aria-label="Prompt" placeholder="Message Blorp..." rows="2"></textarea><button class="btn primary" id="send">↑</button></div><div class="ai-composefoot"><span>Model selection and tools are planned integrations</span><span>Enter to send · Shift+Enter newline</span></div></div>
+</div>
+</section>
+<section class="tab" id="providers"><p class="kicker">YOUR AI NETWORK</p><div class="heading"><div><h1>Connected <em>Providers.</em></h1><p class="subtitle">Choose which providers participate in routing.</p></div><button class="btn primary" id="addProvider">＋ Add provider</button></div><div class="panel"><div id="providerList"></div></div><div class="mutedbox">Provider toggles only affect the visual prototype. Connecting a real provider requires integration with the original project's backend and key-management workflow.</div></section>
+<section class="tab" id="keys"><p class="kicker">SECURE CREDENTIALS</p><div class="heading"><div><h1>API <em>Keys.</em></h1><p class="subtitle">A preview of the secure credentials manager.</p></div><button class="btn primary" id="addKey">＋ Add API key</button></div><div class="panel"><div class="panelhead"><h2>Your credentials</h2><span class="tag">Preview only</span></div><div class="empty"><div style="font-size:32px;margin-bottom:12px">⌁</div><h2 style="margin-bottom:12px">No credentials stored</h2><p>This preview doesn't collect or store API secrets. The final app will use the original backend's encrypted key-storage system.</p></div></div></section>
+<section class="tab" id="analytics"><p class="kicker">MEASURE WHAT MATTERS</p><div class="heading"><div><h1>Usage <em>Analytics.</em></h1><p class="subtitle">Understand request performance, latency, and tokens.</p></div></div><div class="grid4"><div class="stat"><div class="stathead">Success rate <span class="glyph">✓</span></div><div class="statnumber">99.2<span style="font-size:19px">%</span></div><div class="statfoot">Illustrative data</div></div><div class="stat"><div class="stathead">p95 latency <span class="glyph">ϟ</span></div><div class="statnumber">1.6<span style="font-size:17px">s</span></div><div class="statfoot">Illustrative data</div></div><div class="stat"><div class="stathead">Failed requests <span class="glyph">!</span></div><div class="statnumber">103</div><div class="statfoot">Illustrative data</div></div><div class="stat"><div class="stathead">Avg. tokens / req <span class="glyph">◇</span></div><div class="statnumber">187</div><div class="statfoot">Illustrative data</div></div></div><div class="panel under"><h2>Metrics integration</h2><p class="subtitle" style="margin-top:15px;line-height:1.7">Once connected to the target repository, this panel can visualize the existing request logs and analytics endpoints. No backend is connected in this preview.</p></div></section>
+
+<!-- BUILD FAST: a distinct workspace. Data and actions are local preview, not an agent backend. -->
+
+<section class="tab" id="localai">
+ <div class="section-overline"><p class="kicker">BLORP / LOCAL INTELLIGENCE</p><span class="preview-badge">● YOUR PC · NO PAID API NEEDED</span></div>
+ <div class="heading"><div><h1>Local <em>AI Lab.</em></h1><p class="subtitle">Real AI responses and three specialist agents, powered by an Ollama model running on your computer.</p></div><button type="button" class="btn" id="localRefresh">⟳ Detect Ollama</button></div>
+ <div class="local-status" id="localStatus" role="status" aria-live="polite">Checking for local models…</div>
+ <div class="local-layout">
+   <div class="panel local-main">
+     <div class="local-controls">
+       <label for="localModel" class="field-label">Installed model</label>
+       <select id="localModel" class="search"><option value="">Detecting models…</option></select>
+       <span class="local-model-note">These are real Ollama model names, not untrained Blorp V1–V5 product tiers.</span>
+     </div>
+     <div class="local-tabs" role="group" aria-label="Local AI mode">
+       <button type="button" data-local-mode="chat" class="active">☷ Local Chat</button>
+       <button type="button" data-local-mode="build">⌘ Build Website</button>
+     </div>
+     <div id="localChatThread" class="local-chat-thread" role="log" aria-live="polite"><div class="local-welcome">Ask a real local model a question, or switch to Build Website to run the agent team.</div></div>
+     <label class="field-label" for="localInput" id="localInputLabel">Message your local model</label>
+     <textarea id="localInput" class="large-prompt" rows="5" maxlength="3000" placeholder="Ask Blorp anything…"></textarea>
+     <div class="local-actions"><button class="btn" type="button" id="localClear">↺ Clear chat</button><button class="btn primary" type="button" id="localRun">↑ Send to local model</button></div>
+     <p class="local-disclaimer">Local model inference runs on your own PC. Local chat uses no cloud model API. Models may hallucinate; generated code is not executed by Blorp.</p>
+   </div>
+   <aside class="panel local-results">
+     <div class="panelhead"><div><h2>Agent workspace</h2><p class="subtle" style="margin-top:7px">Local static website MVP</p></div><span class="tag">3 agents</span></div>
+     <div class="local-agent-row"><span>01</span><div><strong>Architect Agent</strong><small>Creates the implementation plan</small></div></div>
+     <div class="local-agent-row"><span>02</span><div><strong>Builder Agent</strong><small>Creates HTML, CSS and JavaScript</small></div></div>
+     <div class="local-agent-row"><span>03</span><div><strong>QA Reviewer</strong><small>Reviews the code without running it</small></div></div>
+     <div class="local-build-output" id="localBuildOutput" aria-live="polite"><p>Switch to <b>Build Website</b>, enter a brief, and run the agent team. You'll get an actual ZIP containing files if the model completes the task.</p></div>
+     <a id="localDownload" class="btn primary" href="#" download hidden>↓ Download generated website ZIP</a>
+   </aside>
+ </div>
+</section>
+
+<section class="tab" id="multitask">
+  <div class="section-overline"><p class="kicker">BUILD FAST / AGENT CONTROL</p><span class="preview-badge">● OPEN PREVIEW · NO PAYWALL YET</span></div>
+  <div class="heading"><div><h1>Multi-Agent <em>Workspace.</em></h1><p class="subtitle">Give each agent one job. Organize them into one fast, focused build pipeline.</p></div><div class="heading-actions"><button type="button" class="btn" id="newWorkflowBtn">◇ Create workflow</button><button type="button" class="btn primary" id="newAgentBtn">＋ Add agent</button></div></div>
+  <div class="fast-metrics"><div class="metric-mini"><span>AGENTS</span><strong id="agentCount">05</strong><small>Customizable roles</small></div><div class="metric-mini"><span>WORKFLOWS</span><strong id="workflowCount">02</strong><small>Demo + your drafts</small></div><div class="metric-mini"><span>RUNTIME</span><strong class="purple">Preview</strong><small>No agent API connected</small></div><div class="metric-mini"><span>ACCESS</span><strong class="green">Open</strong><small>Subscriptions later</small></div></div>
+  <div class="section-title"><div><h2>Your specialist agents</h2><p class="subtle">Pick the right model and role when you connect a real runtime.</p></div><span class="tag">Local agent configurations</span></div>
+  <div class="agent-grid" id="agentGrid"></div>
+  <div class="panel under"><div class="panelhead"><div><h2>Workflow routing</h2><p class="subtle" style="margin:7px 0 0">Define the order of work before launching a build.</p></div><button type="button" class="chooser" data-open="workflows">All workflows ↗</button></div><div id="multiWorkflowList"></div></div>
+  <div class="soft-note">⌁ The agent cards, task queues, and workflows are editable previews. Running real agents will require an authenticated backend, model connections, and an isolated execution environment.</div>
+</section>
+<section class="tab" id="builder">
+  <div class="build-header-bar">
+    <div class="build-header-caption"><span class="build-mark">✦</span><span><strong>Build Playground</strong><small>Multi-agent web builder · Design preview</small></span></div>
+    <div class="build-header-controls">
+      <button type="button" class="build-toolbar-btn" id="projectPickerBtn" title="Choose or create a project"><span aria-hidden="true">▣</span><span id="activeProjectName">Untitled project</span><span aria-hidden="true">⌄</span></button>
+      <button type="button" class="build-toolbar-btn" id="buildModelPickerBtn" title="Choose a model tier"><span aria-hidden="true">◈</span><span id="activeModelName">Blorp V3</span><span aria-hidden="true">⌄</span></button>
+      <button type="button" class="build-toolbar-btn" id="buildSetupOpenBtn"><span aria-hidden="true">⚙</span> Setup</button>
+      <button type="button" class="build-toolbar-btn build-output-toggle" id="outputPanelToggle" aria-expanded="false" aria-controls="buildOutputDrawer"><span aria-hidden="true">◫</span> Output</button>
+    </div>
+  </div>
+  <div class="build-layout" id="buildLayout">
+    <div class="build-conversation">
+      <div class="build-conversation-scroll" id="buildConversationScroll" aria-label="Build conversation">
+        <div class="build-welcome" id="buildWelcome">
+          <div class="build-welcome-logo">b<span>.</span></div>
+          <p class="build-eyebrow">BLORP · BUILD FAST</p>
+          <h1>What should we <em>build?</em></h1>
+          <p class="build-welcome-desc">Describe your idea and let your specialist agent team shape the execution plan. Keep the complicated controls out of the way.</p>
+          <div class="build-suggest-grid" aria-label="Quick project prompts">
+            <button class="build-suggest" type="button" data-template="landing"><span>◈</span><strong>Landing page</strong><small>Elegant, animated website</small></button>
+            <button class="build-suggest" type="button" data-template="dashboard"><span>▦</span><strong>Dashboard</strong><small>Clean analytics & data</small></button>
+            <button class="build-suggest" type="button" data-template="api"><span>⌘</span><strong>Backend API</strong><small>Auth & endpoints</small></button>
+          </div>
+        </div>
+        <div class="build-thread" id="buildThread" role="log" aria-live="polite" aria-label="Chat messages"></div>
+      </div>
+      <div class="build-composer-wrap">
+        <div class="build-composer">
+          <textarea id="buildPrompt" maxlength="4000" rows="2" aria-label="Describe your build" placeholder="Message Blorp... describe the website or app you want to build"></textarea>
+          <div class="build-composer-footer">
+            <div class="build-compose-left">
+              <button type="button" class="build-icon-btn" id="composerAddBtn" title="Project options" aria-label="Project options">＋</button>
+              <button type="button" class="build-subtle-btn" id="composeSetupBtn"><span aria-hidden="true">⚙</span> Project setup</button>
+              <button type="button" class="build-subtle-btn" id="composeModelBtn"><span aria-hidden="true">✦</span> <span id="composerModelName">Blorp V3</span></button>
+            </div>
+            <div class="build-compose-right"><span id="promptCounter" class="build-count">0 / 4000</span><button type="button" id="preparePlanBtn" class="build-send" aria-label="Prepare build plan" title="Prepare build plan">↑</button></div>
+          </div>
+        </div>
+        <p class="build-demo-note">Preview only · Build plans are generated locally. No real AI models or agent workers are connected yet.</p>
+      </div>
+    </div>
+    <aside class="build-output-drawer" id="buildOutputDrawer" hidden aria-label="Build output">
+      <div class="build-output-header"><div><p class="build-eyebrow">YOUR PROJECT</p><h2>Build output</h2><small>Planning & agent routing</small></div><button type="button" class="build-icon-btn" id="closeBuildOutput" aria-label="Close build output">✕</button></div>
+      <div class="build-output-body" id="buildOutput" aria-live="polite"><div class="output-empty"><span class="output-icon">✧</span><h3>Nothing built yet</h3><p>Send your first message to prepare a local execution plan. Your specialist agents will be listed here.</p></div></div>
+      <div class="output-actions" id="buildOutputActions" hidden><button type="button" class="btn" id="copyPlanBtn">⎘ Copy</button><button type="button" class="btn" id="exportPlanBtn">↓ Export</button><button type="button" class="btn primary" id="saveWorkflowBtn">＋ Save workflow</button></div>
+    </aside>
+  </div>
+</section>
+<section class="tab" id="workflows">
+  <div class="section-overline"><p class="kicker">BUILD FAST / PIPELINES</p><span class="preview-badge">● LOCAL WORKFLOW DRAFTS</span></div>
+  <div class="heading"><div><h1>Workflow <em>Studio.</em></h1><p class="subtitle">Create repeatable pipelines for research, design, code, and QA.</p></div><button type="button" class="btn primary" id="newWorkflowFromPage">＋ New workflow</button></div>
+  <div class="panel"><div class="panelhead"><div><h2>Saved workflows</h2><p class="subtle" style="margin:7px 0 0">Examples and personal drafts. Nothing runs on a server yet.</p></div><span class="tag" id="workflowTotalTag">2 workflows</span></div><div id="allWorkflowList"></div></div>
+</section>
+
+<section class="tab active" id="account">
+  <div class="v5-page-heading"><div><p class="kicker">YOUR BLORP WORKSPACE</p><h1>Your space to <em>create.</em></h1><p class="subtitle">Projects, membership, credits, and the tools that power your work.</p></div><button type="button" class="btn primary" data-open="builder">✦ Start a build</button></div>
+  <div class="account-hero panel"><div class="account-hello"><div class="account-portrait">b.</div><div><span class="account-eyebrow">WELCOME TO BLORP</span><h2 id="v5Hello">Your creator dashboard</h2><p id="v5AccountLead">Sign in to save your profile on the local development server.</p></div></div><span class="account-plan-pill" id="v5AccountPlan">FREE PLAN</span></div>
+  <div class="v5-metrics"><div class="v5-metric"><span>YOUR PLAN</span><strong id="v5PlanMetric">Free</strong><small>Local membership status</small></div><div class="v5-metric"><span>AVAILABLE CREDITS</span><strong id="v5CreditsMetric">—</strong><small>4M on local signup · No live billing</small></div><div class="v5-metric"><span>MY PROJECTS</span><strong id="v5ProjectsMetric">0</strong><small>Drafts stored in this browser</small></div><div class="v5-metric"><span>BUILD FAST</span><strong id="v5BuildAccess">Locked</strong><small>Agent execution requires paid access</small></div></div>
+  <div class="v5-two-col"><div class="panel"><div class="panelhead"><div><h2>Continue building</h2><p class="subtle" style="margin:7px 0 0">Keep your creative momentum.</p></div><button class="chooser" data-open="projects">All projects ↗</button></div><div id="v5RecentProjects" class="v5-recent"><div class="v5-empty">No projects yet. Start with your first idea.</div></div></div><div class="panel v5-profile-panel"><div class="panelhead"><h2>Account & access</h2><span class="tag">Local foundation</span></div><p class="v5-profile-line"><span>Email</span><strong id="v5ProfileEmail">Not signed in</strong></p><button type="button" class="btn v52-link-google-btn" id="linkGoogleBtn">Connect Google to this account</button><p class="v5-profile-line"><span>Membership</span><strong id="v5ProfilePlan">Free</strong></p><p class="v5-profile-line"><span>Multi-agent runs</span><strong id="v5ProfileRuns">Not connected</strong></p><button class="btn" type="button" data-open="membership">Explore plans →</button><p class="form-hint">Free credits are stored in the local backend. No actual inference is metered yet.</p></div></div>
+</section>
+<section class="tab" id="projects"><div class="v5-page-heading"><div><p class="kicker">YOUR WORK</p><h1>Project <em>Library.</em></h1><p class="subtitle">Find your drafts and continue in the Build Playground.</p></div><button class="btn primary" id="v5NewProject">＋ New project</button></div><div class="panel"><div class="panelhead"><h2>My projects</h2><div class="v5-sync-actions"><button class="btn" type="button" id="v5BackupProjects">↑ Back up</button><button class="btn" type="button" id="v5RestoreProjects">↓ Restore</button></div></div><div id="v5ProjectsList" class="v5-project-list"></div></div><div class="mutedbox">Drafts remain in browser storage. Signed-in users can manually back up and restore them on this local development server. Browser drafts are not isolated between accounts using the same browser; do not store sensitive project data yet.</div></section>
+<section class="tab" id="addons"><div class="v5-page-heading"><div><p class="kicker">EXTEND YOUR WORKSPACE</p><h1>Blorp <em>Add-ons.</em></h1><p class="subtitle">Explore tools, reusable skills, and future MCP integrations—all in one place.</p></div><span class="preview-badge">◉ CONNECTIONS NOT LIVE</span></div>
+ <div class="addons-feature panel"><div><p class="kicker">YOUR TOOLS, YOUR RULES</p><h2>Give your agents superpowers.</h2><p>Find the right tools for research, design, code, and deployment. Set agent permissions before connecting anything.</p></div><span class="addons-orb" aria-hidden="true">✣</span></div>
+ <div class="addons-controls"><div class="addons-tabs" role="group" aria-label="Add-on library section"><button class="selected" data-addontab="discover">Discover</button><button data-addontab="mine">My add-ons</button><button data-addontab="skills">Skills</button></div><input class="search" id="addonSearch" placeholder="Search tools and skills..." aria-label="Search add-ons"/></div>
+ <div id="addonsDiscover"><div class="addons-filter" id="addonFilters"></div><div class="addon-grid" id="addonGrid"></div></div>
+ <div id="addonsMine" hidden><div id="addonInstalled" class="addon-grid"></div><p class="form-hint">These are browser-only configuration preferences. No external account is connected.</p></div>
+ <div id="addonsSkills" hidden><div class="addon-grid" id="skillGrid"></div><p class="form-hint">Skill switches are saved as local preferences; they are not injected into actual models yet.</p></div>
+ <div class="panel under addons-custom"><div><h2>Custom MCP integrations</h2><p class="subtitle" style="margin-top:6px">Bring your own compatible tool server after our secure connector runtime is available.</p></div><button type="button" class="btn" id="customMcpBtn">＋ Register a draft</button></div>
+</section>
+<section class="tab" id="membership"><div class="v5-page-heading"><div><p class="kicker">MEMBERSHIP & CREDITS</p><h1>Plans built for <em>makers.</em></h1><p class="subtitle">Choose a plan, submit a payment request, and unlock Build Fast after owner verification.</p></div><span class="account-plan-pill" id="memberCurrentPlan">CURRENT · FREE</span></div>
+ <div class="billing-toolbar"><div class="billing-switch" role="group" aria-label="Billing frequency"><button type="button" data-billing="monthly" class="selected">Monthly</button><button type="button" data-billing="annual">Annual <span>Save 10%</span></button></div><p>USD · Manual approval · No in-app card processing</p></div>
+ <div class="pricing-grid">
+  <article class="pricing-card"><span class="pricing-index">START HERE</span><h2>Free</h2><p>Explore Blorp and plan your ideas.</p><div class="pricing-price"><strong>$0</strong><small>/ forever</small></div><ul><li>4,000,000 starter credits</li><li>AI interface preview</li><li>Project drafts and design planning</li><li>Multi-agent execution locked</li></ul><button class="btn" type="button" disabled>Current default plan</button></article>
+  <article class="pricing-card featured"><span class="pricing-index">FOR BUILDERS</span><h2>Builder</h2><p>More power for everyday shipping.</p><div class="pricing-price"><strong id="builderPrice">$20</strong><small>/mo</small></div><p class="billed-yearly" id="builderBilled">$20 billed monthly</p><ul><li>Multi Task access when launched</li><li>Five-hour rolling compute window</li><li>Token allowance: to be set by testing</li><li>Model routing up to eligible tiers</li></ul><button class="btn primary" type="button" id="builderPlanBtn">Request Builder membership</button></article>
+  <article class="pricing-card"><span class="pricing-index">FOR STUDIOS</span><h2>Studio</h2><p>High-capacity workflows for teams.</p><div class="pricing-price"><strong id="studioPrice">$50</strong><small>/mo</small></div><p class="billed-yearly" id="studioBilled">$50 billed monthly</p><ul><li>High-capacity build sessions</li><li>Premium model routing priority</li><li>More parallel agent capacity</li><li>Fair-use and security safeguards</li></ul><button class="btn" type="button" id="studioPlanBtn">Request Studio membership</button></article>
+ </div>
+ <div class="panel under v53-payment-card" id="paymentPanel" hidden>
+  <div class="panelhead"><div><h2 id="paymentTitle">Pay for your membership</h2><p class="subtle" style="margin:7px 0 0">Manual UPI payment · Owner verification required</p></div><span class="tag">Pending until approved</span></div>
+  <p id="paymentSummary" class="subtitle">Select Builder or Studio above.</p>
+  <div class="v53-checkout-clock" role="status" aria-live="off"><span>⏱ UTR submission deadline · server enforced</span><strong id="paymentCountdown" aria-label="Time remaining for UTR submission">Not started</strong></div>
+  <div class="v53-payment-grid">
+    <div class="v53-qr-wrap"><img id="memberQrImage" alt="Owner-configured UPI payment QR" hidden/><div id="memberQrEmpty" class="v53-qr-placeholder">⌗<small>Owner has not uploaded a QR yet</small></div><p class="v53-upi-label">UPI ID: <strong id="memberUpiId">Not configured</strong></p></div>
+    <div><div class="v53-pay-total"><small>Pay exactly</small><strong id="memberInrAmount">Not configured</strong><span>USD plan prices are informational. Pay the displayed INR total.</span></div>
+      <p class="form-hint">Scan the QR in your UPI app. After successful payment, paste your transaction UTR below. Submission does <strong>not</strong> activate membership.</p>
+      <form id="paymentRequestForm" class="v53-payment-form">
+        <label for="paymentPayerName">Name used for payment</label><input class="search" id="paymentPayerName" placeholder="Account holder / payer name" minlength="2" maxlength="80" required/>
+        <label for="paymentUtr">UTR / Transaction reference number</label><input class="search" id="paymentUtr" placeholder="Enter your UPI transaction reference" pattern="[A-Za-z0-9-]{8,35}" minlength="8" maxlength="35" autocomplete="off" required/>
+        <button type="submit" class="btn primary" id="submitUtrBtn" disabled>Submit UTR for owner verification →</button>
+      </form>
+      <p id="paymentInstructions" class="form-hint">Your QR payment instructions will appear here.</p>
+      <p id="paymentStatus" class="v52-status" role="status"></p>
+    </div>
+  </div>
+ </div>
+ <div class="panel under"><div class="panelhead"><h2>My payment requests</h2><button type="button" class="chooser" id="refreshPayments">Refresh ↻</button></div><div id="myPaymentRequests" class="v52-list"><p class="subtitle">Sign in to view your requests.</p></div></div>
+ <div class="mutedbox">Membership requests are recorded locally. No card is charged in Blorp. Owner approval requires independent payment verification. Compute quotas are still being implemented.</div>
+</section>
+<section class="tab" id="owner">
+  <div class="v53-owner-head">
+    <div><p class="kicker">♛ &nbsp; PRIVATE OWNER CONTROL CENTER</p><h1>Welcome, <em>Owner.</em> 👑</h1><p class="subtitle">Your Blorp business, subscriptions and payment approvals in one secure workspace.</p></div>
+    <div class="v53-owner-head-actions"><span class="v53-owner-only">♛ &nbsp; Owner only</span><button class="btn" id="ownerRefresh" type="button">↻ &nbsp; Refresh</button></div>
+  </div>
+  <nav class="v53-owner-tabs" id="ownerTabBar" aria-label="Owner Console sections">
+    <button data-owner-tab="dashboard" type="button" class="selected">◫ Overview</button><button data-owner-tab="payments" type="button">▤ Payments <span id="ownerPendingChip">0</span></button><button data-owner-tab="users" type="button">♧ Users</button><button data-owner-tab="settings" type="button">⌗ UPI & Pricing</button><button data-owner-tab="audit" type="button">☷ Activity</button>
+  </nav>
+  <div class="v53-owner-view" data-owner-screen="dashboard">
+    <div class="v53-kpi-grid" id="ownerSummary">
+      <div class="v53-kpi"><span>◉ &nbsp; Total users</span><strong>—</strong><small>Real account records only</small></div>
+      <div class="v53-kpi"><span>♛ &nbsp; Active members</span><strong>—</strong><small>Current paid access</small></div>
+      <div class="v53-kpi"><span>◷ &nbsp; Pending payments</span><strong>—</strong><small>Awaiting your review</small></div>
+      <div class="v53-kpi"><span>◈ &nbsp; Verified revenue</span><strong>—</strong><small>Approved INR transactions</small></div>
+    </div>
+    <div class="v53-owner-grid">
+      <div class="v53-owner-primary">
+        <div class="panel v53-glass"><div class="panelhead"><div><h2>Payment verification requests</h2><p class="subtle">Confirm the UTR and amount in your bank or UPI app before approving.</p></div><button class="chooser" data-owner-open="payments" type="button">View all ↗</button></div><div id="ownerPendingPreview" class="v53-list-table"></div></div>
+        <div class="v53-summary-bottom">
+          <div class="panel v53-glass"><div class="panelhead"><div><h2>Revenue overview</h2><p class="subtle">Verified UPI payments · Last 7 days</p></div><strong id="ownerRevenueTotal" class="v53-amount">₹0</strong></div><div class="v53-chart" id="ownerRevenueChart" aria-label="Verified payment revenue chart"></div></div>
+          <div class="panel v53-glass"><div class="panelhead"><h2>Membership distribution</h2></div><div class="v53-donut-flex"><div class="v53-donut" id="ownerDonut"><span id="ownerDonutCount">0<small>active</small></span></div><div id="ownerDistribution" class="v53-chart-legend"></div></div></div>
+        </div>
+      </div>
+      <div class="v53-owner-side">
+        <div class="panel v53-glass"><div class="panelhead"><div><h2>Payment QR (UPI)</h2><p class="subtle">Shown to buyers when purchasing a plan.</p></div><span class="v53-mini-icon">⌗</span></div><div class="v53-owner-qr"><img id="ownerQrImage" alt="Configured UPI QR" hidden/><div class="v53-owner-qr-empty" id="ownerQrEmpty">⌗<small>Not configured</small></div><div><strong id="ownerUpiLabel">UPI not configured</strong><p class="subtle">Upload your own real QR in settings.</p><button class="btn" data-owner-open="settings" type="button">Manage QR ↗</button></div></div></div>
+        <div class="panel v53-glass"><div class="panelhead"><h2>Quick actions</h2></div><div class="v53-quick-actions"><button type="button" data-owner-open="settings">◈ &nbsp; Configure QR & INR prices <span>→</span></button><button type="button" data-owner-open="payments">✓ &nbsp; Verify UTR requests <span>→</span></button><button type="button" data-owner-open="users">♛ &nbsp; Grant or revoke membership <span>→</span></button></div></div>
+        <div class="panel v53-glass"><div class="panelhead"><h2>Recent activity</h2></div><div id="ownerActivityPreview" class="v53-recent"></div></div>
+      </div>
+    </div>
+  </div>
+  <div class="v53-owner-view" data-owner-screen="payments" hidden>
+    <div class="panel v53-glass"><div class="panelhead"><div><h2>All payment requests</h2><p class="subtle">Only payments verified independently by you should be approved.</p></div><select class="search v53-filter" id="ownerPaymentFilter"><option value="pending">Pending</option><option value="all">All requests</option><option value="approved">Approved</option><option value="rejected">Rejected</option></select></div><div id="ownerPaymentRequests" class="v53-list-table"></div></div>
+  </div>
+  <div class="v53-owner-view" data-owner-screen="users" hidden>
+    <div class="panel v53-glass"><div class="panelhead"><h2>Member accounts</h2><span class="tag">Server-authorized Owner only</span></div><div id="ownerMembers" class="v53-list-table"></div></div>
+    <div class="panel under v53-glass"><div class="panelhead"><div><h2>Manual membership adjustment</h2><p class="subtle">For complimentary access or separately verified payments. Every change is audited.</p></div></div>
+      <form id="ownerGrantForm" class="v53-grant-form"><label for="ownerTarget">Customer</label><select id="ownerTarget" class="search" required></select><label for="ownerPlan">Plan</label><select class="search" id="ownerPlan"><option value="builder">Builder</option><option value="studio">Studio</option><option value="free">Free (revoke access)</option></select><label for="ownerDays">Duration (days)</label><input id="ownerDays" class="search" type="number" min="1" max="365" value="30" required/><label for="ownerReason">Reason</label><input id="ownerReason" class="search" required minlength="5" maxlength="240" placeholder="e.g. Complimentary access for testing"/><button class="btn primary" type="submit">Update membership</button></form>
+    </div>
+  </div>
+  <div class="v53-owner-view" data-owner-screen="settings" hidden>
+    <div class="panel v53-glass v53-settings-card"><div class="panelhead"><div><h2>QR payments & pricing</h2><p class="subtle">Only your account can change these settings. INR totals are set by you, not estimated exchange rates.</p></div><span class="tag">Owner controlled</span></div>
+      <form id="ownerPaymentSettingsForm" class="v53-settings-grid">
+        <div><label for="ownerUpiInput" class="field-label">Your UPI ID</label><input class="search" id="ownerUpiInput" placeholder="yourbusiness@bank" required maxlength="200"/>
+          <label for="ownerQrFile" class="field-label">Upload payment QR image · PNG/JPEG · 350 KB max</label><input id="ownerQrFile" class="search" type="file" accept="image/png,image/jpeg"/>
+          <p class="form-hint">The QR must belong to your bank or UPI account. Only publish it after checking it in your UPI app. The current QR is shown above in Overview.</p></div>
+        <div><div class="v53-price-heading">Exact INR amounts collected by your QR</div>
+          <div class="v53-prices-grid"><label>Builder · Monthly ($20)<input id="inrBuilderMonthly" class="search" inputmode="decimal" type="number" min="1" max="10000000" step="0.01" placeholder="Amount in ₹" required/></label><label>Builder · Annual ($216)<input id="inrBuilderAnnual" class="search" type="number" min="1" max="10000000" step="0.01" placeholder="Amount in ₹" required/></label><label>Studio · Monthly ($50)<input id="inrStudioMonthly" class="search" type="number" min="1" max="10000000" step="0.01" placeholder="Amount in ₹" required/></label><label>Studio · Annual ($540)<input id="inrStudioAnnual" class="search" type="number" min="1" max="10000000" step="0.01" placeholder="Amount in ₹" required/></label></div>
+          <button class="btn primary" type="submit">Save payment settings</button><span id="ownerSettingsStatus" class="v52-status" role="status"></span></div>
+      </form>
+    </div>
+  </div>
+  <div class="v53-owner-view" data-owner-screen="audit" hidden>
+    <div class="panel v53-glass"><div class="panelhead"><h2>Membership audit history</h2><span class="tag">Change records</span></div><div id="ownerAudit" class="v53-list-table"></div></div>
+  </div>
+  <p class="form-hint v53-owner-caution">🔒 Local development environment — never expose this Python server to the public internet. Transactions are not automatically verified or charged.</p>
+</section>
+<section class="tab" id="settings"><p class="kicker">WORKSPACE PREFERENCES</p><div class="heading"><div><h1>Blorp <em>Settings.</em></h1><p class="subtitle">Customize the feel of your workspace.</p></div></div><div class="panel preferences-panel">
+  <div class="fx-title"><div><h2>Visual performance</h2><p class="subtle" style="margin:8px 0 0">Choose how much glass and motion Blorp renders. Auto is recommended.</p></div><span class="tag" id="performanceTag">Detecting profile…</span></div>
+  <div class="fx-options" role="group" aria-label="Visual effects quality">
+    <button type="button" class="fx-option is-selected" data-fx="auto" aria-pressed="true"><span>⚡ Auto</span><small>Adapts to your device</small></button>
+    <button type="button" class="fx-option" data-fx="cinematic" aria-pressed="false"><span>✦ Cinematic</span><small>Full glass effects</small></button>
+    <button type="button" class="fx-option" data-fx="balanced" aria-pressed="false"><span>◈ Balanced</span><small>Lightweight glass</small></button>
+    <button type="button" class="fx-option" data-fx="lite" aria-pressed="false"><span>◌ Lite</span><small>Minimal effects</small></button>
+  </div>
+  <div class="fx-reason" id="fxReason" role="status">Choosing a suitable effects profile…</div>
+</div>
+<div class="panel under"><div class="prov"><div class="prov-main"><b>Reduced motion</b><small>Turn off interface transitions and animations</small></div><button class="toggle" id="motionToggle" aria-label="Toggle reduced motion" aria-pressed="false"></button></div><div class="prov"><div class="prov-main"><b>Compact navigation</b><small>Use a smaller sidebar in a future version</small></div><button class="toggle" id="compactToggle" aria-label="Toggle compact navigation" aria-pressed="false"></button></div><div class="prov"><div class="prov-main"><b>Color theme</b><small>Midnight Glass · Dark theme</small></div><span class="tag">V1 concept</span></div></div><div class="mutedbox">Visual effect preferences are saved locally in this browser. The model/provider controls remain a frontend demo until we select and integrate the upstream repository.</div>
+<div class="trust-panel"><span class="trust-icon">🛡</span><div><strong>Windows-friendly release approach</strong><p>Blorp V2 is a standalone HTML design preview, not an EXE installer. The future Windows app should use transparent permissions, clean signed builds and verified distribution. Antivirus settings never need to be disabled.</p></div></div></section>
+</div>
+</main></div>
+
+<dialog id="buildSetupDialog" class="blorp-modal build-dialog" aria-labelledby="buildSetupTitle">
+  <div class="modal-form"><div class="dialog-head"><div><p class="kicker">PROJECT CONTROLS</p><h2 id="buildSetupTitle">Project setup</h2><p class="build-dialog-desc">Select a project type, technology stack, and specialist team before starting.</p></div><button type="button" class="dialog-close" data-close-dialog="buildSetupDialog" aria-label="Close">✕</button></div>
+    <label class="field-label" for="buildType">What are we building?</label><select class="search" id="buildType"><option value="Website">Website / Landing page</option><option value="Dashboard">Business dashboard</option><option value="Full-stack app">Full-stack app</option><option value="API">Backend / API</option></select>
+    <label class="field-label" for="buildStack">Preferred stack</label><select class="search" id="buildStack"><option>React + Vite + Tailwind</option><option>Next.js + Tailwind</option><option>Vanilla HTML / CSS / JS</option><option>Node.js + Express</option><option>Python + FastAPI</option></select>
+    <div class="builder-divider"></div>
+    <div class="panelhead" style="margin-bottom:14px"><h2>Agent team</h2><span id="selectedAgentCount" class="tag">5 selected</span></div>
+    <div id="agentChecklist" class="agent-checklist"></div>
+    <button id="manageBuildAgents" class="btn fill-btn" type="button" data-open="multitask">◇ Customize agents</button>
+    <div class="dialog-actions"><button type="button" class="btn primary" id="saveBuildSetupBtn">Apply settings</button></div>
+  </div>
+</dialog>
+<dialog id="buildModelDialog" class="blorp-modal build-dialog" aria-labelledby="buildModelTitle">
+ <div class="modal-form"><div class="dialog-head"><div><p class="kicker">COMPUTE PROFILE</p><h2 id="buildModelTitle">Choose a Blorp model</h2><p class="build-dialog-desc">Five planned capability tiers. These are UI concepts until real models are connected.</p></div><button type="button" class="dialog-close" data-close-dialog="buildModelDialog" aria-label="Close">✕</button></div>
+ <div id="buildModelOptions" class="build-model-options"></div>
+ <p class="build-model-notice">Higher tiers are designed to use more compute. Selecting one here does not start inference or charge credits.</p>
+ </div>
+</dialog>
+<dialog id="buildProjectDialog" class="blorp-modal build-dialog" aria-labelledby="buildProjectTitle">
+ <div class="modal-form"><div class="dialog-head"><div><p class="kicker">YOUR BUILDS</p><h2 id="buildProjectTitle">Projects</h2><p class="build-dialog-desc">Switch projects or start another idea without losing your previous preview chat.</p></div><button type="button" class="dialog-close" data-close-dialog="buildProjectDialog" aria-label="Close">✕</button></div>
+ <div class="build-project-list" id="buildProjectList"></div>
+ <form id="createBuildProjectForm" class="build-new-project"><label class="field-label" for="newBuildProjectName">New project name</label><div class="build-project-entry"><input class="search" id="newBuildProjectName" required maxlength="42" placeholder="e.g. My portfolio"/><button type="submit" class="btn primary">＋ Create</button></div></form>
+ </div>
+</dialog>
+
+<dialog id="agentDialog" class="blorp-modal" aria-labelledby="agentDialogTitle"><form id="agentForm" class="modal-form"><div class="dialog-head"><div><p class="kicker">CUSTOM AGENT</p><h2 id="agentDialogTitle">Add new agent</h2></div><button type="button" class="dialog-close" data-close-dialog="agentDialog" aria-label="Close">✕</button></div><input id="agentEditId" type="hidden"/><label class="field-label" for="agentName">Agent name</label><input class="search" id="agentName" required maxlength="45" placeholder="e.g. Frontend Specialist"/><label class="field-label" for="agentRole">Responsibility</label><select class="search" id="agentRole"><option>Research</option><option>Design</option><option>Development</option><option>Testing</option><option>Orchestration</option><option>Content</option><option>DevOps</option><option>Custom</option></select><label class="field-label" for="agentModel">Preferred model</label><select class="search" id="agentModel"><option>Auto-select (not connected)</option><option>Gemini / Google</option><option>Claude / Anthropic</option><option>GPT / OpenAI</option><option>Llama / Groq</option><option>OpenRouter model</option><option>Local model</option></select><label class="field-label" for="agentInstructions">Agent instructions</label><textarea class="search modal-textarea" id="agentInstructions" maxlength="400" rows="3" placeholder="Describe this agent's responsibilities and boundaries."></textarea><div class="dialog-actions"><button type="button" class="btn" data-close-dialog="agentDialog">Cancel</button><button type="submit" class="btn primary">Save agent</button></div><p class="form-hint">Saved only in this browser. Model selection does not connect an API.</p></form></dialog>
+<dialog id="workflowDialog" class="blorp-modal" aria-labelledby="workflowDialogTitle"><form id="workflowForm" class="modal-form"><div class="dialog-head"><div><p class="kicker">BUILD FAST PIPELINE</p><h2 id="workflowDialogTitle">Create workflow</h2></div><button type="button" class="dialog-close" data-close-dialog="workflowDialog" aria-label="Close">✕</button></div><label class="field-label" for="workflowName">Workflow name</label><input class="search" id="workflowName" maxlength="65" required placeholder="e.g. Production website build"/><label class="field-label" for="workflowDescription">Description</label><input class="search" id="workflowDescription" maxlength="120" placeholder="One sentence on what this workflow does"/><label class="field-label">Route through these agents (top to bottom)</label><div id="workflowAgentChecks" class="dialog-checkboxes"></div><div class="dialog-actions"><button type="button" class="btn" data-close-dialog="workflowDialog">Cancel</button><button type="submit" class="btn primary">Create draft</button></div><p class="form-hint">This saves a workflow definition; it does not start agent execution.</p></form></dialog>
+<dialog id="authDialog" class="blorp-modal auth-modal" aria-labelledby="authTitle"><form id="authForm" class="modal-form"><div class="dialog-head"><div><p class="kicker">YOUR BLORP ACCOUNT</p><h2 id="authTitle">Sign in</h2></div><button type="button" class="dialog-close" data-close-dialog="authDialog" aria-label="Close">✕</button></div><div class="auth-switch" role="group" aria-label="Account action"><button type="button" class="selected" id="authSignInTab" aria-pressed="true">Sign in</button><button type="button" id="authSignUpTab" aria-pressed="false">Sign up</button></div><div class="v52-google-area"><div id="googleLoginSlot"></div><p id="googleAuthHint" class="form-hint">Google sign-in requires a configured Google Cloud OAuth client.</p></div><div id="authNameWrap" hidden><label class="field-label" for="authName">Display name</label><input class="search" id="authName" maxlength="55" placeholder="Your name" autocomplete="name"/></div><label class="field-label" for="authEmail">Email address</label><input type="email" class="search" id="authEmail" required placeholder="you@example.com" autocomplete="email"/><label class="field-label" for="authPassword">Password</label><input type="password" class="search" id="authPassword" required minlength="6" autocomplete="current-password" placeholder="Use a demo-only password"/><p class="form-hint warn-hint">Local development sign-in uses the bundled Python + SQLite server. Not yet production hardened.</p><button class="btn primary fill-btn" id="authSubmit" type="submit">Sign in</button><p class="auth-bottom">Local account data is stored in SQLite on your own PC. Public launch requires a production auth and security review.</p></form></dialog>
+<dialog id="addonDialog" class="blorp-modal v5-dialog"><form id="addonForm" class="modal-form"><div class="dialog-head"><div><p class="kicker">ADD-ON CONFIGURATION</p><h2 id="addonDialogTitle">Set permissions</h2><p class="build-dialog-desc" id="addonDialogDesc">Preview-only configuration. No external service is connected.</p></div><button type="button" class="dialog-close" data-close-dialog="addonDialog">✕</button></div><input type="hidden" id="addonId"/><label class="field-label">Which agents may request this tool?</label><div class="v5-check-row"><label><input type="checkbox" name="addonRole" value="Research"/> Research</label><label><input type="checkbox" name="addonRole" value="Design"/> Design</label><label><input type="checkbox" name="addonRole" value="Builder"/> Builder</label><label><input type="checkbox" name="addonRole" value="QA"/> QA</label></div><label class="v5-approve"><input type="checkbox" id="addonAskBefore" checked/> Require approval for sensitive actions</label><p class="form-hint">This saves a browser preference only. Real integrations will require OAuth or verified MCP credentials and server-side authorization.</p><div class="dialog-actions"><button type="button" class="btn" id="addonDisable">Disable</button><button type="submit" class="btn primary">Save preview settings</button></div></form></dialog>
+<dialog id="mcpDialog" class="blorp-modal v5-dialog"><form id="mcpForm" class="modal-form"><div class="dialog-head"><div><p class="kicker">CUSTOM INTEGRATION DRAFT</p><h2>MCP server</h2></div><button type="button" class="dialog-close" data-close-dialog="mcpDialog">✕</button></div><label class="field-label" for="mcpName">Display name</label><input id="mcpName" class="search" required maxlength="55" placeholder="My tools"/><label class="field-label" for="mcpAddress">Server URL (metadata only)</label><input id="mcpAddress" class="search" type="url" required maxlength="300" placeholder="https://example.com/mcp"/><p class="form-hint">URLs are not contacted. Never enter secrets or tokens here.</p><button class="btn primary fill-btn" type="submit">Save draft</button></form></dialog>
+<div class="toast" id="toast" role="status"></div>
+<script src="/assets/base.js"></script>
+<script src="/assets/v5.js"></script>
+<script src="/assets/v51.js"></script>
+<script src="/assets/v52.js"></script>
+<script src="/assets/v53.js"></script>
+<script src="/assets/cloud-desktop.js"></script>
+<script src="/assets/cloud-payments.js"></script>
+<script src="/assets/native-studio.js"></script>
+<script src="/assets/model-hub.js"></script>
+</body>
+</html>
