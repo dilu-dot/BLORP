@@ -1,3 +1,26 @@
+# BLORP Studio V4.3 — New Default Interface (development branch)
+
+> **This is the new Studio frontend, not the old V5.3 local dashboard.** The default `public/index.html` is now the approved Studio design. The old UI remains preserved as `public/legacy-v53.html`. This feature branch is **not merged into `main`**, and the application remains an unfinished local-development prototype.
+
+## Start the new Studio on Windows
+
+```powershell
+cd D:\BLORP-NEW
+python server.py
+```
+
+Open **http://127.0.0.1:8765/** (or the port printed by the backend).
+
+- New Studio: `/`, `/index.html`, or `/blorp-studio-subscriptions-preview.html`.
+- Original V5.3 legacy UI: `/legacy-v53.html`.
+- To use sign-in, projects, payment attempts, and model discovery, open the Studio through the running localhost server, **not** by double-clicking its HTML file.
+- The Electron offline launcher now reads the new index page too, but offline sign-in/AI/payment dialogs are **demonstrations**. Real backend functions require starting Python on localhost; do not mistake the offline desktop UI for a functioning SaaS.
+- The old `D:\BLORP-main` folder from a previous ZIP will not update itself. Download the feature branch, or fetch/switch to it via Git.
+
+Security: Verify bank QR/UPI details independently. Enter API keys only through the Windows DPAPI-backed localhost form; keys are not accepted by the offline standalone demo. Multi Task execution and production billing are not ready.
+
+## Legacy V5.3 documentation
+
 # BLORP V5.3 — Private Owner Console & UPI / UTR payments (local prototype)
 
 This is the next iteration of the Blorp project. It builds on **the existing V5 foundation and original V4.1 frontend**, preserving Multi Task, Build Playground, Workflows, AI Playground, Model Explorer, Projects, account dashboard, membership UI and Add-ons. It adds **Local AI Lab**, a real integration with an Ollama model running on the *same computer*.
