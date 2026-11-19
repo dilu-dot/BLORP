@@ -25,6 +25,7 @@ with tempfile.TemporaryDirectory() as temp:
             try:op.open(url+'/api/health',timeout=1);break
             except Exception:time.sleep(.1)
         else:raise RuntimeError('Server not started')
+        assert json.load(op.open(url+'/api/health'))['studio_ui'] == 'v4.3'
         # Root must now serve the approved premium Studio; legacy stays explicitly accessible.
         with op.open(url+'/',timeout=6) as response:
             html=response.read().decode('utf-8')

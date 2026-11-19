@@ -52,7 +52,7 @@
     $('authName').required = authMode === 'signup';
     $('authPassword').autocomplete = authMode === 'signup' ? 'new-password' : 'current-password';
     $('blorpAuthTitle').textContent = authMode === 'signup' ? 'Create your BLORP account.' : 'Welcome back.';
-    $('blorpAuthExplainer').textContent = 'Local BLORP account · encrypted session cookie · localhost development.';
+    $('blorpAuthExplainer').textContent = 'Local BLORP account · HTTP-only session cookie · localhost development.';
     $('authSubmit').textContent = authMode === 'signup' ? 'Create account →' : 'Sign in →';
     $('authPasswordHelp').hidden = authMode === 'signup';
     clearAuth();
@@ -105,7 +105,9 @@
   }
   async function loadProjects() {
     if (!user) return;
+    const account = user;
     const result = await request('/api/projects');
+    if (user !== account) return;
     const entries = (result.projects || []).map(parseProject);
     const s = state();
     s.projects = entries.map(e => e.project);
@@ -138,9 +140,13 @@
   async function setAccount(next) {
     user = next || null;
     clearWorkspace();
-    if (user) await loadProjects();
-    renderAccount();
-    if (user) await discoverModels();
+    if (user) {
+      const account = user;
+      await loadProjects().catch(err => {
+        if (user === account) notify('Could not load projects: ' + err.message);
+      });
+      if (user === account) void discoverModels();
+    }
   }
 
   async function submitAuth(e) {
@@ -428,7 +434,9 @@
     const button=e.target.closest('button');
     if (!button) return;
     if(button.id==='authLaunch'||button.matches('[data-open-auth]')) {
-      e.preventDefault();e.stopPropagation();openAuth(button.dataset.openAuth||'signin');
+      e.preventDefault();e.stopPropagation();
+      if (button.id === 'authLaunch' && user) $('profileTrigger').click();
+      else openAuth(button.dataset.openAuth||'signin');
     } else if(button.matches('[data-auth-mode]')) {
       e.preventDefault();e.stopPropagation();setMode(button.dataset.authMode);
     } else if(button.id==='authDismiss') {

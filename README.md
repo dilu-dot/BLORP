@@ -9,7 +9,7 @@ cd D:\BLORP-NEW
 python server.py
 ```
 
-Open **http://127.0.0.1:8765/** (or the port printed by the backend).
+Open the exact localhost URL printed beside **BLORP Studio V4.3** and the checkout path. An occupied default port can belong to another checkout. Press Ctrl+C in this console to stop this server. See [the integration audit](docs/CODEX_BLORP_AUDIT.md) for isolated Windows smoke tests.
 
 - New Studio: `/`, `/index.html`, or `/blorp-studio-subscriptions-preview.html`.
 - Original V5.3 legacy UI: `/legacy-v53.html`.
