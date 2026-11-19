@@ -69,7 +69,7 @@ function renderConnected(){
     id:"secured-"+item.provider,
     provider: LABELS[item.provider]||item.name||item.provider,
     alias:item.label||item.name||item.provider,
-    enabled:true, models:(modelChecks[item.provider]?.models||[]).map(m=>({id:m.id,enabled:true})),catalogStatus:modelChecks[item.provider]?.status||'not_checked', backendStored:true, providerId:item.provider,
+    enabled:true, models:(modelChecks[item.provider]?.models||[]).map(m=>({id:m.id,enabled:modelChecks[item.provider]?.status==="catalog_checked"})),catalogStatus:modelChecks[item.provider]?.status||'not_checked', backendStored:true, providerId:item.provider,
     createdAt:new Date((item.stored_at||0)*1000).toISOString()
   }));
   app.commit();app.rerender();
@@ -179,7 +179,17 @@ document.addEventListener("click",event=>{
     event.preventDefault();event.stopPropagation();discoverProvider(button.dataset.discoverProvider);
   }else if(button.id==="checkKeysBtn"){
     event.preventDefault();event.stopPropagation();
-    setStatus(backendProviders.length+" saved keys · "+Object.keys(modelChecks).length+" cached catalog checks");
+    const control=$("checkKeysBtn");
+    if(control.disabled)return;
+    control.disabled=true;control.textContent="Checking providers…";
+    (async()=>{
+      try{
+        const providers=backendProviders.map(p=>p.provider);
+        if(!providers.length){setStatus("Add an API key first");return}
+        for(const provider of providers)await discoverProvider(provider);
+        setStatus("Catalog checks finished · inference remains untested");
+      }finally{control.disabled=false;control.textContent="✓ Check all";}
+    })();
   }else if(button.hasAttribute("data-remove-key")){
     const item=backendProviders.find(p=>"secured-"+p.provider===button.dataset.removeKey);
     if(!item)return;
