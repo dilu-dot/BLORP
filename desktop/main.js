@@ -5,7 +5,7 @@
  * Actual sign-in, payments, and AI building require a backend.
  * The private Blorp Owner desktop app is NOT included.
  */
-const {app, BrowserWindow, protocol, net, session, shell, ipcMain, safeStorage} = require("electron");
+const {app, BrowserWindow, protocol, net, dialog, session, shell, ipcMain, safeStorage} = require("electron");
 const {BlorpCloudAuth} = require("./cloud-auth");
 const {LocalWorkspace} = require("./native-workspace");
 const {ModelHub} = require("./model-hub");
@@ -40,7 +40,7 @@ async function health(origin) {
     });
     if (!response.ok) return false;
     const data = await response.json();
-    return data && data.ok === true;
+    return data && data.ok === true && data.studio === "blorp-v4.3";
   } catch { return false; }
   finally { clearTimeout(timer); }
 }
@@ -97,12 +97,17 @@ app.whenReady().then(async () => {
   let backend = null;
   // The public desktop uses Supabase by default; local Python backend only via explicit dev opt-in.
   const configured = process.env.BLORP_USE_LEGACY_BACKEND === "1" ? (process.env.BLORP_SERVER_URL || LOCAL_BACKEND) : null;
-  try {
-    if (!configured) throw Error("Legacy backend disabled for cloud desktop");
-    const origin = validateOrigin(configured);
-    if (await health(origin)) backend = origin;
-  } catch (error) {
-    console.warn("Blorp server configuration invalid:", error.message);
+  if (configured) {
+    try {
+      const origin = validateOrigin(configured);
+      if (!await health(origin)) throw Error("The selected server did not identify itself as BLORP Studio V4.3.");
+      backend = origin;
+    } catch (error) {
+      dialog.showErrorBox("BLORP Studio backend unavailable",
+        error.message + "\nStart python server.py from the Studio checkout and set BLORP_SERVER_URL to its printed URL.");
+      app.quit();
+      return;
+    }
   }
 
   const cloud = new BlorpCloudAuth({dir:app.getPath("userData"),safeStorage,shell});
