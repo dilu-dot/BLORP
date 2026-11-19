@@ -1011,7 +1011,7 @@ html[data-glass-opaque="true"] *::after,html[data-glass-opaque="true"] dialog::b
   } catch(_) {}
   const safeArray=v=>Array.isArray(v)?v:[];
   for(const field of ["agents","groups","runs","credentials","mcps","projects","chatHistory","localModels"])state[field]=safeArray(state[field]);
-  if(serverPage){state.projects=[];state.projectChats={};state.activeProjectId=null;state.chatHistory=[];}
+  if(serverPage){state.projects=[];state.projectChats={};state.activeProjectId=null;state.chatHistory=[];state.credentials=[];}
   state.credentials=state.credentials.filter(c=>c && c.id && c.provider && Array.isArray(c.models)).map(c=>({
     id:String(c.id),provider:String(c.provider),alias:String(c.alias||"Key draft"),enabled:!!c.enabled,
     models:c.models.map(m=>({id:String(m.id||""),enabled:!!m.enabled})).filter(m=>m.id),createdAt:c.createdAt||""
@@ -1024,7 +1024,7 @@ html[data-glass-opaque="true"] *::after,html[data-glass-opaque="true"] dialog::b
   function toast(message){const el=$("toast");el.textContent=message;el.classList.add("on");clearTimeout(toastTimer);toastTimer=setTimeout(()=>el.classList.remove("on"),3200)}
   function persist(){try {
     // Account data is owned by the backend. Never copy private chats into browser localStorage.
-    const safe = serverPage ? {...state,projects:[],projectChats:{},activeProjectId:null,chatHistory:[]} : state;
+    const safe = serverPage ? {...state,projects:[],projectChats:{},activeProjectId:null,chatHistory:[],credentials:[]} : state;
     localStorage.setItem(KEY,JSON.stringify(safe));
     document.dispatchEvent(new CustomEvent('blorp:state'));return true;
   }catch(_) {toast("Local storage unavailable. Please export your drafts.");return false;}}
@@ -1392,7 +1392,7 @@ html[data-glass-opaque="true"] *::after,html[data-glass-opaque="true"] dialog::b
           '<select aria-label="Assign '+esc(m.id)+' to specialist" data-assign-model="'+esc(ref)+'" '+(!m.enabled?"disabled":"")+'><option value="">Assign specialist…</option>'+state.agents.map(a=>'<option value="'+esc(a.id)+'">'+esc(a.name)+' · '+esc(a.role)+'</option>').join("")+'</select>';
         return '<div class="hub-provider-model"><div><strong>'+esc(m.id)+'</strong><div class="small-help">'+(m.enabled?"Enabled for specialist assignment":"Model disabled")+'</div></div><label class="switch" title="Enable model"><input type="checkbox" data-model-toggle="'+esc(ref)+'" '+(m.enabled?"checked":"")+'><span></span></label>'+select+(locked?'<button class="btn small" data-unlock-model="'+esc(ref)+'">Unlock</button>':'<span class="chip muted">'+(m.enabled?"Available":"Off")+'</span>')+'</div>';
       }).join("");
-      return '<article class="hub-provider-card"><div class="hub-provider-top"><div><strong>'+esc(c.provider)+'</strong><small>'+esc(c.alias)+' · UI-configured (not verified)</small></div><span class="chip muted">'+c.models.length+' model IDs</span></div>'+rows+'</article>';
+      return '<article class="hub-provider-card"><div class="hub-provider-top"><div><strong>'+esc(c.provider)+'</strong><small>'+esc(c.alias)+' · '+(c.backendStored?'Securely saved · model discovery pending':'UI draft · not verified')+'</small></div><span class="chip muted">'+c.models.length+' model IDs</span></div>'+rows+'</article>';
     }).join(""):'<div class="empty"><div><div style="font-size:34px">✳</div><strong>No providers connected yet</strong><p class="small-help">Add a key draft in API Keys first. Provider cards and model switches will appear here afterward.</p><button class="btn primary" data-go="keys">＋ Add key ↗</button></div></div>';
     $("hubAssignments").innerHTML=assignmentCards();
     $("keyAgentAccess").innerHTML=assignmentCards();
@@ -1445,7 +1445,7 @@ html[data-glass-opaque="true"] *::after,html[data-glass-opaque="true"] dialog::b
     const q=$("keySearch").value.trim().toLowerCase();
     const items=state.credentials.filter(c=>(c.provider+" "+c.alias).toLowerCase().includes(q)&&(keyFilter==="all"||(keyFilter==="enabled"&&c.enabled)||(keyFilter==="disabled"&&!c.enabled)));
     $("keysProviderList").innerHTML=items.length?items.map(c=>{
-      return '<article class="keys-provider-card"><div class="keys-provider-heading"><label class="switch" title="Enable provider"><input type="checkbox" data-credential-enable="'+esc(c.id)+'" '+(c.enabled?"checked":"")+'><span></span></label><strong>'+esc(c.provider)+'</strong><span class="keys-pill">'+c.models.length+' models</span><span class="keys-pill">'+(c.enabled?"Enabled":"Disabled")+'</span></div><div class="keys-provider-row"><span class="keys-dot"></span><div style="min-width:0;flex:1"><strong>'+esc(c.alias)+'</strong><small style="display:block;margin-top:3px">Key reference · secret not saved · not verified</small></div><span class="keys-pill">'+(c.enabled?"UI configured":"Disabled")+'</span><div class="row-actions"><button class="btn small" data-open-hub="'+esc(c.id)+'">Models ↗</button><button class="btn small danger" data-remove-key="'+esc(c.id)+'">Remove</button></div></div></article>';
+      return '<article class="keys-provider-card"><div class="keys-provider-heading"><label class="switch" title="Enable provider"><input type="checkbox" data-credential-enable="'+esc(c.id)+'" '+(c.enabled?"checked":"")+' '+(c.backendStored?"disabled":"")+'><span></span></label><strong>'+esc(c.provider)+'</strong><span class="keys-pill">'+c.models.length+' models</span><span class="keys-pill">'+(c.enabled?"Enabled":"Disabled")+'</span></div><div class="keys-provider-row"><span class="keys-dot"></span><div style="min-width:0;flex:1"><strong>'+esc(c.alias)+'</strong><small style="display:block;margin-top:3px">'+(c.backendStored?'Encrypted with Windows DPAPI · saved, not verified':'Key reference · secret not saved · not verified')+'</small></div><span class="keys-pill">'+(c.enabled?"UI configured":"Disabled")+'</span><div class="row-actions"><button class="btn small" data-open-hub="'+esc(c.id)+'">Models ↗</button><button class="btn small danger" data-remove-key="'+esc(c.id)+'">Remove</button></div></div></article>';
     }).join(""):'<div class="empty" style="min-height:225px"><div><div style="font-size:30px">⌑</div><strong>No provider keys added</strong><p class="small-help">Use Add key above to create your first provider draft. The Model Hub stays empty until then.</p></div></div>';
     renderMcp();renderHub();
   }
@@ -2227,5 +2227,6 @@ html[data-glass-opaque="true"] *::after,html[data-glass-opaque="true"] dialog::b
 })();
 </script>
 <script src="/assets/studio-backend-bridge.js"></script>
+<script src="/assets/studio-provider-keys.js"></script>
 </body>
 </html>
